@@ -1,7 +1,7 @@
 // public/js/main.js - Frontend HIDROSYS v3.0
 // Comunicación real con API REST + PostgreSQL
 
-const API = '';  // Misma URL base (servido por Express)
+const API = window.location.protocol === 'file:' ? 'http://127.0.0.1:3000' : '';
 
 // ============================================================
 // TOASTS
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupNavigation();
     checkDBStatus();
-    loadDashboard();
+    navigateTo('dashboard'); // Aterrizar en el inicio del cliente en vez de cargar métricas
     setupBookingForm();
     setupPaymentForm();
     setupSurveyForm();
