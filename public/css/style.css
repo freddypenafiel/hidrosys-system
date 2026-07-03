@@ -628,6 +628,18 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     .modal-footer, .modal-header { display: none !important; }
 }
 
+/* ===== LAYOUT GRIDS & CLASSES ===== */
+.client-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+.dashboard-split-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
     .sidebar { width: 200px; }
@@ -635,9 +647,20 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     .zone-grid { grid-template-columns: 1fr 1fr; }
     .bank-grid { grid-template-columns: 1fr 1fr; }
     .apt-cards-grid { grid-template-columns: 1fr; }
+    .dashboard-split-grid { grid-template-columns: 1fr; }
 }
+
 @media (max-width: 768px) {
-    .sidebar { transform: translateX(-100%); }
+    #sidebar-toggle { display: block !important; }
+    .sidebar { 
+        transform: translateX(-100%); 
+        z-index: 500; 
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sidebar.open { 
+        transform: translateX(0); 
+        box-shadow: 10px 0 30px rgba(0,0,0,0.3);
+    }
     .main-wrapper { margin-left: 0; }
     .main-content { padding: 18px; }
     .topbar { padding: 12px 18px; }
@@ -648,4 +671,27 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
     .wa-drawer { width: 100%; }
     .phone-device { width: 320px; }
+    .client-dashboard-grid { grid-template-columns: 1fr; gap: 14px; }
+    
+    /* Evita que los pasos del Wizard se empalmen en móviles */
+    .wizard-nav { flex-wrap: wrap; justify-content: center; gap: 8px 12px; margin-bottom: 20px; }
+    .wz-step { flex: initial; }
+    .wz-step:not(:last-child)::after { display: none; }
+    
+    /* Evita que los botones del Wizard se superpongan */
+    .wz-buttons { flex-direction: column; gap: 8px; margin-top: 18px; }
+    .wz-buttons .btn { width: 100%; flex: none; }
+    
+    /* Bancos en lista vertical */
+    .bank-grid { grid-template-columns: 1fr; gap: 8px; }
+    
+    /* Emojis envueltos para que no desborden */
+    .emoji-rating { flex-wrap: wrap; gap: 6px; }
+    .emoji-btn { padding: 8px 6px; font-size: 1.3rem; }
+}
+
+@media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr; gap: 12px; }
+    .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .topbar-actions { width: 100%; justify-content: space-between; }
 }

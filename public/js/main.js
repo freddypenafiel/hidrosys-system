@@ -157,8 +157,28 @@ function navigateTo(pageId) {
 
 function setupNavigation() {
     document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
-        btn.addEventListener('click', () => navigateTo(btn.dataset.page));
+        btn.addEventListener('click', () => {
+            navigateTo(btn.dataset.page);
+            document.querySelector('.sidebar')?.classList.remove('open');
+        });
     });
+
+    // Hamburguesa en móviles
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    const sidebar = document.querySelector('.sidebar');
+    if (toggleBtn && sidebar) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('open');
+        });
+        
+        // Cerrar al hacer clic fuera del sidebar
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && e.target !== toggleBtn) {
+                sidebar.classList.remove('open');
+            }
+        });
+    }
 }
 
 // ============================================================
