@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIDROSYS EC. – Sistema de Gestión Integral</title>
+    <meta name="description" content="Sistema de gestión de visitas técnicas, agendamiento y seguimiento para HIDROSYS EC.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- TOASTS -->
+<div id="toast-container"></div>
+
+<!-- VOICE OVERLAY -->
+<div id="voice-overlay" class="voice-overlay">
+    <div class="voice-ring">🎙️</div>
+    <h2 style="color:white;font-family:'Outfit',sans-serif;">Escuchando tu voz...</h2>
+    <p id="voice-live-text" class="voice-live-text">Habla claramente para dictar los datos de tu solicitud</p>
+    <button class="voice-stop-btn" id="voice-stop-btn">⏹ Detener Grabación</button>
+</div>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <img src="/img/hidrosys_logo.png" alt="Logo HIDROSYS" id="sidebar-logo">
+        <div class="sidebar-logo-text">
+            <h1>HIDROSYS</h1>
+            <p>Sistema de Gestión v3.0</p>
+        </div>
+    </div>
+
+    <!-- Selector de Perfil para separar vistas de Cliente y Administrador/Dueño -->
+    <div style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.12);">
+        <label style="font-size:0.65rem; color:rgba(255,255,255,0.5); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:6px;">Perfil de Acceso</label>
+        <select id="profile-select" style="width:100%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:var(--radius-sm); padding:8px; font-family:var(--font-h); font-weight:600; outline:none; cursor:pointer;" onchange="switchProfile(this.value)">
+            <option value="client" style="color:var(--gray-900);">👤 Cliente / Dueño de Obra</option>
+            <option value="admin" style="color:var(--gray-900);">💼 Administrador / Empleado</option>
+        </select>
+    </div>
+
+    <nav class="sidebar-nav">
+        <!-- Grupo de Navegación del Cliente -->
+        <div id="nav-group-client">
+            <div class="nav-section-title">CLIENTE</div>
+            <button class="nav-item active" data-page="dashboard">
+                <span class="nav-icon">🏠</span> Dashboard
+            </button>
+            <button class="nav-item" data-page="booking">
+                <span class="nav-icon">📅</span> Agendar Visita
+            </button>
+            <button class="nav-item" data-page="payments">
+                <span class="nav-icon">💳</span> Reportar Pago
+            </button>
+            <button class="nav-item" data-page="survey">
+                <span class="nav-icon">⭐</span> Calificar Servicio
+            </button>
+            <button class="nav-item" data-page="leads">
+                <span class="nav-icon">🏗️</span> Proyectos Grandes
+            </button>
+            <button class="nav-item" data-page="catalog">
+                <span class="nav-icon">📦</span> Catálogo de Productos
+            </button>
+        </div>
+
+        <!-- Grupo de Navegación del Administrador / Empleados (Oculto por defecto para Clientes) -->
+        <div id="nav-group-admin" style="display:none;">
+            <div class="nav-section-title">ADMINISTRACIÓN</div>
+            <button class="nav-item" data-page="admin-dashboard">
+                <span class="nav-icon">📊</span> Panel Admin (Métricas)
+            </button>
+            <button class="nav-item" data-page="admin-appointments">
+                <span class="nav-icon">📋</span> Agenda y Citas
+            </button>
+            <button class="nav-item" data-page="admin-clients">
+                <span class="nav-icon">👥</span> Clientes
+            </button>
+            <button class="nav-item" data-page="admin-leads">
+                <span class="nav-icon">📈</span> Prospectos
+                <span class="nav-badge" id="leads-badge">0</span>
+            </button>
+            <button class="nav-item" data-page="admin-surveys">
+                <span class="nav-icon">📊</span> Satisfacción
+            </button>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        HIDROSYS EC. © 2026<br>Agua · Gas · Hidráulica
+    </div>
+</aside>
+
+<!-- ===== MAIN WRAPPER ===== -->
+<div class="main-wrapper">
+    <!-- TOP BAR -->
+    <header class="topbar">
+        <div>
+            <div class="topbar-title" id="topbar-title">Dashboard</div>
+            <div class="topbar-sub" id="topbar-sub">Resumen general del sistema</div>
+        </div>
+        <div class="topbar-actions">
+            <div class="db-status" id="db-status-badge">
+                <div class="db-dot"></div>
+                <span>PostgreSQL</span>
+            </div>
+            <!-- Botón WhatsApp -->
+            <button class="btn btn-sm" style="background:#25d366;color:white;" id="wa-open-btn">
+                💬 WhatsApp Bot
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <!-- ==================== DASHBOARD CLIENTE ==================== -->
+        <div class="page active" id="page-dashboard">
+            <div class="page-header" style="margin-bottom: 28px;">
+                <div>
+                    <h2>Bienvenido a HIDROSYS EC.</h2>
+                    <p>Sistemas, equipos y soluciones hidráulicas en la Provincia del Cañar.</p>
+                </div>
+            </div>
+            
+            <div class="card" style="background:var(--blue-50); border-color:var(--blue-100); margin-bottom: 28px; padding: 24px; border-radius: var(--radius-lg);">
+                <h3 style="font-family:var(--font-h); font-weight:700; color:var(--blue-800); margin-bottom: 8px;">👋 ¡Hola! ¿En qué podemos ayudarte hoy?</h3>
+                <p style="font-size:0.875rem; color:var(--gray-700); line-height:1.6;">Utiliza el menú lateral o los accesos directos de abajo para gestionar tus citas, reportar tus comprobantes de pago o consultar nuestro catálogo de productos oficiales.</p>
+            </div>
+
+            <!-- Accesos Rápidos del Cliente -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                <div class="card" style="cursor:pointer; transition:var(--transition);" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='var(--shadow-xs)';this.style.transform='translateY(0)'" onclick="navigateTo('booking')">
+                    <div class="card-body" style="display:flex; align-items:center; gap:16px;">
+                        <div style="font-size:2.2rem; background:var(--blue-100); border-radius:var(--radius-md); width:60px; height:60px; display:flex; align-items:center; justify-content:center;">📅</div>
+                        <div>
+                            <h4 style="font-family:var(--font-h); font-weight:700; font-size:1rem; margin-bottom:4px; color:var(--blue-800);">Agendar Visita Técnica</h4>
+                            <p style="font-size:0.75rem; color:var(--gray-500);">Solicita inspección, reparaciones o instalación de medidores en tu cantón.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card" style="cursor:pointer; transition:var(--transition);" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='var(--shadow-xs)';this.style.transform='translateY(0)'" onclick="navigateTo('payments')">
+                    <div class="card-body" style="display:flex; align-items:center; gap:16px;">
+                        <div style="font-size:2.2rem; background:var(--green-bg); border-radius:var(--radius-md); width:60px; height:60px; display:flex; align-items:center; justify-content:center;">💳</div>
+                        <div>
+                            <h4 style="font-family:var(--font-h); font-weight:700; font-size:1rem; margin-bottom:4px; color:var(--green);">Reportar Pago</h4>
+                            <p style="font-size:0.75rem; color:var(--gray-500);">Registra tu comprobante de transferencia bancaria para confirmar tu cita.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card" style="cursor:pointer; transition:var(--transition);" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='var(--shadow-xs)';this.style.transform='translateY(0)'" onclick="navigateTo('catalog')">
+                    <div class="card-body" style="display:flex; align-items:center; gap:16px;">
+                        <div style="font-size:2.2rem; background:var(--purple-bg); border-radius:var(--radius-md); width:60px; height:60px; display:flex; align-items:center; justify-content:center;">📦</div>
+                        <div>
+                            <h4 style="font-family:var(--font-h); font-weight:700; font-size:1rem; margin-bottom:4px; color:var(--purple);">Catálogo de Productos</h4>
+                            <p style="font-size:0.75rem; color:var(--gray-500);">Explora medidores, tuberías PVC/PEAD y accesorios de alta calidad.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card" style="cursor:pointer; transition:var(--transition);" onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='var(--shadow-xs)';this.style.transform='translateY(0)'" onclick="navigateTo('survey')">
+                    <div class="card-body" style="display:flex; align-items:center; gap:16px;">
+                        <div style="font-size:2.2rem; background:var(--yellow-bg); border-radius:var(--radius-md); width:60px; height:60px; display:flex; align-items:center; justify-content:center;">⭐</div>
+                        <div>
+                            <h4 style="font-family:var(--font-h); font-weight:700; font-size:1rem; margin-bottom:4px; color:var(--yellow);">Calificar Servicio</h4>
+                            <p style="font-size:0.75rem; color:var(--gray-500);">Evalúa el desempeño de nuestro técnico tras finalizar su visita.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== DASHBOARD ADMINISTRATIVO ==================== -->
+        <div class="page" id="page-admin-dashboard">
+            <div class="page-header">
+                <div>
+                    <h2>Panel de Control Administrativo</h2>
+                    <p>Métricas de facturación, solicitudes y control en tiempo real desde PostgreSQL</p>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="loadDashboard()">🔄 Actualizar</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card"><div class="stat-icon blue">📅</div><div><div class="stat-label">Total Citas</div><div class="stat-value" id="stat-total">–</div></div></div>
+                <div class="stat-card"><div class="stat-icon yellow">⏳</div><div><div class="stat-label">Pendientes</div><div class="stat-value" id="stat-pending">–</div></div></div>
+                <div class="stat-card"><div class="stat-icon green">✅</div><div><div class="stat-label">Confirmadas</div><div class="stat-value" id="stat-confirmed">–</div></div></div>
+                <div class="stat-card"><div class="stat-icon purple">💵</div><div><div class="stat-label">Ingresos Mes</div><div class="stat-value" id="stat-revenue">–</div><div class="stat-sub">USD este mes</div></div></div>
+                <div class="stat-card"><div class="stat-icon blue">👥</div><div><div class="stat-label">Clientes</div><div class="stat-value" id="stat-clients">–</div></div></div>
+                <div class="stat-card"><div class="stat-icon red">📈</div><div><div class="stat-label">Leads Nuevos</div><div class="stat-value" id="stat-leads">–</div></div></div>
+            </div>
+
+            <!-- Zonas + Últimas citas -->
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-top:0;">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">📍 Citas por Cantón</span></div>
+                    <div class="card-body">
+                        <div id="zones-chart" style="display:flex;flex-direction:column;gap:10px;"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">🕐 Últimas Solicitudes</span>
+                        <button class="btn btn-xs btn-outline" data-page="admin-appointments" onclick="navigateTo('admin-appointments')">Ver todas</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead><tr><th>Cliente</th><th>Servicio</th><th>Fecha</th><th>Estado</th></tr></thead>
+                            <tbody id="recent-apts-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== AGENDAR VISITA ==================== -->
+        <div class="page" id="page-booking">
+            <div class="page-header">
+                <div>
+                    <h2>Solicitar Visita Técnica</h2>
+                    <p>Registre una nueva cita usando el formulario o nuestro asistente de WhatsApp con reconocimiento de voz</p>
+                </div>
+            </div>
+
+            <!-- Selector de canal -->
+            <div class="channel-cards">
+                <div class="channel-card active-form" id="ch-form-card" onclick="selectChannel('form')">
+                    <div class="ch-icon">📋</div>
+                    <div class="ch-title">Formulario Guiado</div>
+                    <div class="ch-desc">Wizard paso a paso con validación automática</div>
+                </div>
+                <div class="channel-card" id="ch-wa-card" onclick="selectChannel('whatsapp')">
+                    <span class="channel-badge">NUEVO · IA</span>
+                    <div class="ch-icon">🎙️</div>
+                    <div class="ch-title">Asistente de Voz WhatsApp</div>
+                    <div class="ch-desc">Dictado por audio → transcripción automática → formulario lleno</div>
+                </div>
+            </div>
+
+            <!-- Formulario Wizard -->
+            <div id="booking-form-section">
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Wizard steps -->
+                        <div class="wizard-nav" id="wz-nav">
+                            <div class="wz-step active" data-wz="1"><div class="wz-num">1</div><span class="wz-label">Sus Datos</span></div>
+                            <div class="wz-step" data-wz="2"><div class="wz-num">2</div><span class="wz-label">Zona y Servicio</span></div>
+                            <div class="wz-step" data-wz="3"><div class="wz-num">3</div><span class="wz-label">Fecha y Hora</span></div>
+                            <div class="wz-step" data-wz="4"><div class="wz-num">4</div><span class="wz-label">Confirmar</span></div>
+                        </div>
+
+                        <form id="booking-form">
+                            <!-- Panel 1 -->
+                            <div class="wz-panel active" id="wz-1">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Nombre Completo <span class="required">*</span></label>
+                                        <input id="bk-name" class="form-control" required placeholder="Ej. Freddy Loor">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Celular de Contacto <span class="required">*</span></label>
+                                        <input id="bk-phone" class="form-control" required placeholder="+593 98 765 4321">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Correo Electrónico</label>
+                                        <input id="bk-email" type="email" class="form-control" placeholder="correo@example.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Dirección <span class="required">*</span></label>
+                                        <input id="bk-address" class="form-control" required placeholder="Ej. Av. Granados N32-15 y Eloy Alfaro">
+                                    </div>
+                                </div>
+                                <div class="wz-buttons">
+                                    <div></div>
+                                    <button type="button" class="btn btn-primary" onclick="wzNext(1)">Siguiente →</button>
+                                </div>
+                            </div>
+
+                            <!-- Panel 2 -->
+                            <div class="wz-panel" id="wz-2">
+                                <div class="form-grid col-2" style="margin-bottom:18px;">
+                                    <div class="form-group">
+                                        <label class="form-label">Cantón (Provincia del Cañar) <span class="required">*</span></label>
+                                        <select id="bk-canton" class="form-control" required onchange="updateParishes(this.value)">
+                                            <option value="">— Seleccione Cantón —</option>
+                                            <option value="Azogues">Azogues</option>
+                                            <option value="Biblián">Biblián</option>
+                                            <option value="Cañar">Cañar</option>
+                                            <option value="La Troncal">La Troncal</option>
+                                            <option value="El Tambo">El Tambo</option>
+                                            <option value="Déleg">Déleg</option>
+                                            <option value="Suscal">Suscal</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Parroquia <span class="required">*</span></label>
+                                        <select id="bk-parish" class="form-control" required onchange="compileLocation()">
+                                            <option value="">— Seleccione Parroquia —</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="bk-zone">
+                                <div class="form-group" style="margin-bottom:16px;">
+                                    <label class="form-label">Tipo de Servicio <span class="required">*</span></label>
+                                    <select id="bk-service" class="form-control" required>
+                                        <option value="">— Seleccione el servicio —</option>
+                                        <option>🔧 Mantenimiento Preventivo Red</option>
+                                        <option>💧 Reparación de Fuga / Correctivo</option>
+                                        <option>📟 Instalación de Medidor de Agua</option>
+                                        <option>🔥 Acometida e Instalación de Gas</option>
+                                        <option>🔍 Inspección Técnica General</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Notas / Descripción del problema</label>
+                                    <textarea id="bk-notes" class="form-control" rows="2" placeholder="Cuéntenos brevemente el problema..."></textarea>
+                                </div>
+                                <div class="wz-buttons">
+                                    <button type="button" class="btn btn-ghost" onclick="wzBack(2)">← Anterior</button>
+                                    <button type="button" class="btn btn-primary" onclick="wzNext(2)">Siguiente →</button>
+                                </div>
+                            </div>
+
+                            <!-- Panel 3 -->
+                            <div class="wz-panel" id="wz-3">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Fecha de la Cita <span class="required">*</span></label>
+                                        <input id="bk-date" type="date" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Hora Preferida <span class="required">*</span></label>
+                                        <select id="bk-time" class="form-control" required>
+                                            <option value="09:00">09:00 AM</option>
+                                            <option value="10:00">10:00 AM</option>
+                                            <option value="11:00">11:00 AM</option>
+                                            <option value="14:00">02:00 PM</option>
+                                            <option value="15:00">03:00 PM</option>
+                                            <option value="16:00">04:00 PM</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-2">
+                                        <label class="form-label">Modalidad de Pago</label>
+                                        <select id="bk-payment" class="form-control">
+                                            <option value="Tarifa Base Completa">💰 Tarifa Base Completa – $15.00</option>
+                                            <option value="Anticipo (50%)">🔒 Anticipo 50% – $7.50 (Congela tu turno)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="wz-buttons">
+                                    <button type="button" class="btn btn-ghost" onclick="wzBack(3)">← Anterior</button>
+                                    <button type="button" class="btn btn-primary" onclick="wzNext(3)">Ver Resumen →</button>
+                                </div>
+                            </div>
+
+                            <!-- Panel 4: Resumen -->
+                            <div class="wz-panel" id="wz-4">
+                                <div id="booking-summary" style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--radius-sm);padding:20px;margin-bottom:18px;font-size:0.875rem;line-height:1.8;"></div>
+                                <div class="wz-buttons">
+                                    <button type="button" class="btn btn-ghost" onclick="wzBack(4)">← Anterior</button>
+                                    <button type="submit" class="btn btn-success btn-lg">✅ Confirmar y Registrar Cita</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WA Channel Info -->
+            <div id="booking-wa-section" style="display:none;">
+                <div class="card">
+                    <div class="card-body" style="text-align:center;padding:40px;">
+                        <div style="font-size:3rem;margin-bottom:14px;">🎙️</div>
+                        <h3 style="font-family:'Outfit',sans-serif;margin-bottom:8px;">Asistente de Voz con IA</h3>
+                        <p style="color:var(--gray-500);font-size:0.9rem;max-width:400px;margin:0 auto 20px;">El asistente de WhatsApp le hará preguntas y puede responder <strong>escribiendo</strong> o <strong>dictando por audio</strong> — la transcripción ocurre automáticamente y gratis en Chrome/Edge.</p>
+                        <button class="btn btn-lg" style="background:#25d366;color:white;" onclick="startWABot()">
+                            💬 Iniciar Asistente en WhatsApp
+                        </button>
+                        <p style="font-size:0.75rem;color:var(--gray-400);margin-top:10px;">El chat aparecerá en el panel lateral derecho →</p>
+                    </div>
+                </div>
+
+                <!-- Datos capturados por el bot -->
+                <div id="wa-captured-form" class="card" style="display:none;margin-top:18px;">
+                    <div class="card-header">
+                        <span class="card-title" style="color:var(--green);">✅ Datos capturados por el asistente</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group"><label class="form-label">Nombre</label><input id="wac-name" class="form-control" readonly></div>
+                            <div class="form-group"><label class="form-label">Teléfono</label><input id="wac-phone" class="form-control" readonly></div>
+                            <div class="form-group col-2"><label class="form-label">Dirección</label><input id="wac-address" class="form-control" readonly></div>
+                            <div class="form-group"><label class="form-label">Zona</label><input id="wac-zone" class="form-control" readonly></div>
+                            <div class="form-group"><label class="form-label">Servicio</label><input id="wac-service" class="form-control" readonly></div>
+                            <div class="form-group"><label class="form-label">Fecha</label><input id="wac-date" class="form-control" readonly></div>
+                            <div class="form-group"><label class="form-label">Hora</label><input id="wac-time" class="form-control" readonly></div>
+                        </div>
+                        <button class="btn btn-success btn-block btn-lg" style="margin-top:16px;" id="wac-confirm-btn">✅ Confirmar y Guardar en Base de Datos</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== REPORTAR PAGO ==================== -->
+        <div class="page" id="page-payments">
+            <div class="page-header">
+                <div><h2>Reportar Transferencia Bancaria</h2>
+                <p>Adjunte los datos de su pago para que el administrador lo valide y confirme su cita</p></div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <form id="payment-form" class="form-grid" style="max-width:650px;">
+                        <div class="form-group col-2">
+                            <label class="form-label">Seleccione su cita pendiente de pago</label>
+                            <select id="pay-apt-select" class="form-control"></select>
+                        </div>
+                        <div class="form-group col-2">
+                            <label class="form-label">Entidad Bancaria donde realizó la transferencia</label>
+                            <div class="bank-grid">
+                                <div class="bank-card" data-bank="Banco Pichincha"><div class="bank-logo bk-yellow">Pichincha</div><span class="bank-name">B. Pichincha</span><span class="bank-acc">Cta: 2201948332</span></div>
+                                <div class="bank-card" data-bank="Banco Guayaquil"><div class="bank-logo bk-purple">Guayaquil</div><span class="bank-name">B. Guayaquil</span><span class="bank-acc">Cta: 10482938</span></div>
+                                <div class="bank-card" data-bank="Produbanco"><div class="bank-logo bk-green">Produbanco</div><span class="bank-name">Produbanco</span><span class="bank-acc">Cta: 0209384729</span></div>
+                                <div class="bank-card" data-bank="Banco del Pacífico"><div class="bank-logo bk-navy">Pacífico</div><span class="bank-name">B. Pacífico</span><span class="bank-acc">Cta: 72938472</span></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">N° de Transferencia / Comprobante <span class="required">*</span></label>
+                            <input id="pay-receipt-no" class="form-control" required placeholder="Ej. TR-482039">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Imagen del Comprobante (opcional)</label>
+                            <div class="file-upload-area" id="file-upload-area" onclick="document.getElementById('pay-file').click()">
+                                <div class="file-upload-icon">📄</div>
+                                <div class="file-upload-text">Clic para subir imagen<br><small>JPG, PNG, PDF</small></div>
+                                <input type="file" id="pay-file" accept="image/*,.pdf" style="display:none">
+                            </div>
+                        </div>
+                        <div class="form-group col-2">
+                            <button type="submit" class="btn btn-primary btn-block">📤 Enviar Reporte de Pago</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== CALIFICAR SERVICIO ==================== -->
+        <div class="page" id="page-survey">
+            <div class="page-header">
+                <div><h2>Evaluar Servicio Técnico</h2>
+                <p>Si nuestra visita ya fue completada, por favor califique el desempeño del técnico</p></div>
+            </div>
+            <div class="card" style="max-width:600px;">
+                <div class="card-body">
+                    <div class="form-group" style="margin-bottom:20px;">
+                        <label class="form-label">Seleccionar visita finalizada</label>
+                        <div style="display:flex;gap:10px;">
+                            <select id="survey-apt-select" class="form-control" style="flex:1;"></select>
+                            <button class="btn btn-outline btn-sm" id="view-report-btn">📄 Ver Informe</button>
+                        </div>
+                    </div>
+                    <div id="survey-apt-info" style="margin-bottom:18px;"></div>
+
+                    <form id="survey-form">
+                        <div class="form-group" style="text-align:center;margin-bottom:20px;">
+                            <label class="form-label" style="display:block;margin-bottom:10px;">¿Cómo califica el servicio?</label>
+                            <div class="emoji-rating">
+                                <button type="button" class="emoji-btn" data-rating="1">😡<span>Pésimo</span></button>
+                                <button type="button" class="emoji-btn" data-rating="2">🙁<span>Malo</span></button>
+                                <button type="button" class="emoji-btn" data-rating="3">😐<span>Regular</span></button>
+                                <button type="button" class="emoji-btn" data-rating="4">😊<span>Bueno</span></button>
+                                <button type="button" class="emoji-btn" data-rating="5">😍<span>Excelente</span></button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:16px;">
+                            <label class="form-label">Nota de voz (opcional)</label>
+                            <div class="recorder-panel">
+                                <button type="button" id="rec-btn" class="rec-btn"><span>🎙️ Grabar Audio</span></button>
+                                <div>
+                                    <div class="rec-timer" id="rec-timer">00:00</div>
+                                    <div class="rec-status" id="rec-status">Presione para iniciar</div>
+                                </div>
+                                <div class="wave-container" id="wave-container">
+                                    <div class="wave-bar"></div><div class="wave-bar"></div>
+                                    <div class="wave-bar"></div><div class="wave-bar"></div>
+                                    <div class="wave-bar"></div><div class="wave-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:18px;">
+                            <label class="form-label">Comentarios escritos</label>
+                            <textarea id="survey-comment" class="form-control" rows="2" placeholder="Escriba sus observaciones o sugerencias..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-block">Enviar Evaluación</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== PROYECTOS GRANDES ==================== -->
+        <div class="page" id="page-leads">
+            <div class="page-header">
+                <div><h2>Solicitar Cotización de Proyecto</h2>
+                <p>Para constructoras, municipios e industrias que requieren soluciones a gran escala</p></div>
+            </div>
+            <div class="card" style="max-width:650px;">
+                <div class="card-body">
+                    <form id="lead-form" class="form-grid">
+                        <div class="form-group col-2">
+                            <label class="form-label">Empresa o Constructora <span class="required">*</span></label>
+                            <input id="ld-name" class="form-control" required placeholder="Ej. Constructora Alfa S.A.">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Teléfono Comercial <span class="required">*</span></label>
+                            <input id="ld-phone" class="form-control" required placeholder="02 249 9384">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Correo de Contacto <span class="required">*</span></label>
+                            <input id="ld-email" type="email" class="form-control" required placeholder="compras@empresa.ec">
+                        </div>
+                        <div class="form-group col-2">
+                            <label class="form-label">Dirección del Proyecto <span class="required">*</span></label>
+                            <input id="ld-address" class="form-control" required placeholder="Ej. Av. Simón Bolívar y Ruta Viva">
+                        </div>
+                        <div class="form-group col-2">
+                            <label class="form-label">Descripción de Materiales y Requerimientos <span class="required">*</span></label>
+                            <textarea id="ld-details" class="form-control" rows="4" required placeholder="Ej. Necesitamos cotización para 120 válvulas de compuerta bridadas de 2 pulgadas y 1000m de tubería PEAD 110mm para proyecto inmobiliario en Los Chillos..."></textarea>
+                        </div>
+                        <div class="form-group col-2">
+                            <button type="submit" class="btn btn-primary btn-block">🚀 Enviar Solicitud de Cotización</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== CATÁLOGO ==================== -->
+        <div class="page" id="page-catalog">
+            <div class="page-header">
+                <div><h2>Catálogo de Productos</h2><p>Equipos y materiales para sistemas hidráulicos, agua potable y gas</p></div>
+            </div>
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" id="cat-search" class="search-input" placeholder="🔍 Buscar producto..." oninput="loadProducts()">
+                    <select id="cat-category" class="filter-select" onchange="loadProducts()">
+                        <option value="">Todas las categorías</option>
+                        <option>Agua Potable</option>
+                        <option>Hidráulica</option>
+                        <option>Medición</option>
+                        <option>Gas</option>
+                        <option>Accesorios</option>
+                    </select>
+                </div>
+                <div id="catalog-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:20px;"></div>
+            </div>
+        </div>
+
+        <!-- ==================== ADMIN: CITAS ==================== -->
+        <div class="page" id="page-admin-appointments">
+            <div class="page-header">
+                <div><h2>Gestión de Visitas Técnicas</h2><p>Apruebe pagos, asigne técnicos y monitoree el estado en tiempo real</p></div>
+                <button class="btn btn-outline btn-sm" onclick="loadAppointments()">🔄 Actualizar</button>
+            </div>
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" id="apt-search" class="search-input" placeholder="🔍 Buscar cliente o servicio...">
+                    <select id="apt-status-filter" class="filter-select">
+                        <option value="">Todos los estados</option>
+                        <option>Pre-agendado</option>
+                        <option>Confirmado</option>
+                        <option>Confirmado por Cliente</option>
+                        <option>Terminado</option>
+                    </select>
+                    <select id="apt-zone-filter" class="filter-select">
+                        <option value="">Todos los cantones</option>
+                        <option>Azogues</option>
+                        <option>Biblián</option>
+                        <option>Cañar</option>
+                        <option>La Troncal</option>
+                        <option>El Tambo</option>
+                        <option>Déleg</option>
+                        <option>Suscal</option>
+                    </select>
+                    <button class="btn btn-ghost btn-sm" id="apt-filter-btn">Filtrar</button>
+                </div>
+                <div id="apt-cards-container" class="apt-cards-grid" style="padding:20px;"></div>
+            </div>
+        </div>
+
+        <!-- ==================== ADMIN: CLIENTES ==================== -->
+        <div class="page" id="page-admin-clients">
+            <div class="page-header">
+                <div><h2>Base de Datos de Clientes</h2><p>Registro centralizado con historial de servicios por cliente</p></div>
+            </div>
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" id="cli-search" class="search-input" placeholder="🔍 Buscar por nombre o teléfono..." oninput="loadClients()">
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Dirección</th><th>Zona</th><th style="text-align:center;">Visitas</th><th>Último Servicio</th></tr></thead>
+                        <tbody id="clients-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ADMIN: LEADS ==================== -->
+        <div class="page" id="page-admin-leads">
+            <div class="page-header">
+                <div><h2>Gestión de Prospectos</h2><p>Constructoras e industrias interesadas en soluciones hidráulicas a gran escala</p></div>
+                <button class="btn btn-outline btn-sm" onclick="loadLeads()">🔄 Actualizar</button>
+            </div>
+            <div id="leads-cards-container" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
+        </div>
+
+        <!-- ==================== ADMIN: ENCUESTAS ==================== -->
+        <div class="page" id="page-admin-surveys">
+            <div class="page-header">
+                <div><h2>Resultados de Satisfacción</h2><p>Calificaciones y retroalimentación del personal técnico post-servicio</p></div>
+            </div>
+            <div id="surveys-container" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ===== WHATSAPP DRAWER ===== -->
+<button class="wa-panel-toggle" id="wa-panel-toggle" onclick="toggleWADrawer()">
+    💬 WhatsApp Bot
+    <span id="wa-unread-badge" style="background:red;color:white;border-radius:50%;width:18px;height:18px;font-size:0.65rem;display:none;align-items:center;justify-content:center;">1</span>
+</button>
+
+<div class="wa-drawer" id="wa-drawer">
+    <button class="wa-close-btn" onclick="toggleWADrawer()">✕</button>
+    <div class="phone-device">
+        <div class="phone-notch-bar"><div class="phone-notch"></div></div>
+        <div class="phone-screen">
+            <div class="wa-header">
+                <div class="wa-status-bar"><span>09:41</span><span>📶 LTE 🔋88%</span></div>
+                <div class="wa-contact">
+                    <div class="wa-avatar">💧</div>
+                    <div>
+                        <div class="wa-name">Hidrosys Soporte</div>
+                        <div class="wa-online" id="wa-online-status">en línea</div>
+                    </div>
+                </div>
+            </div>
+            <div class="wa-mode-pills">
+                <button class="wa-pill active" id="wa-pill-text" onclick="setWAMode('text')">⌨️ Texto</button>
+                <button class="wa-pill" id="wa-pill-voice" onclick="setWAMode('voice')">🎙️ Voz IA</button>
+            </div>
+            <div class="wa-chat" id="wa-chat">
+                <div class="wa-date-sep">HOY</div>
+                <div class="wa-msg wa-msg-in">
+                    <div class="wa-msg-text">¡Bienvenido a <strong>Hidrosys EC.</strong>! 💧 Soy tu asistente. Puedo ayudarte a agendar una visita técnica. Escribe <strong>"agendar"</strong> o usa el modo de voz para comenzar.</div>
+                    <span class="wa-msg-time" id="wa-init-time"></span>
+                </div>
+            </div>
+            <div class="wa-footer">
+                <input type="text" class="wa-input" id="wa-input" placeholder="Escribe un mensaje...">
+                <button class="wa-mic" id="wa-mic-btn">🎙️</button>
+                <button class="wa-send" id="wa-send-btn">➔</button>
+            </div>
+        </div>
+        <div style="display:flex;justify-content:center;margin-top:10px;">
+            <div style="width:90px;height:4px;background:#555;border-radius:2px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: INFORME TÉCNICO ===== -->
+<div class="modal-backdrop" id="report-modal">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3>📄 Informe Técnico de Visita</h3>
+            <button class="modal-close" onclick="closeModal('report-modal')">✕</button>
+        </div>
+        <div class="modal-body print-area" id="report-modal-content"></div>
+        <div class="modal-footer">
+            <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Imprimir / PDF</button>
+            <button class="btn btn-ghost btn-sm" onclick="closeModal('report-modal')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="js/main.js"></script>
+</body>
+</html>
