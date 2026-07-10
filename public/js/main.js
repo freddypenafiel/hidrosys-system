@@ -768,7 +768,7 @@ async function loadAppointments() {
                         </div>
                     </div>
                     <div class="apt-card-footer">
-                        ${a.receipt_no && a.payment_status === 'Pendiente' ? `<button class="btn btn-success btn-xs" onclick="approvePayment(${a.id},'${a.tech_id||''}')">✅ Aprobar Pago</button>` : ''}
+                        ${a.receipt_no && a.payment_status && a.payment_status.toLowerCase().includes('pendiente') ? `<button class="btn btn-success btn-xs" onclick="approvePayment(${a.id},'${a.tech_id||''}')">✅ Aprobar Pago</button>` : ''}
                         ${a.status !== 'Terminado' ? `<button class="btn btn-ghost btn-xs" onclick="finishApt(${a.id})">🏁 Finalizar</button>` : ''}
                         <button class="btn btn-ghost btn-xs" onclick="showTechReport(${a.id})">📄 Informe</button>
                         <button class="btn btn-xs" style="background:var(--red-bg);color:var(--red);border:none;" onclick="deleteApt(${a.id})">🗑️</button>
