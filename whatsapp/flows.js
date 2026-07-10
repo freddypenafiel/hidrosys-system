@@ -76,7 +76,8 @@ async function processMessage(phone, text, senderJid) {
     if (['menu', 'hola', 'hi', 'inicio', '0', 'cancel', 'cancelar'].includes(msg.toLowerCase())) {
         clearSession(phone);
         // Guardar el JID completo en la sesion para usar en booking
-        if (senderJid) setSession(phone, 'idle', { senderJid });
+        if (senderJid) setSession(phone, 'main_menu', { senderJid });
+        else setSession(phone, 'main_menu');
         return menuPrincipal();
     }
 
@@ -85,20 +86,66 @@ async function processMessage(phone, text, senderJid) {
         setSession(phone, step, { senderJid });
     }
 
-    // ── IDLE / Saludo inicial ──────────────────────────────────
+    const msgClean = msg.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    // ── Confirmación de disponibilidad por parte del cliente (SÍ/NO tras confirmación de admin) ──
+    if (step === 'awaiting_availability_confirm' || (['si', 's', 'confirmo', 'confirmar'].includes(msgClean) && (step === 'idle' || step === 'main_menu'))) {
+        if (['si', 's', '1', 'confirmo', 'confirmar', 'estaré disponible', 'estare disponible'].includes(msgClean)) {
+            try {
+                let aptId = sess.data.aptId;
+                if (!aptId) {
+                    // Buscar en la BD si el cliente tiene una cita en estado 'Confirmado'
+                    const resApt = await pool.query(
+                        `SELECT id FROM appointments WHERE client_phone LIKE $1 AND status = 'Confirmado' ORDER BY id DESC LIMIT 1`,
+                        [`%${phone.slice(-9)}%`]
+                    );
+                    if (resApt.rows.length > 0) {
+                        aptId = resApt.rows[0].id;
+                    }
+                }
+                if (aptId) {
+                    await pool.query(
+                        `UPDATE appointments SET status = 'Conf. Cliente' WHERE id = $1`,
+                        [aptId]
+                    );
+                    clearSession(phone);
+                    setSession(phone, 'idle');
+                    return `✅ *¡Perfecto! Disponibilidad confirmada.*\n\n📋 Tu cita *#${aptId}* ha quedado en estado *Confirmada por el Cliente*.\n👷 Nuestro técnico se comunicará contigo antes de la visita.\n\n¡Gracias por confiar en *HIDROSYS EC.*! Escribe *menu* para volver al inicio.`;
+                } else if (step === 'awaiting_availability_confirm') {
+                    clearSession(phone);
+                    setSession(phone, 'idle');
+                    return `✅ *¡Disponibilidad registrada!* Nuestro técnico se comunicará contigo antes de la visita.\n\n_Escribe *menu* para volver al inicio._`;
+                }
+            } catch (err) {
+                console.error('[WA Bot] Error actualizando estado a Conf. Cliente:', err.message);
+            }
+        }
+        if (step === 'awaiting_availability_confirm') {
+            if (['no', 'n', '2', 'cancelar'].includes(msgClean)) {
+                clearSession(phone);
+                setSession(phone, 'idle');
+                return `⚠️ Entendido. Si necesitas reagendar tu cita, por favor comunícate con nuestro soporte o escribe *menu* para agendar una nueva fecha.`;
+            }
+            return `❓ Por favor responde *SÍ* para confirmar tu disponibilidad o *NO* si necesitas reagendar.`;
+        }
+    }
+
+    // ── Si el usuario envía opción numérica (1, 2, 3 o 4) desde 'idle' o 'main_menu' ──
+    if (step === 'idle' || step === 'main_menu') {
+        if (msg === '1') { setSession(phone, 'book_name', { senderJid }); return `📝 *Agendar Visita Técnica*\n\nPor favor, escribe tu *nombre completo*:`; }
+        if (msg === '2') { setSession(phone, 'pay_phone', { senderJid }); return `💳 *Reportar Comprobante de Pago*\n\nEscribe el *número de teléfono* con el que registraste tu cita (ej. 0987654321):`; }
+        if (msg === '3') { setSession(phone, 'status_phone', { senderJid }); return `🔍 *Consultar Estado de Cita*\n\nEscribe el *número de teléfono* con el que te registraste:`; }
+        if (msg === '4') { clearSession(phone); setSession(phone, 'idle'); return `📦 *Catálogo de Servicios HIDROSYS:*\n\n🔧 Instalación medidor agua: $15.00\n🔧 Reparación de tubería: $15.00\n⛽ Red de gas domiciliario: $15.00\n🔩 Mant. sistema hidráulico: $15.00\n🔍 Inspección técnica: $15.00\n\n_Precio incluye visita técnica. Materiales adicionales se cotizan en sitio._\n\nEscribe *menu* para volver.`; }
+        if (step === 'main_menu') {
+            return `❓ Opción no válida. Responde con 1, 2, 3 o 4.\n\n` + menuPrincipal();
+        }
+    }
+
+    // ── IDLE / Saludo inicial (cualquier otro texto en 'idle') ────────────────
     if (step === 'idle') {
         clearSession(phone);
         setSession(phone, 'main_menu', { senderJid });
         return `👋 ¡Hola! Bienvenido al sistema de atención de *HIDROSYS EC.*\n\n` + menuPrincipal();
-    }
-
-    // ── MENÚ PRINCIPAL ─────────────────────────────────────────
-    if (step === 'main_menu') {
-        if (msg === '1') { setSession(phone, 'book_name'); return `📝 *Agendar Visita Técnica*\n\nPor favor, escribe tu *nombre completo*:`; }
-        if (msg === '2') { setSession(phone, 'pay_phone'); return `💳 *Reportar Comprobante de Pago*\n\nEscribe el *número de teléfono* con el que registraste tu cita (ej. 0987654321):`; }
-        if (msg === '3') { setSession(phone, 'status_phone'); return `🔍 *Consultar Estado de Cita*\n\nEscribe el *número de teléfono* con el que te registraste:`; }
-        if (msg === '4') { clearSession(phone); setSession(phone, 'idle'); return `📦 *Catálogo de Servicios HIDROSYS:*\n\n🔧 Instalación medidor agua: $15.00\n🔧 Reparación de tubería: $15.00\n⛽ Red de gas domiciliario: $15.00\n🔩 Mant. sistema hidráulico: $15.00\n🔍 Inspección técnica: $15.00\n\n_Precio incluye visita técnica. Materiales adicionales se cotizan en sitio._\n\nEscribe *menu* para volver.`; }
-        return `❓ Opción no válida. Responde con 1, 2, 3 o 4.\n\n` + menuPrincipal();
     }
 
     // ══════════════════════════════════════════════════════════
@@ -312,6 +359,9 @@ async function buildConfirmationMessage(aptId) {
         }
 
         console.log(`[WA Bot] 📤 Enviando confirmación de cita #${aptId} a JID: ${targetJid}`);
+
+        const phoneKey = targetJid.split('@')[0].replace(/\D/g,'');
+        setSession(phoneKey, 'awaiting_availability_confirm', { aptId: a.id });
 
         return {
             phone: targetJid,
