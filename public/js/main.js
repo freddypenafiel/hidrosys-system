@@ -826,8 +826,11 @@ async function approvePayment(aptId, currentTechId) {
             console.warn('WhatsApp bot no disponible para notificación.');
         }
 
-        // Mantener mensaje en el simulador interno también
-        sendWAMsg('system', `*HIDROSYS – Cita Confirmada* ✅\nTu transferencia fue verificada. Tu cita está confirmada:\n🛠️ Técnico: *${tech.name}*\n\n¿Confirmas tu asistencia?`, true, aptId);
+        // Mantener mensaje en el simulador interno también (solo si NO somos administrador)
+        const isAdmin = document.getElementById('nav-group-admin')?.style.display !== 'none';
+        if (!isAdmin) {
+            sendWAMsg('system', `*HIDROSYS – Cita Confirmada* ✅\nTu transferencia fue verificada. Tu cita está confirmada:\n🛠️ Técnico: *${tech.name}*\n\n¿Confirmas tu asistencia?`, true, aptId);
+        }
         loadAppointments();
     } catch (err) { toast(`Error: ${err.message}`, 'error'); }
 }
@@ -837,7 +840,11 @@ async function finishApt(aptId) {
     try {
         await api('PUT', `/appointments/${aptId}`, { status: 'Terminado' });
         toast('Visita marcada como finalizada.', 'success');
-        sendWAMsg('system', '🎉 *HIDROSYS – Servicio Completado*\nNuestra visita técnica fue finalizada. ¿Cómo nos calificarías? Ingresa a la plataforma para dejar tu evaluación.');
+        
+        const isAdmin = document.getElementById('nav-group-admin')?.style.display !== 'none';
+        if (!isAdmin) {
+            sendWAMsg('system', '🎉 *HIDROSYS – Servicio Completado*\nNuestra visita técnica fue finalizada. ¿Cómo nos calificarías? Ingresa a la plataforma para dejar tu evaluación.');
+        }
         loadAppointments();
         loadSurveyDropdown();
     } catch (err) { toast(`Error: ${err.message}`, 'error'); }

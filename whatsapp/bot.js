@@ -124,7 +124,9 @@ async function startWhatsAppBot() {
             if (msg.key.remoteJid?.endsWith('@g.us')) continue;
 
             const jid  = msg.key.remoteJid;
-            const phone = jid.split('@')[0].replace(/\D/g,'');
+            // Eliminar el sufijo de dispositivo multi-dispositivo (:1, :57, etc.) para obtener el número de teléfono limpio
+            const cleanJid = jid.split(':')[0];
+            const phone = cleanJid.split('@')[0].replace(/\D/g,'');
 
             // Extraer texto del mensaje
             let text = msg.message?.conversation
@@ -142,7 +144,8 @@ async function startWhatsAppBot() {
                 await waSocket.sendPresenceUpdate('composing', jid);
 
                 // Procesar mensaje con el motor de flujos
-                const response = await processMessage(phone, text);
+                // Pasamos el JID completo original para que se pueda guardar en wa_sender
+                const response = await processMessage(phone, text, jid);
 
                 if (response) {
                     // Pequeña pausa para que se vea natural
@@ -171,17 +174,22 @@ async function sendMessage(jidOrPhone, text) {
     // Normalizar JID
     let jid = jidOrPhone;
     if (!jid.includes('@')) {
-        // Es un número de teléfono → convertir a JID de Ecuador
-        const cleaned = jid.replace(/\D/g,'');
-        const withCountry = cleaned.startsWith('593') ? cleaned : `593${cleaned.replace(/^0/,'')}`;
-        jid = `${withCountry}@s.whatsapp.net`;
+        const cleanPhone = jid.split(':')[0].replace(/\D/g,'');
+        // Si tiene 10 o menos dígitos (ej: 0998952546 o 998952546), asumimos Ecuador local y anteponemos 593
+        // Si tiene más de 10 dígitos (ej: 593990328940 o 180959907459144), ya es un número internacional completo
+        let targetPhone = cleanPhone;
+        if (cleanPhone.length <= 10) {
+            targetPhone = `593${cleanPhone.replace(/^0/,'')}`;
+        }
+        jid = `${targetPhone}@s.whatsapp.net`;
     }
 
     try {
         await waSocket.sendMessage(jid, { text });
+        console.log(`[WA Bot] ✅ Mensaje enviado exitosamente a: ${jid}`);
         return true;
     } catch (err) {
-        console.error('[WA Bot] Error enviando mensaje:', err.message);
+        console.error('[WA Bot] ❌ Error enviando mensaje:', err.message);
         return false;
     }
 }

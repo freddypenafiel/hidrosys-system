@@ -67,7 +67,7 @@ function menuPrincipal() {
 // ============================================================
 // PROCESADOR PRINCIPAL DE MENSAJES
 // ============================================================
-async function processMessage(phone, text) {
+async function processMessage(phone, text, senderJid) {
     const msg  = text.trim();
     const sess = getSession(phone);
     const step = sess.step;
@@ -75,13 +75,20 @@ async function processMessage(phone, text) {
     // ── Comandos globales ──────────────────────────────────────
     if (['menu', 'hola', 'hi', 'inicio', '0', 'cancel', 'cancelar'].includes(msg.toLowerCase())) {
         clearSession(phone);
+        // Guardar el JID completo en la sesion para usar en booking
+        if (senderJid) setSession(phone, 'idle', { senderJid });
         return menuPrincipal();
+    }
+
+    // Siempre actualizar el JID si viene en este mensaje
+    if (senderJid && !sess.data.senderJid) {
+        setSession(phone, step, { senderJid });
     }
 
     // ── IDLE / Saludo inicial ──────────────────────────────────
     if (step === 'idle') {
         clearSession(phone);
-        setSession(phone, 'main_menu');
+        setSession(phone, 'main_menu', { senderJid });
         return `👋 ¡Hola! Bienvenido al sistema de atención de *HIDROSYS EC.*\n\n` + menuPrincipal();
     }
 
@@ -167,11 +174,14 @@ async function processMessage(phone, text) {
         // Guardar en base de datos
         try {
             const d = sess.data;
+            // Guardamos el JID completo del remitente (ej: 593990328940@s.whatsapp.net)
+            // para poder enviar la confirmacion directamente al mismo chat sin reconstruir el numero
+            const fullJid = d.senderJid || `${phone}@s.whatsapp.net`;
             const result = await pool.query(
                 `INSERT INTO appointments
-                 (client_name, client_phone, address, zone, service_type, apt_date, apt_time, payment_amount, channel, status)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
-                [d.name, d.clientPhone, d.address, d.zone, d.service, d.date, d.time, 15.00, 'WhatsApp', 'Pre-agendado']
+                 (client_name, client_phone, address, zone, service_type, apt_date, apt_time, payment_amount, channel, status, wa_sender)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+                [d.name, d.clientPhone, d.address, d.zone, d.service, d.date, d.time, 15.00, 'WhatsApp', 'Pre-agendado', fullJid]
             );
             await pool.query(
                 `INSERT INTO clients (name, phone, address, zone) VALUES ($1,$2,$3,$4) ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name`,
@@ -289,8 +299,22 @@ async function buildConfirmationMessage(aptId) {
         if (!result.rows.length) return null;
         const a = result.rows[0];
         const fecha = a.apt_date?.toISOString().split('T')[0] || 'N/A';
+
+        // Determinar el destino del mensaje:
+        // Si wa_sender ya tiene '@' es un JID completo (ej: 593990328940@s.whatsapp.net) → usarlo directo
+        // Si no, reconstruir el JID desde el numero del cliente
+        let targetJid = a.wa_sender || '';
+        if (!targetJid.includes('@')) {
+            // Reconstruir: quitar ceros y no-digitos, agregar 593 si es local
+            const digits = targetJid.replace(/\D/g,'');
+            const phone = digits.length <= 10 ? `593${digits.replace(/^0/,'')}` : digits;
+            targetJid = `${phone}@s.whatsapp.net`;
+        }
+
+        console.log(`[WA Bot] 📤 Enviando confirmación de cita #${aptId} a JID: ${targetJid}`);
+
         return {
-            phone: a.client_phone,
+            phone: targetJid,
             message: `✅ *HIDROSYS EC. – ¡Cita Confirmada!*\n\n🎉 Tu pago fue verificado. Tu cita está *CONFIRMADA*:\n\n🔧 Servicio: *${a.service_type}*\n📅 Fecha: *${fecha}*\n⏰ Hora: *${String(a.apt_time).slice(0,5)}*\n📍 Zona: *${a.zone}*\n👷 Técnico: *${a.tech_name || 'Por asignar'}*\n\n¿Confirmas que estarás disponible?\nResponde *SÍ* o *NO*.`,
         };
     } catch (err) {

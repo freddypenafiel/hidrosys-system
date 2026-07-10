@@ -498,6 +498,19 @@ app.get('/api/wa/status', (req, res) => {
     res.json({ enabled: true, ...status });
 });
 
+// Endpoint temporal para pruebas de envío manual
+app.get('/api/wa/test-send', async (req, res) => {
+    const { phone, text } = req.query;
+    if (!waBot) return res.json({ error: 'Bot no habilitado' });
+    if (!phone) return res.json({ error: 'Falta el parámetro phone' });
+    try {
+        const success = await waBot.sendMessage(phone, text || 'Prueba de conexión Hidrosys');
+        res.json({ success });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Llamado automáticamente cuando el admin aprueba un pago
 app.post('/api/wa/notify/:aptId', async (req, res) => {
     const { aptId } = req.params;
@@ -526,12 +539,16 @@ app.listen(PORT, async () => {
     console.log('╚════════════════════════════════════════╝\n');
     console.log(`🌐 Servidor corriendo en: http://localhost:${PORT}`);
 
-    // Verificar conexión a DB
+    // Verificar conexión a DB y ejecutar migraciones básicas
     try {
         const r = await pool.query('SELECT NOW()');
-        console.log(`✅ PostgreSQL conectado: ${r.rows[0].now}\n`);
+        console.log(`✅ PostgreSQL conectado: ${r.rows[0].now}`);
+        
+        // Migración: agregar columna wa_sender a appointments
+        await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS wa_sender VARCHAR(50)');
+        console.log('✅ Migración de DB: Columna "wa_sender" verificada/creada exitosamente.\n');
     } catch (err) {
-        console.error(`❌ PostgreSQL NO conectado: ${err.message}`);
+        console.error(`❌ PostgreSQL NO conectado o error en migración: ${err.message}`);
         console.error('   Verifica tu archivo .env y que PostgreSQL esté corriendo\n');
     }
 
