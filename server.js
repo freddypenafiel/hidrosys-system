@@ -8,6 +8,16 @@ const path    = require('path');
 const crypto  = require('crypto');
 const pool    = require('./db/connection');
 
+// WhatsApp Bot (Baileys)
+let waBot = null;
+if (process.env.WA_BOT_ENABLED !== 'false') {
+    try {
+        waBot = require('./whatsapp/bot');
+    } catch (err) {
+        console.warn('⚠️  WhatsApp bot no disponible:', err.message);
+    }
+}
+
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -438,6 +448,71 @@ app.post('/api/surveys', async (req, res) => {
 // ============================================================
 // FRONTEND (SPA - sirve index.html para cualquier ruta no-API)
 // ============================================================
+// WHATSAPP – Endpoints de control
+// ============================================================
+app.get('/wa-qr', (req, res) => {
+    if (!waBot) return res.send('<h1>WhatsApp bot no está habilitado en el archivo .env</h1>');
+    const status = waBot.getBotStatus();
+    if (status.connected) {
+        return res.send(`
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; background:#f0f2f5;">
+                <div style="background:white; padding:30px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); text-align:center;">
+                    <h2 style="color:#075e54; margin-bottom:10px;">¡WhatsApp ya está conectado! ✅</h2>
+                    <p style="color:#667781; font-size:14px; margin-bottom:20px;">Número conectado: +${status.phone}</p>
+                    <button onclick="window.close()" style="background:#075e54; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold;">Cerrar Ventana</button>
+                </div>
+            </div>
+        `);
+    }
+    const qrData = waBot.getLastQr();
+    if (!qrData) {
+        return res.send(`
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; background:#f0f2f5;">
+                <div style="background:white; padding:30px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); text-align:center;">
+                    <h2 style="color:#e53e3e; margin-bottom:10px;">Generando código QR...</h2>
+                    <p style="color:#667781; font-size:14px; margin-bottom:20px;">Por favor espera y recarga la página en unos segundos.</p>
+                    <button onclick="location.reload()" style="background:#1976d2; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:bold;">🔄 Recargar Página</button>
+                </div>
+            </div>
+        `);
+    }
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(qrData)}`;
+    res.send(`
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; background:#f0f2f5;">
+            <div style="background:white; padding:40px; border-radius:18px; box-shadow:0 12px 40px rgba(0,0,0,0.12); text-align:center; max-width:420px; margin:20px;">
+                <h2 style="color:#075e54; margin-bottom:8px; font-weight:bold; font-size:24px;">Vincular WhatsApp 💧</h2>
+                <p style="color:#667781; font-size:14px; margin-bottom:24px; line-height:1.4;">Abre WhatsApp en tu teléfono -> Dispositivos vinculados -> Vincular un dispositivo y escanea este código:</p>
+                <div style="background:#f8f9fa; padding:16px; border-radius:12px; display:inline-block; border:1px solid #e9ecef;">
+                    <img src="${qrImageUrl}" alt="WhatsApp QR Code" style="display:block; width:300px; height:300px;"/>
+                </div>
+                <p style="margin-top:20px; font-size:12px; color:#a0aec0; line-height:1.4;">El código QR se actualiza cada 20 segundos automáticamente.<br>Recarga si no se vincula.</p>
+                <button onclick="location.reload()" style="background:#edf2f7; color:#4a5568; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:bold; margin-top:16px;">🔄 Actualizar QR Manualmente</button>
+            </div>
+        </div>
+    `);
+});
+
+app.get('/api/wa/status', (req, res) => {
+    if (!waBot) return res.json({ enabled: false, connected: false });
+    const status = waBot.getBotStatus();
+    res.json({ enabled: true, ...status });
+});
+
+// Llamado automáticamente cuando el admin aprueba un pago
+app.post('/api/wa/notify/:aptId', async (req, res) => {
+    const { aptId } = req.params;
+    if (!waBot) return res.json({ sent: false, reason: 'Bot no habilitado' });
+    try {
+        const sent = await waBot.notifyPaymentApproved(parseInt(aptId));
+        res.json({ sent });
+    } catch (err) {
+        res.status(500).json({ sent: false, error: err.message });
+    }
+});
+
+// ============================================================
+// FRONTEND (SPA)
+// ============================================================
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -458,5 +533,14 @@ app.listen(PORT, async () => {
     } catch (err) {
         console.error(`❌ PostgreSQL NO conectado: ${err.message}`);
         console.error('   Verifica tu archivo .env y que PostgreSQL esté corriendo\n');
+    }
+
+    // Iniciar bot de WhatsApp
+    if (waBot) {
+        setTimeout(() => {
+            waBot.startWhatsAppBot().catch(err => {
+                console.error('❌ Error iniciando WhatsApp bot:', err.message);
+            });
+        }, 2000); // 2s de espera para que el servidor esté listo
     }
 });

@@ -812,7 +812,21 @@ async function approvePayment(aptId, currentTechId) {
         const techs = await api('GET', '/technicians');
         const tech = techs.find(t => t.id == techId) || { name: 'Técnico Hidrosys', avatar: '👷' };
 
-        toast('Pago aprobado y cita confirmada.', 'success');
+        toast('✅ Pago aprobado y cita confirmada.', 'success');
+
+        // Notificar al cliente por WhatsApp REAL (si el bot está conectado)
+        try {
+            const waRes = await fetch(`${API}/api/wa/notify/${aptId}`, { method: 'POST' });
+            const waData = await waRes.json();
+            if (waData.sent) {
+                toast('💬 Notificación enviada al cliente por WhatsApp.', 'success', 5000);
+            }
+        } catch (waErr) {
+            // Bot no disponible — no interrumpir el flujo
+            console.warn('WhatsApp bot no disponible para notificación.');
+        }
+
+        // Mantener mensaje en el simulador interno también
         sendWAMsg('system', `*HIDROSYS – Cita Confirmada* ✅\nTu transferencia fue verificada. Tu cita está confirmada:\n🛠️ Técnico: *${tech.name}*\n\n¿Confirmas tu asistencia?`, true, aptId);
         loadAppointments();
     } catch (err) { toast(`Error: ${err.message}`, 'error'); }
