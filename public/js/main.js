@@ -24,7 +24,10 @@ function toast(message, type = 'info', duration = 4000) {
 async function api(method, path, body = null) {
     const opts = {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'x-session-token': localStorage.getItem('hs_token') || '',
+        },
     };
     if (body) opts.body = JSON.stringify(body);
     const res = await fetch(`${API}/api${path}`, opts);
@@ -44,7 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupNavigation();
     checkDBStatus();
-    navigateTo('dashboard'); // Aterrizar en el inicio del cliente en vez de cargar métricas
+    checkSession();                // ← Verifica sesión (muestra/oculta admin nav)
+    navigateTo('dashboard');       // ← Aterriza en inicio público por defecto
     setupBookingForm();
     setupPaymentForm();
     setupSurveyForm();
@@ -98,18 +102,133 @@ window.compileLocation = function() {
     }
 };
 
-window.switchProfile = function(profile) {
-    const clientNav = document.getElementById('nav-group-client');
-    const adminNav  = document.getElementById('nav-group-admin');
-    
-    if (profile === 'client') {
-        clientNav.style.display = 'block';
-        adminNav.style.display = 'none';
-        navigateTo('dashboard');
+// ============================================================
+// AUTENTICACIÓN Y CONTROL DE ACCESO
+// ============================================================
+
+// Mostrar / ocultar contraseña en el campo de login
+window.togglePasswordVisibility = function() {
+    const input = document.getElementById('login-password');
+    if (!input) return;
+    input.type = input.type === 'password' ? 'text' : 'password';
+};
+
+// Aplica la vista según el rol del usuario autenticado
+function applyRole(role, name) {
+    const adminNav       = document.getElementById('nav-group-admin');
+    const loginBtn       = document.getElementById('login-btn');
+    const userBadge      = document.getElementById('user-badge');
+    const profileSel     = document.getElementById('profile-select-wrap');
+    const sidebarInfo    = document.getElementById('sidebar-user-info');
+    const sidebarName    = document.getElementById('sidebar-user-name');
+
+    if (role === 'admin') {
+        if (adminNav)    adminNav.style.display = 'block';
+        if (loginBtn)    loginBtn.style.display = 'none';
+        if (userBadge) {
+            userBadge.style.display = 'flex';
+            const nameEl = userBadge.querySelector('#user-badge-name');
+            if (nameEl) nameEl.textContent = name || 'Admin';
+        }
+        if (sidebarInfo) sidebarInfo.style.display = 'block';
+        if (sidebarName) sidebarName.textContent = name || 'Admin';
+        if (profileSel)  profileSel.style.display = 'none';
     } else {
-        clientNav.style.display = 'block';
-        adminNav.style.display = 'block';
+        if (adminNav)    adminNav.style.display = 'none';
+        if (loginBtn)    loginBtn.style.display = 'flex';
+        if (userBadge)   userBadge.style.display = 'none';
+        if (sidebarInfo) sidebarInfo.style.display = 'none';
+        if (profileSel)  profileSel.style.display = 'none';
+    }
+}
+
+// Verificar sesión activa al cargar la página
+async function checkSession() {
+    const token = localStorage.getItem('hs_token');
+    if (!token) { applyRole('public'); return; }
+    try {
+        const data = await api('GET', '/me');
+        applyRole(data.role, data.name);
+    } catch {
+        // Token inválido o expirado
+        localStorage.removeItem('hs_token');
+        applyRole('public');
+    }
+}
+
+// Mostrar modal de login
+window.openLoginModal = function() {
+    document.getElementById('login-modal-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('login-username').focus(), 200);
+};
+
+// Cerrar modal de login
+window.closeLoginModal = function() {
+    document.getElementById('login-modal-overlay').classList.remove('open');
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('login-form').reset();
+};
+
+// Cerrar modal al presionar Escape
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLoginModal();
+});
+
+// Procesar formulario de login
+window.submitLogin = async function(e) {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errorEl  = document.getElementById('login-error');
+    const btnEl    = document.getElementById('login-submit-btn');
+
+    btnEl.disabled = true;
+    btnEl.textContent = 'Verificando...';
+    errorEl.style.display = 'none';
+
+    try {
+        const data = await fetch(`${API}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        }).then(r => r.json());
+
+        if (data.error) throw new Error(data.error);
+
+        localStorage.setItem('hs_token', data.token);
+        closeLoginModal();
+        applyRole(data.role, data.name);
         navigateTo('admin-dashboard');
+        toast(`✅ ¡Bienvenido, ${data.name}!`, 'success');
+    } catch (err) {
+        errorEl.textContent = err.message || 'Error al iniciar sesión.';
+        errorEl.style.display = 'block';
+    } finally {
+        btnEl.disabled = false;
+        btnEl.textContent = 'Ingresar';
+    }
+};
+
+// Cerrar sesión
+window.logout = async function() {
+    try {
+        await api('POST', '/logout');
+    } catch { /* ignorar */ }
+    localStorage.removeItem('hs_token');
+    applyRole('public');
+    navigateTo('dashboard');
+    toast('Sesión cerrada correctamente.', 'info');
+};
+
+// Mantener compatibilidad con el selector anterior (ya no se usa visualmente)
+window.switchProfile = function(profile) {
+    const adminNav = document.getElementById('nav-group-admin');
+    if (profile === 'admin') {
+        if (adminNav) adminNav.style.display = 'block';
+        navigateTo('admin-dashboard');
+    } else {
+        if (adminNav) adminNav.style.display = 'none';
+        navigateTo('dashboard');
     }
 };
 

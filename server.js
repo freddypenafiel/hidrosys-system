@@ -5,7 +5,9 @@ require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
+const crypto  = require('crypto');
 const pool    = require('./db/connection');
+
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +44,65 @@ app.get('/api/health', async (req, res) => {
         res.status(500).json({ status: 'error', message: err.message });
     }
 });
+
+// ============================================================
+// AUTENTICACIÓN
+// ============================================================
+
+// Almacén de sesiones en memoria (se limpia al reiniciar el servidor)
+const activeSessions = new Map();
+
+const USERS = [
+    {
+        username: process.env.ADMIN_USER    || 'admin',
+        password: process.env.ADMIN_PASS    || 'hidrosys2026',
+        role:     'admin',
+        name:     'Administrador',
+    },
+    {
+        username: process.env.EMPLOYEE_USER || 'empleado',
+        password: process.env.EMPLOYEE_PASS || 'soporte123',
+        role:     'admin',  // mismo nivel de acceso que admin
+        name:     'Empleado Hidrosys',
+    },
+];
+
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    const user = USERS.find(u => u.username === username && u.password === password);
+
+    if (!user) {
+        return res.status(401).json({ error: 'Usuario o contraseña incorrectos.' });
+    }
+
+    // Generar token de sesión único
+    const token = crypto.randomBytes(32).toString('hex');
+    activeSessions.set(token, {
+        username: user.username,
+        name:     user.name,
+        role:     user.role,
+        createdAt: Date.now(),
+    });
+
+    res.json({ token, name: user.name, role: user.role });
+});
+
+app.get('/api/me', (req, res) => {
+    const token = req.headers['x-session-token'];
+    if (!token || !activeSessions.has(token)) {
+        return res.status(401).json({ error: 'No autenticado.' });
+    }
+    const session = activeSessions.get(token);
+    res.json({ name: session.name, role: session.role });
+});
+
+app.post('/api/logout', (req, res) => {
+    const token = req.headers['x-session-token'];
+    if (token) activeSessions.delete(token);
+    res.json({ ok: true });
+});
+
+
 
 // ============================================================
 // DASHBOARD STATS

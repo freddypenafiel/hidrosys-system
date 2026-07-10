@@ -33,13 +33,17 @@
         </div>
     </div>
 
-    <!-- Selector de Perfil para separar vistas de Cliente y Administrador/Dueño -->
-    <div style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.12);">
-        <label style="font-size:0.65rem; color:rgba(255,255,255,0.5); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:6px;">Perfil de Acceso</label>
-        <select id="profile-select" style="width:100%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:var(--radius-sm); padding:8px; font-family:var(--font-h); font-weight:600; outline:none; cursor:pointer;" onchange="switchProfile(this.value)">
-            <option value="client" style="color:var(--gray-900);">👤 Cliente / Dueño de Obra</option>
-            <option value="admin" style="color:var(--gray-900);">💼 Administrador / Empleado</option>
-        </select>
+    <!-- Info del usuario logueado (visible solo cuando hay sesión activa) -->
+    <div id="profile-select-wrap" style="display:none;"><!-- selector legacy --></div>
+    <div id="sidebar-user-info" style="padding:14px 20px; border-bottom:1px solid rgba(255,255,255,0.12); display:none;">
+        <div style="font-size:0.62rem; color:rgba(255,255,255,0.5); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">Sesión Activa</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;">👤</div>
+            <div>
+                <div id="sidebar-user-name" style="font-size:0.8rem; font-weight:700; color:white;">Admin</div>
+                <div style="font-size:0.65rem; color:rgba(255,255,255,0.55);">Administrador</div>
+            </div>
+        </div>
     </div>
 
     <nav class="sidebar-nav">
@@ -112,6 +116,18 @@
             <button class="btn btn-sm" style="background:#25d366;color:white;" id="wa-open-btn">
                 💬 WhatsApp Bot
             </button>
+            <!-- Botón Iniciar Sesión (visible cuando NO hay sesión) -->
+            <button class="btn btn-primary btn-sm" id="login-btn" onclick="openLoginModal()" style="display:flex; align-items:center; gap:6px;">
+                🔐 Iniciar Sesión
+            </button>
+            <!-- Badge de usuario (visible cuando SÍ hay sesión) -->
+            <div id="user-badge" style="display:none; align-items:center; gap:8px; background:rgba(25,118,210,0.12); border:1px solid var(--blue-200,#90caf9); border-radius:40px; padding:5px 14px 5px 8px; cursor:default;">
+                <div style="width:28px; height:28px; border-radius:50%; background:var(--blue-700); color:white; display:flex; align-items:center; justify-content:center; font-size:0.85rem; flex-shrink:0;">👤</div>
+                <span id="user-badge-name" style="font-size:0.82rem; font-weight:600; color:var(--blue-800);">Admin</span>
+                <button onclick="logout()" style="background:none; border:none; color:var(--gray-500); cursor:pointer; font-size:0.75rem; padding:0 0 0 4px; display:flex; align-items:center; gap:3px;" title="Cerrar sesión">
+                    ✕ Salir
+                </button>
+            </div>
         </div>
     </header>
 
@@ -682,6 +698,50 @@
         <div class="modal-footer">
             <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Imprimir / PDF</button>
             <button class="btn btn-ghost btn-sm" onclick="closeModal('report-modal')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL DE LOGIN ===== -->
+<div id="login-modal-overlay" class="login-overlay" onclick="if(event.target===this)closeLoginModal()">
+    <div class="login-modal">
+        <!-- Header del modal -->
+        <div class="login-modal-header">
+            <div class="login-logo-ring">💧</div>
+            <h2 class="login-title">HIDROSYS EC.</h2>
+            <p class="login-subtitle">Acceso al Sistema de Gestión</p>
+        </div>
+
+        <!-- Formulario -->
+        <form id="login-form" class="login-form" onsubmit="submitLogin(event)">
+            <div class="login-field">
+                <label class="login-label">Usuario</label>
+                <div class="login-input-wrap">
+                    <span class="login-input-icon">👤</span>
+                    <input id="login-username" type="text" class="login-input" placeholder="Ingresa tu usuario" autocomplete="username" required>
+                </div>
+            </div>
+            <div class="login-field">
+                <label class="login-label">Contraseña</label>
+                <div class="login-input-wrap">
+                    <span class="login-input-icon">🔑</span>
+                    <input id="login-password" type="password" class="login-input" placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
+                    <button type="button" class="login-eye-btn" onclick="togglePasswordVisibility()" title="Mostrar/ocultar contraseña">👁</button>
+                </div>
+            </div>
+
+            <!-- Mensaje de error -->
+            <div id="login-error" class="login-error" style="display:none;"></div>
+
+            <button type="submit" id="login-submit-btn" class="login-submit-btn">
+                Ingresar →
+            </button>
+        </form>
+
+        <!-- Footer del modal -->
+        <div class="login-footer">
+            <p>Vista pública disponible sin inicio de sesión.</p>
+            <button class="login-cancel-link" onclick="closeLoginModal()">✕ Cancelar</button>
         </div>
     </div>
 </div>
