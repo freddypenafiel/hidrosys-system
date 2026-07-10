@@ -136,6 +136,7 @@ CREATE INDEX IF NOT EXISTS idx_leads_status         ON leads(status);
 -- ====================================================
 -- VISTA: appointments_full (Vista enriquecida con técnico)
 -- ====================================================
+DROP VIEW IF EXISTS appointments_full CASCADE;
 CREATE OR REPLACE VIEW appointments_full AS
 SELECT
     a.*,
