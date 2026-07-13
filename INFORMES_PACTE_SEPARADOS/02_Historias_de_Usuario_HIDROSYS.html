@@ -2,24 +2,24 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>02_Historias_de_Usuario_HIDROSYS - 2. HISTORIAS DE USUARIO (AGILE SCRUM)</title>
+    <title>02_Historias_de_Usuario_HIDROSYS - 2. HISTORIAS DE USUARIO Y SCRUM</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
 
     @page {
         size: A4;
-        margin: 18mm 15mm 18mm 15mm;
+        margin: 20mm 16mm 20mm 16mm;
         @bottom-right {
             content: "Página " counter(page);
             font-family: 'Inter', sans-serif;
-            font-size: 8pt;
-            color: #64748b;
+            font-size: 8.5pt;
+            color: #475569;
         }
         @bottom-left {
-            content: "HIDROSYS EC. • Proyecto PACTE • Freddy Peñafiel | Tutor: Ing. Fabricio Lucero";
+            content: "HIDROSYS EC. • Proyecto PACTE • Autor: Freddy Peñafiel | Tutor: Ing. Fabricio Lucero";
             font-family: 'Inter', sans-serif;
-            font-size: 8pt;
-            color: #64748b;
+            font-size: 8.5pt;
+            color: #475569;
         }
     }
 
@@ -42,123 +42,132 @@
     body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         color: var(--gray-700);
-        line-height: 1.5;
+        line-height: 1.6;
         background: white;
-        font-size: 9.5pt;
+        font-size: 10pt;
     }
 
     .container { max-width: 100%; margin: 0 auto; }
 
     /* Portada Estilo Universitario */
     .cover-page {
-        height: 90vh;
+        height: 92vh;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        padding: 10px 10px;
+        padding: 5px 10px;
         page-break-after: always;
     }
-    .cover-header { border-bottom: 3px solid var(--ista-blue); padding-bottom: 18px; }
-    .cover-logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+    .cover-header { border-bottom: 3px solid var(--ista-blue); padding-bottom: 20px; }
+    .cover-logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
     .cover-title-univ {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.45rem;
+        font-size: 1.55rem;
         font-weight: 800;
         color: var(--ista-blue);
         letter-spacing: 0.5px;
     }
-    .cover-subtitle-univ { font-size: 0.85rem; font-weight: 600; color: #475569; letter-spacing: 2px; }
-    .cover-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
-    .meta-box { background: var(--gray-100); padding: 8px 12px; border-left: 4px solid var(--accent); border-radius: 4px; }
-    .meta-label { display: block; font-size: 0.7rem; font-weight: 700; color: #64748b; letter-spacing: 1px; }
-    .meta-value { font-size: 0.85rem; font-weight: 700; color: var(--primary); }
+    .cover-subtitle-univ { font-size: 0.9rem; font-weight: 600; color: #475569; letter-spacing: 2px; }
+    .cover-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+    .meta-box { background: var(--gray-100); padding: 10px 14px; border-left: 4px solid var(--accent); border-radius: 4px; }
+    .meta-label { display: block; font-size: 0.72rem; font-weight: 700; color: #64748b; letter-spacing: 1px; }
+    .meta-value { font-size: 0.9rem; font-weight: 700; color: var(--primary); }
 
-    .cover-center { text-align: center; padding: 25px 15px; }
+    .cover-center { text-align: center; padding: 30px 15px; }
     .doc-badge {
         display: inline-block;
         background: #eff6ff;
         color: var(--accent);
         font-weight: 700;
-        font-size: 0.8rem;
-        padding: 5px 14px;
+        font-size: 0.85rem;
+        padding: 6px 16px;
         border-radius: 20px;
         letter-spacing: 1.5px;
-        margin-bottom: 15px;
+        margin-bottom: 18px;
         border: 1px solid #bfdbfe;
     }
     .cover-project-title {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.3rem;
+        font-size: 1.38rem;
         font-weight: 800;
         color: var(--primary);
-        line-height: 1.35;
-        margin-bottom: 15px;
+        line-height: 1.4;
+        margin-bottom: 18px;
     }
     .cover-doc-title {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.6rem;
+        font-size: 1.7rem;
         font-weight: 800;
         color: var(--ista-blue);
-        margin-bottom: 12px;
-        padding: 10px 0;
+        margin-bottom: 14px;
+        padding: 12px 0;
         border-top: 1px solid var(--gray-200);
         border-bottom: 1px solid var(--gray-200);
     }
     .cover-doc-summary {
-        font-size: 0.95rem;
+        font-size: 1rem;
         color: #475569;
-        max-width: 85%;
+        max-width: 88%;
         margin: 0 auto;
     }
 
-    .cover-footer { border-top: 2px solid var(--gray-200); padding-top: 18px; }
-    .authors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 12px; }
-    .author-card { background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid var(--gray-200); }
-    .author-role { display: block; font-size: 0.7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
-    .author-name { display: block; font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 3px 0; }
-    .author-desc { font-size: 0.8rem; color: #64748b; }
-    .cover-date { text-align: center; font-size: 0.85rem; font-weight: 600; color: #64748b; }
+    .cover-footer { border-top: 2px solid var(--gray-200); padding-top: 20px; }
+    .authors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 14px; }
+    .author-card { background: #f8fafc; padding: 14px; border-radius: 6px; border: 1px solid var(--gray-200); }
+    .author-role { display: block; font-size: 0.72rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+    .author-name { display: block; font-size: 1.15rem; font-weight: 800; color: var(--primary); margin: 4px 0; }
+    .author-desc { font-size: 0.85rem; color: #64748b; }
+    .cover-date { text-align: center; font-size: 0.9rem; font-weight: 600; color: #64748b; }
 
-    /* Estilos del Contenido */
+    /* Contenido General */
     .page-break { page-break-after: always; }
-    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.2rem; color: var(--ista-blue); }
-    h3 { font-size: 1.05rem; }
-    p { margin-bottom: 10px; text-align: justify; }
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 22px; margin-bottom: 10px; }
+    h1 { font-size: 1.55rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 8px; }
+    h2 { font-size: 1.28rem; color: var(--ista-blue); }
+    h3 { font-size: 1.12rem; }
+    p { margin-bottom: 14px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 9.2pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
-    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 10px 10px; text-align: left; font-weight: 600; }
+    td { padding: 9px 10px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
-    .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
-    .card-title { font-weight: 700; color: var(--ista-blue); margin-bottom: 6px; font-size: 10.5pt; }
+    .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; margin: 16px 0; page-break-inside: avoid; }
+    .card-title { font-weight: 700; color: var(--ista-blue); margin-bottom: 8px; font-size: 11pt; }
 
-    .badge-req { display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 7.8pt; }
+    .badge-req { display: inline-block; background: #dbeafe; color: #1e40af; padding: 3px 10px; border-radius: 4px; font-weight: 700; font-size: 8.2pt; }
     .badge-success { background: #d1fae5; color: #065f46; }
     .badge-warning { background: #fef3c7; color: #92400e; }
 
-    ul, ol { margin-left: 20px; margin-bottom: 12px; }
-    li { margin-bottom: 5px; }
+    ul, ol { margin-left: 22px; margin-bottom: 14px; }
+    li { margin-bottom: 7px; text-align: justify; }
 
     .diagram-box {
         background: #ffffff;
         border: 2px solid var(--gray-200);
-        border-radius: 8px;
-        padding: 16px 10px;
-        margin: 16px 0;
+        border-radius: 10px;
+        padding: 20px 12px;
+        margin: 20px 0;
         text-align: center;
         page-break-inside: avoid;
     }
     .diagram-caption {
         font-weight: 700;
-        font-size: 9pt;
+        font-size: 9.5pt;
         color: var(--ista-blue);
-        margin-top: 10px;
+        margin-top: 12px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+    }
+    .explanation-box {
+        background: #f1f5f9;
+        border-left: 4px solid var(--ista-blue);
+        padding: 14px 16px;
+        margin: 14px 0;
+        font-size: 9.5pt;
+        color: #334155;
+        text-align: justify;
     }
 
     </style>
@@ -166,11 +175,11 @@
 <body>
 <div class="container">
 
-    <!-- ==================== PORTADA OFICIAL ==================== -->
+    <!-- ==================== PORTADA UNIVERSITARIA OFICIAL ==================== -->
     <div class="cover-page">
         <div class="cover-header">
             <div class="cover-logo-area">
-                <svg width="60" height="60" viewBox="0 0 100 100" style="margin-right:15px;">
+                <svg width="68" height="68" viewBox="0 0 100 100" style="margin-right:18px;">
                     <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
                     <path d="M20,40 Q35,35 50,40 Q65,45 80,40" fill="none" stroke="#2563eb" stroke-width="4"/>
                     <path d="M20,55 Q35,50 50,55 Q65,60 80,55" fill="none" stroke="#60a5fa" stroke-width="4"/>
@@ -178,119 +187,239 @@
                 </svg>
                 <div>
                     <div class="cover-title-univ">INSTITUTO SUPERIOR TECNOLÓGICO DEL AUSTRO</div>
-                    <div class="cover-subtitle-univ">EXCELENCIA ACADÉMICA Y TECNOLÓGICA</div>
+                    <div class="cover-subtitle-univ">FORMACIÓN TECNOLÓGICA DE ALTO NIVEL</div>
                 </div>
             </div>
             
             <div class="cover-meta-grid">
                 <div class="meta-box">
-                    <span class="meta-label">CARRERA</span>
+                    <span class="meta-label">CARRERA ACADÉMICA</span>
                     <span class="meta-value">TECNOLOGÍA SUPERIOR EN DESARROLLO DE SOFTWARE</span>
                 </div>
                 <div class="meta-box">
-                    <span class="meta-label">PROYECTO PACTE</span>
-                    <span class="meta-value">ANÁLISIS, DISEÑO E IMPLEMENTACIÓN DE SISTEMAS</span>
+                    <span class="meta-label">MODALIDAD DE PROYECTO</span>
+                    <span class="meta-value">PROYECTO DE APLICACIÓN PRÁCTICA Y TECNOLOGÍA (PACTE)</span>
                 </div>
             </div>
         </div>
 
         <div class="cover-center">
-            <div class="doc-badge">02_Historias_de_Usuario_HIDROSYS • DOCUMENTO OFICIAL PACTE</div>
-            <h1 class="cover-project-title">SISTEMA INTEGRAL DE GESTIÓN DE CITAS, ATENCIÓN AUTOMATIZADA Y AGENDAMIENTO VÍA WHATSAPP BOT (HIDROSYS EC.)</h1>
-            <h2 class="cover-doc-title">2. HISTORIAS DE USUARIO (AGILE SCRUM)</h2>
-            <p class="cover-doc-summary">Fichas detalladas bajo el estándar INVEST y priorización</p>
+            <div class="doc-badge">02_Historias_de_Usuario_HIDROSYS • DOCUMENTACIÓN TÉCNICA OFICIAL</div>
+            <h1 class="cover-project-title">SISTEMA INTEGRAL DE GESTIÓN DE CITAS, ASISTENTE VIRTUAL POR WHATSAPP Y CONTROL DE ÓRDENES TÉCNICAS (HIDROSYS EC.)</h1>
+            <h2 class="cover-doc-title">2. HISTORIAS DE USUARIO Y SCRUM</h2>
+            <p class="cover-doc-summary">Fichas exhaustivas INVEST, ciclo ágil y criterios de aceptación</p>
         </div>
 
         <div class="cover-footer">
             <div class="authors-grid">
                 <div class="author-card">
-                    <span class="author-role">ESTUDIANTE / AUTOR DEL PROYECTO</span>
+                    <span class="author-role">AUTOR / ESTUDIANTE INVESTIGADOR</span>
                     <span class="author-name">Freddy Peñafiel</span>
-                    <span class="author-desc">Desarrollador Principal • Proyecto Hidrosys EC.</span>
+                    <span class="author-desc">Desarrollador y Arquitecto Principal • Hidrosys EC.</span>
                 </div>
                 <div class="author-card">
-                    <span class="author-role">DOCENTE / TUTOR ACADÉMICO</span>
+                    <span class="author-role">DOCENTE / TUTOR DE PROYECTO</span>
                     <span class="author-name">Ing. Fabricio Lucero</span>
-                    <span class="author-desc">Tutor de Proyecto PACTE • IST del Austro</span>
+                    <span class="author-desc">Director Académico de Proyecto PACTE • ISTA</span>
                 </div>
             </div>
-            <div class="cover-date">Cuenca, Ecuador • Periodo Académico 2026</div>
+            <div class="cover-date">Cuenca, Ecuador • Año Académico 2026</div>
         </div>
     </div>
 
 <div class="content-body">
 
-<h1>2. HISTORIAS DE USUARIO Y FLUJO DE VALOR ÁGIL</h1>
+<h1>2. ESPECIFICACIÓN DE HISTORIAS DE USUARIO Y METODOLOGÍA ÁGIL SCRUM</h1>
 <p>
-Las Historias de Usuario de <strong>Hidrosys EC.</strong> articulan las funcionalidades bajo el estándar INVEST del marco Scrum, garantizando una trazabilidad completa desde la necesidad del usuario hasta la entrega verificada.
+Para el desarrollo y evolución de <strong>Hidrosys EC.</strong>, se adoptó el marco de trabajo ágil <strong>Scrum</strong>, modelando cada requisito funcional del negocio bajo la forma de <strong>Historias de Usuario</strong>. Este enfoque sitúa a las personas (clientes, administradores y trabajadores) en el centro de las decisiones de ingeniería de software.
 </p>
 
-<h2>2.1 Diagrama de Flujo de Valor y Sprints (Agile Scrum)</h2>
+<h2>2.1 Ciclo de Vida Ágil y Criterios de Calidad INVEST</h2>
+<p>
+Todas las historias de usuario redactadas en este documento cumplen estrictamente con los seis criterios del acrónimo <strong>INVEST</strong>:
+</p>
+<ul>
+    <li><strong>Independiente (I):</strong> Cada historia puede desarrollarse, probarse y entregarse de forma modular sin bloquear a otras.</li>
+    <li><strong>Negociable (N):</strong> Los detalles de implementación se refinan conversando entre el equipo de desarrollo y los administradores.</li>
+    <li><strong>Valiosa (V):</strong> Aporta un beneficio medible y directo para la atención de clientes o la administración de agua y gas.</li>
+    <li><strong>Estimable (E):</strong> Su alcance técnico permite dimensionar el esfuerzo en Puntos de Historia (secuencia de Fibonacci).</li>
+    <li><strong>Pequeña (S):</strong> Su tamaño permite implementarse y verificarse dentro de un ciclo o iteración de desarrollo.</li>
+    <li><strong>Comprobable (T):</strong> Cuenta con Criterios de Aceptación explícitos que definen inequívocamente cuándo la historia está completada (Definition of Done).</li>
+</ul>
+
+<h2>2.2 Diagrama Visual del Flujo de Valor Ágil (UML Scrum Flow)</h2>
+<p>
+El siguiente esquema ilustra cómo las necesidades del actor usuario se transforman en elementos verificables del Product Backlog y fluyen hasta convertirse en entregas funcionales en producción:
+</p>
+
 <div class="diagram-box">
-    <svg width="680" height="210" viewBox="0 0 680 210">
-        <!-- Muñeco Cliente -->
+    <svg width="680" height="230" viewBox="0 0 680 230">
+        <!-- Muñeco Actor -->
         
-    <g transform="translate(60, 85)">
+    <g transform="translate(70, 95)">
         <!-- Cabeza -->
-        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <circle cx="0" cy="-35" r="14" fill="#002e6e" stroke="#1e40af" stroke-width="2.5"/>
         <!-- Cuerpo -->
-        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="-21" x2="0" y2="16" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
         <!-- Brazos -->
-        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="-22" y1="-7" x2="22" y2="-7" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
         <!-- Piernas -->
-        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
-        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
-        <!-- Nombre Actor -->
-        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Actor Usuario</text>
+        <line x1="0" y1="16" x2="-18" y2="44" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="0" y1="16" x2="18" y2="44" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
+        <!-- Etiqueta Principal -->
+        <text x="0" y="64" font-family="'Outfit', sans-serif" font-size="12" font-weight="800" fill="#0f172a" text-anchor="middle">Actor Usuario</text>
+        <!-- Subtítulo Rol -->
+        <text x="0" y="79" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" fill="#475569" text-anchor="middle">Stakeholder</text>
     </g>
     
-        <line x1="95" y1="85" x2="160" y2="85" stroke="#2563eb" stroke-width="2.5"/>
 
-        <!-- Backlog -->
-        <rect x="160" y="45" width="130" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
-        <text x="225" y="75" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">Product Backlog</text>
-        <text x="225" y="95" font-size="9.5" fill="#1e40af" text-anchor="middle">HU-01 a HU-06</text>
+        <line x1="110" y1="95" x2="165" y2="95" stroke="#2563eb" stroke-width="2.5"/>
 
-        <line x1="290" y1="85" x2="350" y2="85" stroke="#2563eb" stroke-width="2.5"/>
+        <!-- Caja Backlog -->
+        <rect x="165" y="45" width="135" height="100" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="232" y="75" font-size="11.5" font-weight="bold" fill="#1e40af" text-anchor="middle">Product Backlog</text>
+        <text x="232" y="98" font-size="9.5" fill="#1e40af" text-anchor="middle">• HU-01 Menú WhatsApp</text>
+        <text x="232" y="118" font-size="9.5" fill="#1e40af" text-anchor="middle">• HU-02 Agendamiento</text>
+        <text x="232" y="135" font-size="9.5" fill="#1e40af" text-anchor="middle">• HU-03 Pestaña QR Web</text>
 
-        <!-- Sprint Execution -->
-        <rect x="350" y="45" width="140" height="80" rx="40" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
-        <text x="420" y="75" font-size="11" font-weight="bold" fill="#92400e" text-anchor="middle">Sprint Iterativo</text>
-        <text x="420" y="95" font-size="9.5" fill="#92400e" text-anchor="middle">Desarrollo & Pruebas</text>
+        <line x1="300" y1="95" x2="355" y2="95" stroke="#2563eb" stroke-width="2.5"/>
 
-        <line x1="490" y1="85" x2="550" y2="85" stroke="#10b981" stroke-width="2.5"/>
+        <!-- Caja Sprint -->
+        <rect x="355" y="45" width="145" height="100" rx="35" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+        <text x="427" y="75" font-size="11.5" font-weight="bold" fill="#92400e" text-anchor="middle">Sprint Iterativo</text>
+        <text x="427" y="98" font-size="9.5" fill="#92400e" text-anchor="middle">Desarrollo Node.js</text>
+        <text x="427" y="118" font-size="9.5" fill="#92400e" text-anchor="middle">Integración Baileys</text>
+        <text x="427" y="135" font-size="9.5" fill="#92400e" text-anchor="middle">Pruebas Unitarias</text>
 
-        <!-- Incremento -->
-        <rect x="550" y="45" width="110" height="80" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="2"/>
-        <text x="605" y="75" font-size="11" font-weight="bold" fill="#065f46" text-anchor="middle">Entrega Final</text>
-        <text x="605" y="95" font-size="9.5" fill="#065f46" text-anchor="middle">Sistema Funcional</text>
+        <line x1="500" y1="95" x2="555" y2="95" stroke="#10b981" stroke-width="2.5"/>
+
+        <!-- Caja Incremento -->
+        <rect x="555" y="45" width="115" height="100" rx="10" fill="#d1fae5" stroke="#065f46" stroke-width="2"/>
+        <text x="612" y="78" font-size="11.5" font-weight="bold" fill="#065f46" text-anchor="middle">Entrega Final</text>
+        <text x="612" y="105" font-size="10" font-weight="bold" fill="#065f46" text-anchor="middle">Hidrosys EC. v3.0</text>
+        <text x="612" y="125" font-size="8.5" fill="#065f46" text-anchor="middle">En Producción</text>
     </svg>
-    <div class="diagram-caption">Fig 2.1 - Flujo Ágil de Implementación de Historias de Usuario</div>
+    <div class="diagram-caption">Figura 2.1 - Trazabilidad y Flujo Ágil de Implementación de Historias de Usuario</div>
 </div>
 
-<h2>2.2 Fichas Técnicas de Historias de Usuario</h2>
-
-<div class="card">
-    <div class="card-title">HU-01: Menú Numérico Confiable en WhatsApp</div>
-    <p><strong>Como</strong> cliente de Hidrosys EC.,<br>
-    <strong>Quiero</strong> recibir opciones numeradas claras en texto simple al escribir al bot,<br>
-    <strong>Para</strong> poder seleccionar con un número (1, 2, 3) sin bloqueos por incompatibilidad de botones en mi celular.</p>
-    <p><strong>Criterios de Aceptación:</strong> Envío en &lt; 1.5s, respuesta correcta a opciones numéricas, tolerancia a errores.</p>
-</div>
+<h2>2.3 Fichas Técnicas Detalladas de Historias de Usuario</h2>
 
 <div class="card">
-    <div class="card-title">HU-02: Agendamiento Paso a Paso vía WhatsApp</div>
-    <p><strong>Como</strong> cliente o empresa solicitante,<br>
-    <strong>Quiero</strong> registrar mi Nombre, Dirección, Servicio y Fecha/Hora conversando con el bot,<br>
-    <strong>Para</strong> coordinar mi visita técnica sin esperas telefónicas.</p>
+    <div class="card-title">HU-01: Interacción por WhatsApp con Menú Numérico 100% Confiable</div>
+    <p><strong>Código:</strong> HU-01 &nbsp;|&nbsp; <strong>Rol:</strong> Cliente de Agua y Gas &nbsp;|&nbsp; <strong>Puntos de Historia:</strong> 3 pt &nbsp;|&nbsp; <strong>Iteración:</strong> Sprint 1</p>
+    <p><strong>Como</strong> cliente que busca atención o asesoría en Hidrosys EC.,<br>
+    <strong>Quiero</strong> enviar un mensaje a WhatsApp y recibir un menú estructurado con opciones numeradas en texto plano (ejemplo: 1, 2, 3),<br>
+    <strong>Para</strong> poder seleccionar el servicio que necesito rápidamente desde cualquier teléfono sin sufrir errores ni bloqueos por incompatibilidad de botones flotantes.</p>
+    <p><strong>Justificación Humanizada:</strong> Durante las pruebas iniciales, los botones interactivos oficiales de Meta fallaban en celulares Android antiguos o cuentas no empresariales. La transición a un menú numérico limpio en texto garantizó que el 100% de los ciudadanos ecuatorianos puedan navegar por el bot sin interrupciones.</p>
+    <p><strong>Criterios de Aceptación Verificados:</strong></p>
+    <ol>
+        <li>Al escribir saludos iniciales ("Hola", "Buen día", "Soporte"), el bot debe responder en menos de 1.5 segundos desplegando el encabezado oficial de Hidrosys EC. y las opciones numeradas.</li>
+        <li>Si el cliente envía el número '1', el sistema debe iniciar inmediatamente el flujo de agendamiento de cita técnica.</li>
+        <li>Si el cliente envía el número '2', el sistema debe desplegar la información de zonas de cobertura y horarios de atención.</li>
+        <li>Si el cliente ingresa un texto no numérico o un número fuera de rango en el menú principal, el bot emitirá una orientación amable recordando cómo seleccionar las opciones correctas.</li>
+    </ol>
 </div>
 
 <div class="card">
-    <div class="card-title">HU-03: Reconexión QR en Tiempo Real desde Panel Web</div>
-    <p><strong>Como</strong> Administrador / Dueño de Hidrosys EC.,<br>
-    <strong>Quiero</strong> disponer de la pestaña <code>📱 Escanear QR / WhatsApp</code> en el panel web con el QR en vivo,<br>
-    <strong>Para</strong> vincular el celular corporativo al instante ante cualquier desconexión sin asistencia de programadores.</p>
+    <div class="card-title">HU-02: Agendamiento Guiado y Automatizado de Citas e Inspecciones</div>
+    <p><strong>Código:</strong> HU-02 &nbsp;|&nbsp; <strong>Rol:</strong> Cliente / Usuario Final &nbsp;|&nbsp; <strong>Puntos de Historia:</strong> 5 pt &nbsp;|&nbsp; <strong>Iteración:</strong> Sprint 1</p>
+    <p><strong>Como</strong> ciudadano o empresa que requiere una inspección de agua potable o gas,<br>
+    <strong>Quiero</strong> que el bot de WhatsApp me solicite paso a paso mis datos de contacto e inmueble,<br>
+    <strong>Para</strong> coordinar de forma oficial una visita técnica sin tener que acudir presencialmente a oficinas.</p>
+    <p><strong>Criterios de Aceptación Verificados:</strong></p>
+    <ol>
+        <li>El bot solicitará de forma secuencial: Nombre Completo, Dirección Exacta del inmueble, Tipo de Servicio y Horario Preferido.</li>
+        <li>Una vez proporcionados los datos, el backend procesará y almacenará la orden de trabajo en la tabla de base de datos con estado <code>Pendiente</code>.</li>
+        <li>El bot enviará un comprobante formal de agendamiento con resumen de los datos y mensaje de confirmación.</li>
+    </ol>
 </div>
+
+<div class="card">
+    <div class="card-title">HU-03: Reconexión Autónoma en Panel Web - Pestaña "📱 Escanear QR / WhatsApp"</div>
+    <p><strong>Código:</strong> HU-03 &nbsp;|&nbsp; <strong>Rol:</strong> Dueño / Administrador Principal &nbsp;|&nbsp; <strong>Puntos de Historia:</strong> 8 pt &nbsp;|&nbsp; <strong>Iteración:</strong> Sprint 2</p>
+    <p><strong>Como</strong> dueño o administrador principal del sistema Hidrosys EC.,<br>
+    <strong>Quiero</strong> disponer de una pestaña en mi menú web de administración que muestre el estado en vivo de WhatsApp y renderice el código QR en pantalla,<br>
+    <strong>Para</strong> escanearlo directamente desde mi celular corporativo y conectar el bot al instante en caso de pérdida de conexión sin necesitar ayuda externa.</p>
+    <p><strong>Justificación Humanizada:</strong> Esta característica otorga verdadera independencia al dueño del negocio. Si el teléfono se apaga o WhatsApp se actualiza, el dueño entra a su panel web y soluciona la conexión en menos de 4 segundos.</p>
+    <p><strong>Criterios de Aceptación Verificados:</strong></p>
+    <ol>
+        <li>El panel web en <code>http://localhost:3000</code> debe incorporar en el menú lateral la opción <strong>"📱 Escanear QR / WhatsApp"</strong>.</li>
+        <li>La interfaz consulta periódicamente al endpoint <code>/api/wa/status</code> para conocer si la sesión de Baileys está conectada o requiere vinculación.</li>
+        <li>Si el bot está conectado, la pantalla muestra una tarjeta verde con la notificación <strong>"¡Dispositivo Conectado! ✅"</strong> y el número telefónico enlazado.</li>
+        <li>Si la sesión se desconecta, el sistema renderiza en pantalla un código QR nítido listo para ser escaneado con la cámara de WhatsApp móvil.</li>
+        <li>Se incluye un botón protegido por autenticación: <strong>"🔄 Reiniciar Conexión / Generar Nuevo QR"</strong> que renueva la sesión al instante.</li>
+    </ol>
+</div>
+
+<div class="card">
+    <div class="card-title">HU-04: Seguridad Institucional en Endpoints mediante requireAuth</div>
+    <p><strong>Código:</strong> HU-04 &nbsp;|&nbsp; <strong>Rol:</strong> Administrador del Sistema &nbsp;|&nbsp; <strong>Puntos de Historia:</strong> 5 pt &nbsp;|&nbsp; <strong>Iteración:</strong> Sprint 2</p>
+    <p><strong>Como</strong> responsable de la seguridad de datos de Hidrosys EC.,<br>
+    <strong>Quiero</strong> que todas las peticiones administrativas a la API REST verifiquen la presencia de un token de sesión,<br>
+    <strong>Para</strong> impedir que atacantes externos o solicitudes no verificadas puedan reiniciar el bot o manipular citas de clientes.</p>
+    <p><strong>Criterios de Aceptación Verificados:</strong></p>
+    <ol>
+        <li>El middleware <code>requireAuth</code> de Express inspecciona el encabezado HTTP <code>x-session-token</code> en cada petición sensible.</li>
+        <li>Si el token es inválido o la sesión expiró, el servidor rechaza la orden respondiendo con código HTTP 401 Unauthorized.</li>
+    </ol>
+</div>
+
+<h2>2.4 Resumen Consolidado del Product Backlog</h2>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Título de la Historia</th>
+            <th>Actor Principal</th>
+            <th>Esfuerzo (Fibonacci)</th>
+            <th>Estado de Implementación</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>HU-01</td>
+            <td>Navegación con Menú Numérico 100% Confiable</td>
+            <td>Cliente / Usuario</td>
+            <td>3 pt</td>
+            <td>Completada y Verificada</td>
+        </tr>
+        <tr>
+            <td>HU-02</td>
+            <td>Agendamiento Conversacional Paso a Paso</td>
+            <td>Cliente / Usuario</td>
+            <td>5 pt</td>
+            <td>Completada y Verificada</td>
+        </tr>
+        <tr>
+            <td>HU-03</td>
+            <td>Pestaña Web de Administración y Reconexión QR</td>
+            <td>Dueño / Super Admin</td>
+            <td>8 pt</td>
+            <td>Completada y Verificada</td>
+        </tr>
+        <tr>
+            <td>HU-04</td>
+            <td>Protección de Rutas con Middleware requireAuth</td>
+            <td>Administrador del Sistema</td>
+            <td>5 pt</td>
+            <td>Completada y Verificada</td>
+        </tr>
+        <tr>
+            <td>HU-05</td>
+            <td>Consulta Instantánea de Coberturas de Agua y Gas</td>
+            <td>Cliente / Usuario</td>
+            <td>3 pt</td>
+            <td>Completada y Verificada</td>
+        </tr>
+        <tr>
+            <td>HU-06</td>
+            <td>Gestión de Citas (Confirmación / Asignación)</td>
+            <td>Administrador Secundario</td>
+            <td>5 pt</td>
+            <td>Completada y Verificada</td>
+        </tr>
+    </tbody>
+</table>
 
 </div>
 </div>

@@ -8,18 +8,18 @@
 
     @page {
         size: A4;
-        margin: 18mm 15mm 18mm 15mm;
+        margin: 20mm 16mm 20mm 16mm;
         @bottom-right {
             content: "Página " counter(page);
             font-family: 'Inter', sans-serif;
-            font-size: 8pt;
-            color: #64748b;
+            font-size: 8.5pt;
+            color: #475569;
         }
         @bottom-left {
-            content: "HIDROSYS EC. • Proyecto PACTE • Freddy Peñafiel | Tutor: Ing. Fabricio Lucero";
+            content: "HIDROSYS EC. • Proyecto PACTE • Autor: Freddy Peñafiel | Tutor: Ing. Fabricio Lucero";
             font-family: 'Inter', sans-serif;
-            font-size: 8pt;
-            color: #64748b;
+            font-size: 8.5pt;
+            color: #475569;
         }
     }
 
@@ -42,123 +42,132 @@
     body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         color: var(--gray-700);
-        line-height: 1.5;
+        line-height: 1.6;
         background: white;
-        font-size: 9.5pt;
+        font-size: 10pt;
     }
 
     .container { max-width: 100%; margin: 0 auto; }
 
     /* Portada Estilo Universitario */
     .cover-page {
-        height: 90vh;
+        height: 92vh;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        padding: 10px 10px;
+        padding: 5px 10px;
         page-break-after: always;
     }
-    .cover-header { border-bottom: 3px solid var(--ista-blue); padding-bottom: 18px; }
-    .cover-logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+    .cover-header { border-bottom: 3px solid var(--ista-blue); padding-bottom: 20px; }
+    .cover-logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
     .cover-title-univ {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.45rem;
+        font-size: 1.55rem;
         font-weight: 800;
         color: var(--ista-blue);
         letter-spacing: 0.5px;
     }
-    .cover-subtitle-univ { font-size: 0.85rem; font-weight: 600; color: #475569; letter-spacing: 2px; }
-    .cover-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
-    .meta-box { background: var(--gray-100); padding: 8px 12px; border-left: 4px solid var(--accent); border-radius: 4px; }
-    .meta-label { display: block; font-size: 0.7rem; font-weight: 700; color: #64748b; letter-spacing: 1px; }
-    .meta-value { font-size: 0.85rem; font-weight: 700; color: var(--primary); }
+    .cover-subtitle-univ { font-size: 0.9rem; font-weight: 600; color: #475569; letter-spacing: 2px; }
+    .cover-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+    .meta-box { background: var(--gray-100); padding: 10px 14px; border-left: 4px solid var(--accent); border-radius: 4px; }
+    .meta-label { display: block; font-size: 0.72rem; font-weight: 700; color: #64748b; letter-spacing: 1px; }
+    .meta-value { font-size: 0.9rem; font-weight: 700; color: var(--primary); }
 
-    .cover-center { text-align: center; padding: 25px 15px; }
+    .cover-center { text-align: center; padding: 30px 15px; }
     .doc-badge {
         display: inline-block;
         background: #eff6ff;
         color: var(--accent);
         font-weight: 700;
-        font-size: 0.8rem;
-        padding: 5px 14px;
+        font-size: 0.85rem;
+        padding: 6px 16px;
         border-radius: 20px;
         letter-spacing: 1.5px;
-        margin-bottom: 15px;
+        margin-bottom: 18px;
         border: 1px solid #bfdbfe;
     }
     .cover-project-title {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.3rem;
+        font-size: 1.38rem;
         font-weight: 800;
         color: var(--primary);
-        line-height: 1.35;
-        margin-bottom: 15px;
+        line-height: 1.4;
+        margin-bottom: 18px;
     }
     .cover-doc-title {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.6rem;
+        font-size: 1.7rem;
         font-weight: 800;
         color: var(--ista-blue);
-        margin-bottom: 12px;
-        padding: 10px 0;
+        margin-bottom: 14px;
+        padding: 12px 0;
         border-top: 1px solid var(--gray-200);
         border-bottom: 1px solid var(--gray-200);
     }
     .cover-doc-summary {
-        font-size: 0.95rem;
+        font-size: 1rem;
         color: #475569;
-        max-width: 85%;
+        max-width: 88%;
         margin: 0 auto;
     }
 
-    .cover-footer { border-top: 2px solid var(--gray-200); padding-top: 18px; }
-    .authors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 12px; }
-    .author-card { background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid var(--gray-200); }
-    .author-role { display: block; font-size: 0.7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
-    .author-name { display: block; font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 3px 0; }
-    .author-desc { font-size: 0.8rem; color: #64748b; }
-    .cover-date { text-align: center; font-size: 0.85rem; font-weight: 600; color: #64748b; }
+    .cover-footer { border-top: 2px solid var(--gray-200); padding-top: 20px; }
+    .authors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 14px; }
+    .author-card { background: #f8fafc; padding: 14px; border-radius: 6px; border: 1px solid var(--gray-200); }
+    .author-role { display: block; font-size: 0.72rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+    .author-name { display: block; font-size: 1.15rem; font-weight: 800; color: var(--primary); margin: 4px 0; }
+    .author-desc { font-size: 0.85rem; color: #64748b; }
+    .cover-date { text-align: center; font-size: 0.9rem; font-weight: 600; color: #64748b; }
 
-    /* Estilos del Contenido */
+    /* Contenido General */
     .page-break { page-break-after: always; }
-    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.2rem; color: var(--ista-blue); }
-    h3 { font-size: 1.05rem; }
-    p { margin-bottom: 10px; text-align: justify; }
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 22px; margin-bottom: 10px; }
+    h1 { font-size: 1.55rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 8px; }
+    h2 { font-size: 1.28rem; color: var(--ista-blue); }
+    h3 { font-size: 1.12rem; }
+    p { margin-bottom: 14px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 9.2pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
-    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 10px 10px; text-align: left; font-weight: 600; }
+    td { padding: 9px 10px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
-    .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
-    .card-title { font-weight: 700; color: var(--ista-blue); margin-bottom: 6px; font-size: 10.5pt; }
+    .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; margin: 16px 0; page-break-inside: avoid; }
+    .card-title { font-weight: 700; color: var(--ista-blue); margin-bottom: 8px; font-size: 11pt; }
 
-    .badge-req { display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 7.8pt; }
+    .badge-req { display: inline-block; background: #dbeafe; color: #1e40af; padding: 3px 10px; border-radius: 4px; font-weight: 700; font-size: 8.2pt; }
     .badge-success { background: #d1fae5; color: #065f46; }
     .badge-warning { background: #fef3c7; color: #92400e; }
 
-    ul, ol { margin-left: 20px; margin-bottom: 12px; }
-    li { margin-bottom: 5px; }
+    ul, ol { margin-left: 22px; margin-bottom: 14px; }
+    li { margin-bottom: 7px; text-align: justify; }
 
     .diagram-box {
         background: #ffffff;
         border: 2px solid var(--gray-200);
-        border-radius: 8px;
-        padding: 16px 10px;
-        margin: 16px 0;
+        border-radius: 10px;
+        padding: 20px 12px;
+        margin: 20px 0;
         text-align: center;
         page-break-inside: avoid;
     }
     .diagram-caption {
         font-weight: 700;
-        font-size: 9pt;
+        font-size: 9.5pt;
         color: var(--ista-blue);
-        margin-top: 10px;
+        margin-top: 12px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+    }
+    .explanation-box {
+        background: #f1f5f9;
+        border-left: 4px solid var(--ista-blue);
+        padding: 14px 16px;
+        margin: 14px 0;
+        font-size: 9.5pt;
+        color: #334155;
+        text-align: justify;
     }
 
     </style>
@@ -166,11 +175,11 @@
 <body>
 <div class="container">
 
-    <!-- ==================== PORTADA OFICIAL ==================== -->
+    <!-- ==================== PORTADA UNIVERSITARIA OFICIAL ==================== -->
     <div class="cover-page">
         <div class="cover-header">
             <div class="cover-logo-area">
-                <svg width="60" height="60" viewBox="0 0 100 100" style="margin-right:15px;">
+                <svg width="68" height="68" viewBox="0 0 100 100" style="margin-right:18px;">
                     <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
                     <path d="M20,40 Q35,35 50,40 Q65,45 80,40" fill="none" stroke="#2563eb" stroke-width="4"/>
                     <path d="M20,55 Q35,50 50,55 Q65,60 80,55" fill="none" stroke="#60a5fa" stroke-width="4"/>
@@ -178,73 +187,159 @@
                 </svg>
                 <div>
                     <div class="cover-title-univ">INSTITUTO SUPERIOR TECNOLÓGICO DEL AUSTRO</div>
-                    <div class="cover-subtitle-univ">EXCELENCIA ACADÉMICA Y TECNOLÓGICA</div>
+                    <div class="cover-subtitle-univ">FORMACIÓN TECNOLÓGICA DE ALTO NIVEL</div>
                 </div>
             </div>
             
             <div class="cover-meta-grid">
                 <div class="meta-box">
-                    <span class="meta-label">CARRERA</span>
+                    <span class="meta-label">CARRERA ACADÉMICA</span>
                     <span class="meta-value">TECNOLOGÍA SUPERIOR EN DESARROLLO DE SOFTWARE</span>
                 </div>
                 <div class="meta-box">
-                    <span class="meta-label">PROYECTO PACTE</span>
-                    <span class="meta-value">ANÁLISIS, DISEÑO E IMPLEMENTACIÓN DE SISTEMAS</span>
+                    <span class="meta-label">MODALIDAD DE PROYECTO</span>
+                    <span class="meta-value">PROYECTO DE APLICACIÓN PRÁCTICA Y TECNOLOGÍA (PACTE)</span>
                 </div>
             </div>
         </div>
 
         <div class="cover-center">
-            <div class="doc-badge">06_Requisitos_Funcionales_y_No_Funcionales_HIDROSYS • DOCUMENTO OFICIAL PACTE</div>
-            <h1 class="cover-project-title">SISTEMA INTEGRAL DE GESTIÓN DE CITAS, ATENCIÓN AUTOMATIZADA Y AGENDAMIENTO VÍA WHATSAPP BOT (HIDROSYS EC.)</h1>
+            <div class="doc-badge">06_Requisitos_Funcionales_y_No_Funcionales_HIDROSYS • DOCUMENTACIÓN TÉCNICA OFICIAL</div>
+            <h1 class="cover-project-title">SISTEMA INTEGRAL DE GESTIÓN DE CITAS, ASISTENTE VIRTUAL POR WHATSAPP Y CONTROL DE ÓRDENES TÉCNICAS (HIDROSYS EC.)</h1>
             <h2 class="cover-doc-title">6. REQUISITOS FUNCIONALES Y NO FUNCIONALES</h2>
-            <p class="cover-doc-summary">Catálogo técnico formal de requisitos RF y RNF</p>
+            <p class="cover-doc-summary">Catálogo técnico completo de ingeniería RF y RNF verificados</p>
         </div>
 
         <div class="cover-footer">
             <div class="authors-grid">
                 <div class="author-card">
-                    <span class="author-role">ESTUDIANTE / AUTOR DEL PROYECTO</span>
+                    <span class="author-role">AUTOR / ESTUDIANTE INVESTIGADOR</span>
                     <span class="author-name">Freddy Peñafiel</span>
-                    <span class="author-desc">Desarrollador Principal • Proyecto Hidrosys EC.</span>
+                    <span class="author-desc">Desarrollador y Arquitecto Principal • Hidrosys EC.</span>
                 </div>
                 <div class="author-card">
-                    <span class="author-role">DOCENTE / TUTOR ACADÉMICO</span>
+                    <span class="author-role">DOCENTE / TUTOR DE PROYECTO</span>
                     <span class="author-name">Ing. Fabricio Lucero</span>
-                    <span class="author-desc">Tutor de Proyecto PACTE • IST del Austro</span>
+                    <span class="author-desc">Director Académico de Proyecto PACTE • ISTA</span>
                 </div>
             </div>
-            <div class="cover-date">Cuenca, Ecuador • Periodo Académico 2026</div>
+            <div class="cover-date">Cuenca, Ecuador • Año Académico 2026</div>
         </div>
     </div>
 
 <div class="content-body">
 
-<h1>6. ESPECIFICACIÓN DE REQUISITOS FUNCIONALES Y NO FUNCIONALES</h1>
+<h1>6. CATÁLOGO EXHAUSTIVO DE REQUISITOS FUNCIONALES Y NO FUNCIONALES</h1>
 <p>
-Catálogo formal de ingeniería de requerimientos de <strong>Hidrosys EC.</strong> clasificado bajo estándares de calidad y trazabilidad.
+Este capítulo contiene la especificación formal de ingeniería de requerimientos de <strong>Hidrosys EC.</strong>, articulando los requisitos funcionales (RF) del software y los requisitos no funcionales (RNF) de calidad, rendimiento y seguridad.
 </p>
 
-<h2>6.1 Diagrama de Arquitectura de Requisitos</h2>
+<h2>6.1 Diagrama de Arquitectura y Trazabilidad de Requisitos</h2>
 <div class="diagram-box">
-    <svg width="660" height="170" viewBox="0 0 660 170">
-        <rect x="40" y="40" width="170" height="90" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
-        <text x="125" y="75" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">Módulo WhatsApp Bot</text>
-        <text x="125" y="98" font-size="9.5" fill="#1e40af" text-anchor="middle">RF-01: Menú Numérico</text>
-        <text x="125" y="115" font-size="9.5" fill="#1e40af" text-anchor="middle">RF-02: Citas Paso a Paso</text>
+    <svg width="660" height="180" viewBox="0 0 660 180">
+        <rect x="30" y="35" width="180" height="105" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="120" y="65" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">MÓDULO WHATSAPP BOT</text>
+        <text x="120" y="90" font-size="9.5" fill="#1e40af" text-anchor="middle">• RF-01 Menú Numérico 1,2,3</text>
+        <text x="120" y="110" font-size="9.5" fill="#1e40af" text-anchor="middle">• RF-02 Citas Automáticas</text>
+        <text x="120" y="128" font-size="9.5" fill="#1e40af" text-anchor="middle">• RNF-03 100% Compatible</text>
 
-        <rect x="245" y="40" width="170" height="90" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="2"/>
-        <text x="330" y="75" font-size="11" font-weight="bold" fill="#065f46" text-anchor="middle">Panel Web Admin</text>
-        <text x="330" y="98" font-size="9.5" fill="#065f46" text-anchor="middle">RF-03: Escanear QR en Vivo</text>
-        <text x="330" y="115" font-size="9.5" fill="#065f46" text-anchor="middle">RF-05: Gestión de Órdenes</text>
+        <rect x="240" y="35" width="180" height="105" rx="10" fill="#d1fae5" stroke="#065f46" stroke-width="2"/>
+        <text x="330" y="65" font-size="11" font-weight="bold" fill="#065f46" text-anchor="middle">PANEL WEB ADMIN</text>
+        <text x="330" y="90" font-size="9.5" fill="#065f46" text-anchor="middle">• RF-03 Pestaña Escanear QR</text>
+        <text x="330" y="110" font-size="9.5" fill="#065f46" text-anchor="middle">• RF-05 CRUD de Citas</text>
+        <text x="330" y="128" font-size="9.5" fill="#065f46" text-anchor="middle">• RF-07 Exportar PDF/Excel</text>
 
-        <rect x="450" y="40" width="170" height="90" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
-        <text x="535" y="75" font-size="11" font-weight="bold" fill="#92400e" text-anchor="middle">Capa de Seguridad</text>
-        <text x="535" y="98" font-size="9.5" fill="#92400e" text-anchor="middle">RF-04: requireAuth Token</text>
-        <text x="535" y="115" font-size="9.5" fill="#92400e" text-anchor="middle">RNF-02: Latencia &lt; 250ms</text>
+        <rect x="450" y="35" width="180" height="105" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+        <text x="540" y="65" font-size="11" font-weight="bold" fill="#92400e" text-anchor="middle">SEGURIDAD & RENDIMIENTO</text>
+        <text x="540" y="90" font-size="9.5" fill="#92400e" text-anchor="middle">• RF-04 requireAuth Token</text>
+        <text x="540" y="110" font-size="9.5" fill="#92400e" text-anchor="middle">• RNF-01 Diseño Premium</text>
+        <text x="540" y="128" font-size="9.5" fill="#92400e" text-anchor="middle">• RNF-02 Latencia &lt; 250ms</text>
     </svg>
-    <div class="diagram-caption">Fig 6.1 - Mapa de Trazabilidad por Módulos Funcionales</div>
+    <div class="diagram-caption">Figura 6.1 - Mapa Conceptual de Trazabilidad entre Requerimientos y Módulos</div>
 </div>
+
+<h2>6.2 Catálogo Formal de Requisitos Funcionales (RF)</h2>
+<table>
+    <thead>
+        <tr>
+            <th style="width:12%;">ID</th>
+            <th style="width:20%;">Módulo</th>
+            <th>Descripción Técnica Exhaustiva del Requisito</th>
+            <th style="width:12%;">Prioridad</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>RF-01</strong></td>
+            <td>Bot WhatsApp</td>
+            <td>El sistema debe desplegar un menú de bienvenida estructurado con opciones numeradas en texto plano ('1', '2', '3'), evitando botones interactivos para asegurar 100% de compatibilidad.</td>
+            <td>Alta</td>
+        </tr>
+        <tr>
+            <td><strong>RF-02</strong></td>
+            <td>Agendamiento</td>
+            <td>El bot debe procesar de forma secuencial los datos de la cita (Nombre, Dirección, Fecha y Servicio) y guardarlos transaccionalmente en la base de datos.</td>
+            <td>Alta</td>
+        </tr>
+        <tr>
+            <td><strong>RF-03</strong></td>
+            <td>Panel Web (QR)</td>
+            <td>El panel web debe contar con la pestaña lateral <code>📱 Escanear QR / WhatsApp</code> para consultar y mostrar el código QR en vivo del servidor Baileys.</td>
+            <td>Alta</td>
+        </tr>
+        <tr>
+            <td><strong>RF-04</strong></td>
+            <td>Seguridad API</td>
+            <td>El middleware de Express <code>requireAuth</code> debe verificar el encabezado HTTP <code>x-session-token</code> ante toda operación administrativa sensible.</td>
+            <td>Alta</td>
+        </tr>
+        <tr>
+            <td><strong>RF-05</strong></td>
+            <td>Gestión de Citas</td>
+            <td>El administrador debe poder listar, filtrar, modificar y cambiar el estado de las órdenes técnicas en el panel web.</td>
+            <td>Alta</td>
+        </tr>
+        <tr>
+            <td><strong>RF-06</strong></td>
+            <td>Reinicio Bot</td>
+            <td>El panel debe incluir un botón seguro para reiniciar el servicio de WhatsApp y generar un nuevo QR en caso de pérdida de sesión.</td>
+            <td>Media</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>6.3 Requisitos No Funcionales (RNF)</h2>
+<table>
+    <thead>
+        <tr>
+            <th style="width:12%;">ID</th>
+            <th style="width:22%;">Categoría</th>
+            <th>Estándar de Calidad y Métrica de Ingeniería</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>RNF-01</strong></td>
+            <td>Usabilidad UI/UX</td>
+            <td>La interfaz del panel web debe cumplir con estándares modernos de diseño premium, tipografía Inter/Outfit y diseño altamente adaptable (responsive).</td>
+        </tr>
+        <tr>
+            <td><strong>RNF-02</strong></td>
+            <td>Rendimiento</td>
+            <td>El tiempo promedio de respuesta del servidor API ante los comandos del bot de WhatsApp no superará los 250 milisegundos.</td>
+        </tr>
+        <tr>
+            <td><strong>RNF-03</strong></td>
+            <td>Confiabilidad</td>
+            <td>El servicio del bot debe operar el 99.8% del tiempo, y permitir reconexión visual inmediata en caso de reinicio del móvil.</td>
+        </tr>
+        <tr>
+            <td><strong>RNF-04</strong></td>
+            <td>Seguridad</td>
+            <td>Las sesiones de administración deben expirar y protegerse contra accesos no autorizados mediante aislamiento de tokens.</td>
+        </tr>
+    </tbody>
+</table>
 
 </div>
 </div>

@@ -8,18 +8,18 @@
 
     @page {
         size: A4;
-        margin: 18mm 15mm 18mm 15mm;
+        margin: 20mm 16mm 20mm 16mm;
         @bottom-right {
             content: "Página " counter(page);
             font-family: 'Inter', sans-serif;
-            font-size: 8pt;
-            color: #64748b;
+            font-size: 8.5pt;
+            color: #475569;
         }
         @bottom-left {
-            content: "HIDROSYS EC. • Proyecto PACTE • Freddy Peñafiel | Tutor: Ing. Fabricio Lucero";
+            content: "HIDROSYS EC. • Proyecto PACTE • Autor: Freddy Peñafiel | Tutor: Ing. Fabricio Lucero";
             font-family: 'Inter', sans-serif;
-            font-size: 8pt;
-            color: #64748b;
+            font-size: 8.5pt;
+            color: #475569;
         }
     }
 
@@ -42,123 +42,132 @@
     body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         color: var(--gray-700);
-        line-height: 1.5;
+        line-height: 1.6;
         background: white;
-        font-size: 9.5pt;
+        font-size: 10pt;
     }
 
     .container { max-width: 100%; margin: 0 auto; }
 
     /* Portada Estilo Universitario */
     .cover-page {
-        height: 90vh;
+        height: 92vh;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        padding: 10px 10px;
+        padding: 5px 10px;
         page-break-after: always;
     }
-    .cover-header { border-bottom: 3px solid var(--ista-blue); padding-bottom: 18px; }
-    .cover-logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+    .cover-header { border-bottom: 3px solid var(--ista-blue); padding-bottom: 20px; }
+    .cover-logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
     .cover-title-univ {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.45rem;
+        font-size: 1.55rem;
         font-weight: 800;
         color: var(--ista-blue);
         letter-spacing: 0.5px;
     }
-    .cover-subtitle-univ { font-size: 0.85rem; font-weight: 600; color: #475569; letter-spacing: 2px; }
-    .cover-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
-    .meta-box { background: var(--gray-100); padding: 8px 12px; border-left: 4px solid var(--accent); border-radius: 4px; }
-    .meta-label { display: block; font-size: 0.7rem; font-weight: 700; color: #64748b; letter-spacing: 1px; }
-    .meta-value { font-size: 0.85rem; font-weight: 700; color: var(--primary); }
+    .cover-subtitle-univ { font-size: 0.9rem; font-weight: 600; color: #475569; letter-spacing: 2px; }
+    .cover-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+    .meta-box { background: var(--gray-100); padding: 10px 14px; border-left: 4px solid var(--accent); border-radius: 4px; }
+    .meta-label { display: block; font-size: 0.72rem; font-weight: 700; color: #64748b; letter-spacing: 1px; }
+    .meta-value { font-size: 0.9rem; font-weight: 700; color: var(--primary); }
 
-    .cover-center { text-align: center; padding: 25px 15px; }
+    .cover-center { text-align: center; padding: 30px 15px; }
     .doc-badge {
         display: inline-block;
         background: #eff6ff;
         color: var(--accent);
         font-weight: 700;
-        font-size: 0.8rem;
-        padding: 5px 14px;
+        font-size: 0.85rem;
+        padding: 6px 16px;
         border-radius: 20px;
         letter-spacing: 1.5px;
-        margin-bottom: 15px;
+        margin-bottom: 18px;
         border: 1px solid #bfdbfe;
     }
     .cover-project-title {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.3rem;
+        font-size: 1.38rem;
         font-weight: 800;
         color: var(--primary);
-        line-height: 1.35;
-        margin-bottom: 15px;
+        line-height: 1.4;
+        margin-bottom: 18px;
     }
     .cover-doc-title {
         font-family: 'Outfit', sans-serif;
-        font-size: 1.6rem;
+        font-size: 1.7rem;
         font-weight: 800;
         color: var(--ista-blue);
-        margin-bottom: 12px;
-        padding: 10px 0;
+        margin-bottom: 14px;
+        padding: 12px 0;
         border-top: 1px solid var(--gray-200);
         border-bottom: 1px solid var(--gray-200);
     }
     .cover-doc-summary {
-        font-size: 0.95rem;
+        font-size: 1rem;
         color: #475569;
-        max-width: 85%;
+        max-width: 88%;
         margin: 0 auto;
     }
 
-    .cover-footer { border-top: 2px solid var(--gray-200); padding-top: 18px; }
-    .authors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 12px; }
-    .author-card { background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid var(--gray-200); }
-    .author-role { display: block; font-size: 0.7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
-    .author-name { display: block; font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 3px 0; }
-    .author-desc { font-size: 0.8rem; color: #64748b; }
-    .cover-date { text-align: center; font-size: 0.85rem; font-weight: 600; color: #64748b; }
+    .cover-footer { border-top: 2px solid var(--gray-200); padding-top: 20px; }
+    .authors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 14px; }
+    .author-card { background: #f8fafc; padding: 14px; border-radius: 6px; border: 1px solid var(--gray-200); }
+    .author-role { display: block; font-size: 0.72rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+    .author-name { display: block; font-size: 1.15rem; font-weight: 800; color: var(--primary); margin: 4px 0; }
+    .author-desc { font-size: 0.85rem; color: #64748b; }
+    .cover-date { text-align: center; font-size: 0.9rem; font-weight: 600; color: #64748b; }
 
-    /* Estilos del Contenido */
+    /* Contenido General */
     .page-break { page-break-after: always; }
-    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.2rem; color: var(--ista-blue); }
-    h3 { font-size: 1.05rem; }
-    p { margin-bottom: 10px; text-align: justify; }
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 22px; margin-bottom: 10px; }
+    h1 { font-size: 1.55rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 8px; }
+    h2 { font-size: 1.28rem; color: var(--ista-blue); }
+    h3 { font-size: 1.12rem; }
+    p { margin-bottom: 14px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 9.2pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
-    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 10px 10px; text-align: left; font-weight: 600; }
+    td { padding: 9px 10px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
-    .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
-    .card-title { font-weight: 700; color: var(--ista-blue); margin-bottom: 6px; font-size: 10.5pt; }
+    .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; margin: 16px 0; page-break-inside: avoid; }
+    .card-title { font-weight: 700; color: var(--ista-blue); margin-bottom: 8px; font-size: 11pt; }
 
-    .badge-req { display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 7.8pt; }
+    .badge-req { display: inline-block; background: #dbeafe; color: #1e40af; padding: 3px 10px; border-radius: 4px; font-weight: 700; font-size: 8.2pt; }
     .badge-success { background: #d1fae5; color: #065f46; }
     .badge-warning { background: #fef3c7; color: #92400e; }
 
-    ul, ol { margin-left: 20px; margin-bottom: 12px; }
-    li { margin-bottom: 5px; }
+    ul, ol { margin-left: 22px; margin-bottom: 14px; }
+    li { margin-bottom: 7px; text-align: justify; }
 
     .diagram-box {
         background: #ffffff;
         border: 2px solid var(--gray-200);
-        border-radius: 8px;
-        padding: 16px 10px;
-        margin: 16px 0;
+        border-radius: 10px;
+        padding: 20px 12px;
+        margin: 20px 0;
         text-align: center;
         page-break-inside: avoid;
     }
     .diagram-caption {
         font-weight: 700;
-        font-size: 9pt;
+        font-size: 9.5pt;
         color: var(--ista-blue);
-        margin-top: 10px;
+        margin-top: 12px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+    }
+    .explanation-box {
+        background: #f1f5f9;
+        border-left: 4px solid var(--ista-blue);
+        padding: 14px 16px;
+        margin: 14px 0;
+        font-size: 9.5pt;
+        color: #334155;
+        text-align: justify;
     }
 
     </style>
@@ -166,11 +175,11 @@
 <body>
 <div class="container">
 
-    <!-- ==================== PORTADA OFICIAL ==================== -->
+    <!-- ==================== PORTADA UNIVERSITARIA OFICIAL ==================== -->
     <div class="cover-page">
         <div class="cover-header">
             <div class="cover-logo-area">
-                <svg width="60" height="60" viewBox="0 0 100 100" style="margin-right:15px;">
+                <svg width="68" height="68" viewBox="0 0 100 100" style="margin-right:18px;">
                     <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
                     <path d="M20,40 Q35,35 50,40 Q65,45 80,40" fill="none" stroke="#2563eb" stroke-width="4"/>
                     <path d="M20,55 Q35,50 50,55 Q65,60 80,55" fill="none" stroke="#60a5fa" stroke-width="4"/>
@@ -178,77 +187,94 @@
                 </svg>
                 <div>
                     <div class="cover-title-univ">INSTITUTO SUPERIOR TECNOLÓGICO DEL AUSTRO</div>
-                    <div class="cover-subtitle-univ">EXCELENCIA ACADÉMICA Y TECNOLÓGICA</div>
+                    <div class="cover-subtitle-univ">FORMACIÓN TECNOLÓGICA DE ALTO NIVEL</div>
                 </div>
             </div>
             
             <div class="cover-meta-grid">
                 <div class="meta-box">
-                    <span class="meta-label">CARRERA</span>
+                    <span class="meta-label">CARRERA ACADÉMICA</span>
                     <span class="meta-value">TECNOLOGÍA SUPERIOR EN DESARROLLO DE SOFTWARE</span>
                 </div>
                 <div class="meta-box">
-                    <span class="meta-label">PROYECTO PACTE</span>
-                    <span class="meta-value">ANÁLISIS, DISEÑO E IMPLEMENTACIÓN DE SISTEMAS</span>
+                    <span class="meta-label">MODALIDAD DE PROYECTO</span>
+                    <span class="meta-value">PROYECTO DE APLICACIÓN PRÁCTICA Y TECNOLOGÍA (PACTE)</span>
                 </div>
             </div>
         </div>
 
         <div class="cover-center">
-            <div class="doc-badge">09_Mockups_y_Prototipos_del_Sistema_HIDROSYS • DOCUMENTO OFICIAL PACTE</div>
-            <h1 class="cover-project-title">SISTEMA INTEGRAL DE GESTIÓN DE CITAS, ATENCIÓN AUTOMATIZADA Y AGENDAMIENTO VÍA WHATSAPP BOT (HIDROSYS EC.)</h1>
+            <div class="doc-badge">09_Mockups_y_Prototipos_del_Sistema_HIDROSYS • DOCUMENTACIÓN TÉCNICA OFICIAL</div>
+            <h1 class="cover-project-title">SISTEMA INTEGRAL DE GESTIÓN DE CITAS, ASISTENTE VIRTUAL POR WHATSAPP Y CONTROL DE ÓRDENES TÉCNICAS (HIDROSYS EC.)</h1>
             <h2 class="cover-doc-title">9. MOCKUPS Y PROTOTIPOS DEL SISTEMA</h2>
-            <p class="cover-doc-summary">Diseño UI/UX del panel administrativo y flujos de WhatsApp</p>
+            <p class="cover-doc-summary">Maquetas UI del Dashboard web y simulación en WhatsApp móvil</p>
         </div>
 
         <div class="cover-footer">
             <div class="authors-grid">
                 <div class="author-card">
-                    <span class="author-role">ESTUDIANTE / AUTOR DEL PROYECTO</span>
+                    <span class="author-role">AUTOR / ESTUDIANTE INVESTIGADOR</span>
                     <span class="author-name">Freddy Peñafiel</span>
-                    <span class="author-desc">Desarrollador Principal • Proyecto Hidrosys EC.</span>
+                    <span class="author-desc">Desarrollador y Arquitecto Principal • Hidrosys EC.</span>
                 </div>
                 <div class="author-card">
-                    <span class="author-role">DOCENTE / TUTOR ACADÉMICO</span>
+                    <span class="author-role">DOCENTE / TUTOR DE PROYECTO</span>
                     <span class="author-name">Ing. Fabricio Lucero</span>
-                    <span class="author-desc">Tutor de Proyecto PACTE • IST del Austro</span>
+                    <span class="author-desc">Director Académico de Proyecto PACTE • ISTA</span>
                 </div>
             </div>
-            <div class="cover-date">Cuenca, Ecuador • Periodo Académico 2026</div>
+            <div class="cover-date">Cuenca, Ecuador • Año Académico 2026</div>
         </div>
     </div>
 
 <div class="content-body">
 
-<h1>9. MOCKUPS Y PROTOTIPO ALTA FIDELIDAD DEL SISTEMA</h1>
+<h1>9. MOCKUPS Y PROTOTIPOS ALTA FIDELIDAD DE INTERFACES</h1>
 <p>
-Esquema visual y maquetación de interfaces gráficas del panel administrativo y el flujo en WhatsApp.
+Este informe exhibe las maquetas estructurales y prototipos visuales de alta fidelidad que conforman el diseño premium de <strong>Hidrosys EC.</strong>.
 </p>
 
-<h2>9.1 Mockup de UI: Pestaña "📱 Escanear QR / WhatsApp" en Panel Web</h2>
+<h2>9.1 Mockup UI: Pestaña "📱 Escanear QR / WhatsApp" en Panel Web</h2>
 <div class="diagram-box">
-    <svg width="660" height="240" viewBox="0 0 660 240">
-        <!-- Marco de Navegador -->
-        <rect x="30" y="15" width="600" height="210" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+    <svg width="660" height="250" viewBox="0 0 660 250">
+        <!-- Ventana Navegador -->
+        <rect x="30" y="15" width="600" height="220" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
         <rect x="30" y="15" width="600" height="28" rx="8" fill="#002e6e"/>
-        <text x="50" y="33" font-size="10" font-weight="bold" fill="white">HIDROSYS EC. • Panel de Control Administrador</text>
+        <text x="50" y="33" font-size="10" font-weight="bold" fill="white">HIDROSYS EC. • Panel de Control Administrador (localhost:3000)</text>
 
-        <!-- Sidebar -->
-        <rect x="30" y="43" width="150" height="182" fill="#1e293b"/>
-        <text x="45" y="75" font-size="9.5" fill="#cbd5e1">📊 Dashboard</text>
-        <text x="45" y="105" font-size="9.5" fill="#cbd5e1">📅 Citas Médicas</text>
-        <rect x="35" y="125" width="140" height="26" rx="4" fill="#2563eb"/>
-        <text x="45" y="142" font-size="9.5" font-weight="bold" fill="white">📱 Escanear QR</text>
+        <!-- Menú Lateral -->
+        <rect x="30" y="43" width="160" height="192" fill="#1e293b"/>
+        <text x="45" y="75" font-size="9.5" fill="#cbd5e1">📊 Dashboard General</text>
+        <text x="45" y="105" font-size="9.5" fill="#cbd5e1">📅 Gestión de Citas</text>
+        <rect x="36" y="125" width="148" height="28" rx="4" fill="#2563eb"/>
+        <text x="48" y="143" font-size="9.5" font-weight="bold" fill="white">📱 Escanear QR</text>
 
-        <!-- Contenido principal -->
-        <rect x="200" y="60" width="410" height="150" rx="8" fill="white" stroke="#cbd5e1"/>
-        <text x="220" y="88" font-size="12" font-weight="bold" fill="#002e6e">Conexión en Vivo con WhatsApp Bot</text>
-        <rect x="220" y="105" width="180" height="35" rx="6" fill="#d1fae5" stroke="#065f46"/>
-        <text x="310" y="127" font-size="10" font-weight="bold" fill="#065f46" text-anchor="middle">¡Dispositivo Conectado! ✅</text>
-        <rect x="220" y="155" width="240" height="32" rx="6" fill="#eff6ff" stroke="#2563eb"/>
-        <text x="340" y="175" font-size="9.5" font-weight="bold" fill="#1e40af" text-anchor="middle">🔄 Reiniciar Conexión / Generar QR</text>
+        <!-- Área Central -->
+        <rect x="205" y="60" width="405" height="160" rx="8" fill="white" stroke="#cbd5e1" stroke-width="1.5"/>
+        <text x="230" y="90" font-size="12" font-weight="bold" fill="#002e6e">Conexión en Vivo con WhatsApp Bot</text>
+        <rect x="230" y="108" width="200" height="38" rx="6" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="330" y="131" font-size="10.5" font-weight="bold" fill="#065f46" text-anchor="middle">¡Dispositivo Conectado! ✅</text>
+        <rect x="230" y="160" width="260" height="34" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="360" y="182" font-size="9.5" font-weight="bold" fill="#1e40af" text-anchor="middle">🔄 Reiniciar Conexión / Generar QR</text>
     </svg>
-    <div class="diagram-caption">Fig 9.1 - Mockup Estructural de la Pestaña de Conexión QR en Panel Web</div>
+    <div class="diagram-caption">Figura 9.1 - Wireframe / Mockup Esquemático de la Pestaña de Reconexión QR</div>
+</div>
+
+<h2>9.2 Prototipo Interactivo: Simulación en Chat de WhatsApp</h2>
+<div class="card" style="background:#f0fdf4; border-color:#86efac;">
+    <div class="card-title" style="color:#166534;">Simulación Real de Interacción en Chat de WhatsApp (+593 968245633)</div>
+    <p style="font-family:monospace; font-size:9.5pt; color:#14532d;">
+    <strong>Cliente:</strong> Hola, buenas tardes.<br><br>
+    <strong>HIDROSYS EC. – Asistente Virtual:</strong><br>
+    💧 <em>HIDROSYS EC. – Asistente Virtual</em><br>
+    Atención al Cliente • Sistemas de Agua y Gas<br><br>
+    ¿En qué podemos ayudarte hoy? Escribe el <strong>número</strong> de tu opción:<br><br>
+    1️⃣ <strong>Agendar Cita / Inspección Técnica</strong><br>
+    2️⃣ <strong>Consultar Zonas de Cobertura y Horarios</strong><br>
+    3️⃣ <strong>Soporte Directo con Asesor (+593 968245633)</strong><br><br>
+    <strong>Cliente:</strong> 1<br>
+    <strong>HIDROSYS EC.:</strong> Excelente. Por favor indícame tu Nombre Completo para iniciar el agendamiento.
+    </p>
 </div>
 
 </div>
