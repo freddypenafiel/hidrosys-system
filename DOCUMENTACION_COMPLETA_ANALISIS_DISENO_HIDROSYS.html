@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informe Técnico - HIDROSYS EC. - Freddy Peñafiel</title>
+    <title>Documento Técnico de Análisis y Diseño de Sistemas - HIDROSYS EC.</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         @page {
             size: A4;
-            margin: 20mm;
+            margin: 15mm;
             @bottom-right {
                 content: counter(page);
                 font-family: 'Inter', sans-serif;
@@ -16,7 +16,7 @@
                 color: #64748b;
             }
             @bottom-left {
-                content: "HIDROSYS EC. • Proyecto de Análisis y Diseño";
+                content: "HIDROSYS EC. • Documento Técnico de Análisis y Diseño";
                 font-family: 'Inter', sans-serif;
                 font-size: 8pt;
                 color: #64748b;
@@ -35,6 +35,7 @@
             --gray-300: #cbd5e1;
             --gray-700: #334155;
             --gray-900: #0f172a;
+            --ista-blue: #002e6e;
         }
 
         * {
@@ -46,9 +47,9 @@
         body {
             font-family: 'Inter', sans-serif;
             color: var(--gray-700);
-            line-height: 1.5;
+            line-height: 1.4;
             background: white;
-            font-size: 9.5pt;
+            font-size: 9pt;
         }
 
         .container {
@@ -58,13 +59,13 @@
 
         /* cover page */
         .cover-page {
-            height: 90vh;
+            height: 92vh;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
             text-align: center;
-            padding: 40px 0;
+            padding: 30px 0;
             page-break-after: always;
         }
 
@@ -72,20 +73,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .cover-title-univ {
             font-family: 'Outfit', sans-serif;
-            font-size: 1.6rem;
+            font-size: 1.7rem;
             font-weight: 800;
-            color: var(--primary);
+            color: var(--ista-blue);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .cover-section {
-            margin: 15px 0;
+            margin: 12px 0;
         }
 
         .cover-label {
@@ -94,7 +95,7 @@
             letter-spacing: 2px;
             color: var(--accent);
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .cover-value {
@@ -106,48 +107,48 @@
 
         .cover-project-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 1.8rem;
+            font-size: 1.7rem;
             font-weight: 800;
             color: var(--primary);
             line-height: 1.3;
-            margin: 20px 0;
+            margin: 15px 0;
         }
 
         .cover-students {
             font-size: 1.05rem;
             font-weight: 600;
             color: var(--gray-700);
-            line-height: 1.6;
+            line-height: 1.5;
         }
 
         /* regular sections */
         .section-header {
-            margin-top: 35px;
-            margin-bottom: 18px;
+            margin-top: 30px;
+            margin-bottom: 15px;
             border-bottom: 2px solid var(--gray-200);
-            padding-bottom: 6px;
+            padding-bottom: 5px;
             page-break-before: always;
         }
 
         .section-header h2 {
             font-family: 'Outfit', sans-serif;
             color: var(--primary);
-            font-size: 1.45rem;
+            font-size: 1.35rem;
             font-weight: 700;
         }
 
         .section-header p {
             color: var(--accent);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
         p.intro-text {
-            font-size: 9.5pt;
-            margin-bottom: 12px;
+            font-size: 9pt;
+            margin-bottom: 10px;
             color: var(--gray-700);
             text-align: justify;
         }
@@ -156,8 +157,8 @@
         table.data-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 16px 0;
-            font-size: 9pt;
+            margin: 14px 0;
+            font-size: 8.5pt;
             page-break-inside: avoid;
         }
 
@@ -166,12 +167,12 @@
             color: white;
             font-weight: 600;
             text-align: left;
-            padding: 8px 10px;
+            padding: 6px 8px;
             font-family: 'Outfit', sans-serif;
         }
 
         table.data-table td {
-            padding: 8px 10px;
+            padding: 6px 8px;
             border-bottom: 1px solid var(--gray-200);
             vertical-align: top;
         }
@@ -212,29 +213,19 @@
 
         .tmpl-header-table td {
             border: 1px solid var(--primary) !important;
-            padding: 8px 12px !important;
+            padding: 6px 10px !important;
             background: white !important;
             vertical-align: middle !important;
         }
 
         .tmpl-logo-cell {
-            width: 180px;
+            width: 200px;
             text-align: center;
-        }
-
-        .tmpl-logo-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 7.5pt;
-            font-weight: 800;
-            color: var(--primary);
-            text-transform: uppercase;
-            margin-top: 4px;
-            line-height: 1.1;
         }
 
         .tmpl-main-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 800;
             text-align: center;
             color: var(--primary);
@@ -243,12 +234,12 @@
 
         .tmpl-meta-label {
             font-weight: 700;
-            font-size: 8.5pt;
+            font-size: 8pt;
             color: var(--primary);
         }
 
         .tmpl-meta-value {
-            font-size: 8.5pt;
+            font-size: 8pt;
             color: var(--gray-700);
         }
 
@@ -257,13 +248,13 @@
             width: 100%;
             border: 2px solid var(--primary);
             border-collapse: collapse;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             page-break-inside: avoid;
         }
 
         .hu-table td {
             border: 1px solid var(--primary) !important;
-            padding: 8px 12px !important;
+            padding: 6px 10px !important;
             background: white !important;
             vertical-align: top !important;
         }
@@ -279,11 +270,10 @@
     <!-- ==================== PORTADA ==================== -->
     <div class="cover-page">
         <div class="cover-logo-area">
-            <svg width="60" height="60" viewBox="0 0 100 100" style="margin-right:12px;">
-                <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#0f172a" stroke="#ffffff" stroke-width="2"/>
+            <svg width="55" height="55" viewBox="0 0 100 100" style="margin-right:12px;">
+                <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
                 <path d="M20,40 Q35,35 50,40 Q65,45 80,40" fill="none" stroke="#2563eb" stroke-width="4"/>
                 <path d="M20,55 Q35,50 50,55 Q65,60 80,55" fill="none" stroke="#60a5fa" stroke-width="4"/>
-                <path d="M20,70 Q35,65 50,70 Q65,75 80,70" fill="none" stroke="#93c5fd" stroke-width="4"/>
                 <polygon points="30,35 50,15 70,35" fill="#f59e0b"/>
             </svg>
             <div>
@@ -302,12 +292,12 @@
         </div>
 
         <div class="cover-section">
-            <div class="cover-label">Proyecto de Investigación Formativa</div>
+            <div class="cover-label">Proyecto Técnico Final</div>
             <div class="cover-project-title">SISTEMA INTEGRAL DE GESTIÓN DE CITAS Y AGENDAMIENTO AUTOMATIZADO CON WHATSAPP BOT (HIDROSYS EC.)</div>
         </div>
 
         <div class="cover-section">
-            <div class="cover-label">Tutor / Docente</div>
+            <div class="cover-label">Docente / Tutor</div>
             <div class="cover-value">Ing. Fabricio Lucero</div>
         </div>
 
@@ -318,34 +308,33 @@
             </div>
         </div>
 
-        <div style="font-size: 0.85rem; color: var(--gray-300);">Cuenca - Ecuador<br>2026</div>
+        <div style="font-size: 0.8rem; color: var(--gray-300);">Cuenca - Ecuador<br>2026</div>
     </div>
 
 
     <!-- ==================== ÁMBITO DEL SOFTWARE ==================== -->
     <div class="section-header">
-        <p>Estudio de Factibilidad</p>
+        <p>Capítulo 1</p>
         <h2>Ámbito del Software</h2>
     </div>
     
-    <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 8px; font-size: 1.15rem; color: var(--primary);">¿De qué trata el proyecto?</h3>
+    <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 6px; font-size: 1.1rem; color: var(--primary);">¿De qué trata el proyecto?</h3>
     <p class="intro-text">
-        Este proyecto consiste en el desarrollo de un Sistema de Gestión Integral para la empresa <strong>HIDROSYS EC.</strong>, especializada en la instalación y mantenimiento de sistemas hidráulicos, agua potable y gas en la provincia del Cañar. El objetivo principal es automatizar y optimizar la gestión de visitas técnicas, asignaciones de personal y validación de transferencias bancarias, procesos que anteriormente se manejaban manualmente.
+        Este proyecto consiste en el desarrollo de un Sistema de Gestión Integral de visitas e inspecciones técnicas para la empresa <strong>HIDROSYS EC.</strong>, especializada en la instalación y mantenimiento de sistemas hidráulicos, agua potable y redes de gas. El objetivo es automatizar y coordinar en tiempo real los agendamientos, validaciones de pagos y asignación de técnicos, optimizando los canales de comunicación mediante la vinculación directa de un bot de WhatsApp con la base de datos PostgreSQL de la empresa.
     </p>
 
-    <h3 style="font-family: 'Outfit', sans-serif; margin-top: 15px; margin-bottom: 8px; font-size: 1.15rem; color: var(--primary);">Problemas a resolver</h3>
+    <h3 style="font-family: 'Outfit', sans-serif; margin-top: 12px; margin-bottom: 6px; font-size: 1.1rem; color: var(--primary);">Problemas a resolver</h3>
     <p class="intro-text">
-        La gestión tradicional de citas técnicas enfrentaba los siguientes inconvenientes críticos:
+        Actualmente, la gestión de agendamientos en Hidrosys presentaba serios problemas logísticos:
     </p>
-    <ul style="margin-left: 20px; margin-bottom: 15px; font-size: 9.5pt; line-height: 1.6;">
-        <li>Manejo manual e ineficiente de comprobantes de pago por transferencias.</li>
-        <li>Ausencia de un canal interactivo y directo en tiempo real para coordinar con el cliente.</li>
-        <li>Consumo excesivo de tiempo administrativo y llamadas telefónicas para acordar horarios.</li>
-        <li>Falta de reportes unificados de encuestas de satisfacción post-servicio.</li>
-        <li>Pérdida de trazabilidad en la asignación de técnicos de campo.</li>
+    <ul style="margin-left: 20px; margin-bottom: 12px; font-size: 9pt; line-height: 1.6;">
+        <li><strong>Falta de un Canal Automatizado de Agendamiento:</strong> Los clientes debían realizar llamadas telefónicas reiteradas o coordinar por chat manual de WhatsApp con la oficina central, lo que generaba pérdida de tiempo.</li>
+        <li><strong>Proceso de Validación de Pagos Manual:</strong> La secretaria verificaba las transferencias bancarias manualmente contra el estado de cuenta y luego llamaba para confirmar la aprobación, retrasando la asignación del técnico.</li>
+        <li><strong>Falta de Seguimiento en Tiempo Real:</strong> Ausencia de un panel para el administrador que ordene las citas recientes primero, perdiendo la trazabilidad de las solicitudes urgentes.</li>
+        <li><strong>Pérdida de Conexión del Bot:</strong> La imposibilidad de vincular o restablecer de manera autónoma el canal de WhatsApp obligaba a depender constantemente de un programador especializado.</li>
     </ul>
 
-    <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 8px; font-size: 1.15rem; color: var(--primary);">Usuarios Involucrados y Roles</h3>
+    <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 8px; font-size: 1.1rem; color: var(--primary);">Usuarios Involucrados y Roles</h3>
     <table class="tmpl-header-table">
         <tr class="hu-bg-header">
             <td style="width: 25%; font-weight: 700;">ÁREA / DEPARTAMENTO</td>
@@ -355,48 +344,48 @@
         <tr>
             <td><strong>Operaciones / Clientes</strong></td>
             <td>Clientes Finales</td>
-            <td>Registran solicitudes de inspección vía web o dictado de voz, cargan comprobantes de pago y califican la atención.</td>
+            <td>Registran agendamientos, dictan descripciones por voz, suben imágenes de transferencias y califican la calidad del servicio técnico.</td>
         </tr>
         <tr>
             <td><strong>Administración</strong></td>
             <td>Administrador / Secretaria</td>
-            <td>Validan pagos bancarios, aprueban citas, asignan técnicos de campo y monitorean la vinculación del bot de WhatsApp.</td>
+            <td>Verifican comprobantes de transferencias, aprueban citas, asignan técnicos de campo y administran el bot por código QR.</td>
         </tr>
         <tr>
             <td><strong>Área Técnica</strong></td>
             <td>Técnicos de Campo</td>
-            <td>Consultan su agenda diaria de visitas y cargan los reportes de materiales e inspección al finalizar la labor.</td>
+            <td>Visualizan su agenda diaria, realizan visitas y registran informes técnicos de materiales directly en el sistema.</td>
         </tr>
         <tr>
             <td><strong>Sistemas</strong></td>
             <td>Asistente Virtual (Bot)</td>
-            <td>Interactúa automáticamente con los clientes por WhatsApp procesando comandos numéricos y enviando confirmaciones en vivo.</td>
+            <td>Procesa flujos de conversación de WhatsApp, traduce intenciones y notifica confirmaciones de agendamiento.</td>
         </tr>
     </table>
 
 
     <!-- ==================== ANÁLISIS DE FACTIBILIDAD ==================== -->
     <div class="section-header">
-        <p>Evaluación de Viabilidad</p>
+        <p>Capítulo 2</p>
         <h2>Factibilidad del Proyecto</h2>
     </div>
     
     <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 6px; font-size: 1.1rem; color: var(--primary);">Factibilidad Económica</h3>
     <p class="intro-text">
-        El desarrollo del sistema está estructurado bajo costos sumamente optimizados. Tomando como base un costo estimado de <strong>$5.00 dólares por hora</strong> y un esfuerzo aproximado de <strong>2,000 horas</strong> para la planificación, desarrollo de APIs, flujos del bot de WhatsApp y diseño front-end, el valor nominal del desarrollo equivale a <strong>$10,000.00 dólares</strong>. Al ser un proyecto individual desarrollado bajo supervisión académica, el costo real para la empresa se limita a los gastos de hosting y dominio web, estimados en un aproximado de <strong>$11.99 anuales</strong>, haciendo al proyecto altamente rentable.
+        El costo de horas hombre de desarrollo del sistema se estima en un costo nominal de <strong>$5.00 dólares la hora</strong>. Estimando un tiempo aproximado de <strong>2,000 horas de trabajo</strong> para completar las fases de análisis, modelado base, implementación del backend Node/PostgreSQL, configuración de Baileys y diseño front-end, el costo comercial del proyecto asciende a <strong>$10,000.00 dólares</strong>. Dado que el proyecto es realizado de forma individual por el estudiante Freddy Peñafiel bajo la tutoría del Ing. Fabricio Lucero, la empresa Hidrosys no asume costos de desarrollo, limitándose únicamente a los gastos de hosting y dominio web estimados en <strong>$11.99 anuales</strong>.
     </p>
 
     <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 6px; font-size: 1.1rem; color: var(--primary);">Factibilidad Técnica</h3>
     <p class="intro-text">
-        El sistema cuenta con la infraestructura tecnológica necesaria: servidores basados en Node.js, almacenamiento de base de datos relacional robusto en PostgreSQL, y la biblioteca Baileys que permite vincular la cuenta corporativa de WhatsApp sin depender de licencias costosas de Meta.
+        El sistema de Hidrosys se apoya en tecnologías consolidadas de alto rendimiento. En el backend se utiliza Node.js con Express, PostgreSQL como motor de base de datos relacional y Baileys para la emulación del protocolo de WhatsApp Web en el servidor local. En el frontend se implementa HTML5, CSS3 vainilla (sin frameworks pesados) y Javascript nativo para mayor velocidad.
     </p>
 
-    <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 12px; font-size: 1.1rem; color: var(--primary);">Matriz Resumen de Factibilidad</h3>
+    <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 10px; font-size: 1.1rem; color: var(--primary);">Matriz Resumen de Factibilidad</h3>
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 22%;">Dimensión</th>
-                <th style="width: 18%;">Evaluación</th>
+                <th style="width: 20%;">Dimensión</th>
+                <th style="width: 15%;">Evaluación</th>
                 <th>Justificación</th>
             </tr>
         </thead>
@@ -404,22 +393,22 @@
             <tr>
                 <td><strong>Económica</strong></td>
                 <td><span class="badge-green">VIABLE</span></td>
-                <td>Aprovechamiento de librerías de código abierto y hardware existente. Costo operativo anual mínimo de $11.99.</td>
+                <td>Uso exclusivo de librerías open-source. Costo total de dominio y despliegue anual de $11.99.</td>
             </tr>
             <tr>
                 <td><strong>Técnica</strong></td>
                 <td><span class="badge-green">VIABLE</span></td>
-                <td>Domino de Node.js, Express, PostgreSQL, y comunicación mediante WebSockets.</td>
+                <td>Infraestructura de microservicios robusta Node.js + PostgreSQL con pooling de conexiones activo.</td>
             </tr>
             <tr>
                 <td><strong>Operativa</strong></td>
                 <td><span class="badge-green">VIABLE</span></td>
-                <td>El personal administrativo gestiona de forma autónoma el código QR de WhatsApp desde el panel sin depender del programador.</td>
+                <td>Interfaz del bot integrada con el número 0968245633, permitiendo emparejamiento manual por QR por el dueño.</td>
             </tr>
             <tr>
                 <td><strong>Legal</strong></td>
                 <td><span class="badge-green">VIABLE</span></td>
-                <td>Cumple con la Ley Orgánica de Protección de Datos de Ecuador, encriptando contraseñas y datos del cliente.</td>
+                <td>Cumple con la Ley Orgánica de Protección de Datos Personales (LOPDP) de Ecuador en tránsito y almacenamiento.</td>
             </tr>
         </tbody>
     </table>
@@ -427,7 +416,7 @@
 
     <!-- ==================== REQUISITOS EN PLANTILLA OFICIAL ==================== -->
     <div class="section-header">
-        <p>Especificación Técnica</p>
+        <p>Capítulo 3</p>
         <h2>Requisitos Funcionales y No Funcionales</h2>
     </div>
 
@@ -435,29 +424,38 @@
     <table class="tmpl-header-table">
         <tr>
             <td class="tmpl-logo-cell">
-                <svg width="40" height="40" viewBox="0 0 100 100">
-                    <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#0f172a" stroke="#ffffff" stroke-width="2"/>
-                    <path d="M20,40 Q35,35 50,40 Q65,45 80,40" fill="none" stroke="#2563eb" stroke-width="4"/>
-                    <path d="M20,55 Q35,50 50,55 Q65,60 80,55" fill="none" stroke="#60a5fa" stroke-width="4"/>
-                </svg>
-                <div class="tmpl-logo-title">I.S.T.A.</div>
+                <div style="display:flex; align-items:center; text-align:left;">
+                    <svg width="35" height="35" viewBox="0 0 100 100" style="margin-right:8px;">
+                        <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
+                        <polygon points="50,15 35,35 65,35" fill="#f59e0b"/>
+                        <path d="M20,45 Q35,40 50,45 Q65,50 80,45" fill="none" stroke="#ffffff" stroke-width="2"/>
+                        <path d="M20,58 Q35,53 50,58 Q65,63 80,58" fill="none" stroke="#60a5fa" stroke-width="2"/>
+                    </svg>
+                    <div style="font-family:'Outfit', sans-serif; font-size:6pt; font-weight:800; color:#002e6e; line-height:1.2; text-transform:uppercase;">
+                        Instituto Superior<br>Tecnológico<br>del Austro
+                    </div>
+                </div>
             </td>
             <td class="tmpl-main-title">
                 Requisitos Funcionales y No Funcionales
             </td>
-            <td class="tmpl-logo-cell" style="width:130px;">
-                <svg width="35" height="35" viewBox="0 0 100 100">
-                    <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="5"/>
-                    <path d="M35,35 L20,50 L35,65" fill="none" stroke="#ef4444" stroke-width="6"/>
-                    <path d="M65,35 L80,50 L65,65" fill="none" stroke="#ef4444" stroke-width="6"/>
-                </svg>
-                <div class="tmpl-logo-title" style="color:#ef4444;">Desarrollo de Software</div>
+            <td class="tmpl-logo-cell">
+                <div style="display:flex; align-items:center; text-align:right; justify-content:flex-end;">
+                    <div style="font-family:'Outfit', sans-serif; font-size:6pt; font-weight:800; color:#1a1a1a; line-height:1.2; text-transform:uppercase; margin-right:8px;">
+                        Desarrollo de<br><span style="color:#ef4444;">Software</span>
+                    </div>
+                    <svg width="35" height="35" viewBox="0 0 100 100">
+                        <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="4"/>
+                        <path d="M35,35 L20,50 L35,65" fill="none" stroke="#ef4444" stroke-width="4"/>
+                        <path d="M65,35 L80,50 L65,65" fill="none" stroke="#ef4444" stroke-width="4"/>
+                    </svg>
+                </div>
             </td>
         </tr>
         <tr>
             <td colspan="2">
                 <span class="tmpl-meta-label">Área o Departamento:</span>
-                <span class="tmpl-meta-value">Análisis de Operaciones / HIDROSYS EC.</span>
+                <span class="tmpl-meta-value">Desarrollo de Sistemas / Operaciones Hidrosys</span>
             </td>
             <td>
                 <span class="tmpl-meta-label">Fecha:</span>
@@ -467,7 +465,7 @@
         <tr>
             <td colspan="3">
                 <span class="tmpl-meta-label">Elaborado por:</span>
-                <span class="tmpl-meta-value">Freddy Peñafiel (Estudiante)</span>
+                <span class="tmpl-meta-value">Freddy Peñafiel (Estudiante) &nbsp;|&nbsp; <strong>Tutor:</strong> Ing. Fabricio Lucero</span>
             </td>
         </tr>
     </table>
@@ -485,58 +483,79 @@
         <tbody>
             <tr>
                 <td><strong>RF-01</strong></td>
-                <td>El sistema debe permitir a los clientes agendar citas web y dictar descripciones por voz con transcripción automática.</td>
-                <td>El audio se convierte a texto de forma precisa en el campo de observaciones y guarda la cita como "Pre-agendado".</td>
+                <td>Registro de visitas técnicas web con opción de transcribir observaciones mediante dictado de voz.</td>
+                <td>El audio se procesa por la API WebSpeech y llena automáticamente el campo de texto.</td>
                 <td>Clientes / Soporte</td>
                 <td>Alta</td>
             </tr>
             <tr>
                 <td><strong>RF-02</strong></td>
-                <td>El bot de WhatsApp debe responder instantáneamente a "Hola" y ofrecer un menú numérico 1️⃣ al 4️⃣.</td>
-                <td>Respuesta inmediata en el número corporativo (+593968245633) y procesamiento seguro de la entrada del usuario.</td>
+                <td>El chatbot de WhatsApp debe ofrecer flujos numerados estables y procesar entradas directas (1, 2, 3, 4).</td>
+                <td>Respuesta inmediata en menos de 1 segundo al recibir consultas del cliente.</td>
                 <td>Clientes / Bot</td>
                 <td>Alta</td>
             </tr>
             <tr>
                 <td><strong>RF-03</strong></td>
-                <td>El sistema debe permitir subir comprobantes de transferencias bancarias mediante el portal web o chat de WhatsApp.</td>
-                <td>La imagen se almacena en el servidor y cambia el estado del agendamiento a "Reportado".</td>
+                <td>Carga digital de comprobantes de pago por transferencia desde la web o por mensaje del chatbot.</td>
+                <td>La base de datos actualiza el estado de la cita a "Reportado" y guarda la imagen.</td>
                 <td>Clientes / Secretaria</td>
                 <td>Alta</td>
             </tr>
             <tr>
                 <td><strong>RF-04</strong></td>
-                <td>El panel web administrativo debe listar las citas entrantes en la parte superior como más recientes.</td>
-                <td>Las nuevas citas reportadas aparecen en tiempo real arriba en la pantalla principal para rápida aprobación.</td>
+                <td>El panel de control administrativo debe mostrar las citas entrantes ordenadas por más recientes arriba.</td>
+                <td>Los agendamientos nuevos o comprobantes subidos se muestran primero en pantalla automáticamente.</td>
                 <td>Administrador</td>
                 <td>Alta</td>
             </tr>
             <tr>
                 <td><strong>RF-05</strong></td>
-                <td>El bot debe notificar al cliente en su WhatsApp cuando el administrador apruebe o rechace su pago.</td>
-                <td>Envío de mensaje automático al número del cliente detallando la aprobación, el técnico asignado y la fecha.</td>
-                <td>Clientes / Bot</td>
+                <td>El administrador puede aprobar pagos, lo que desencadena una notificación automática por WhatsApp al cliente.</td>
+                <td>El bot envía al cliente un mensaje indicando su confirmación, técnico asignado y fecha de visita.</td>
+                <td>Administrador / Cliente</td>
                 <td>Alta</td>
             </tr>
             <tr>
                 <td><strong>RF-06</strong></td>
-                <td>El panel administrativo debe incluir una pestaña en vivo para monitorear el QR de WhatsApp.</td>
-                <td>Pinta el código QR de vinculación y permite reiniciar el bot ante cualquier desconexión accidental.</td>
+                <td>Pestaña administrativa para el monitoreo del bot con visualizador de código QR y reinicio manual.</td>
+                <td>Muestra "Conectado" o pinta el código QR actualizado, y permite desvincular o refrescar la sesión del bot.</td>
                 <td>Administrador / TI</td>
                 <td>Alta</td>
             </tr>
             <tr>
+                <td><strong>RF-07</strong></td>
+                <td>Calificación de servicio técnico post-visita.</td>
+                <td>Permitir al cliente registrar una valoración (1-5 estrellas) y comentarios sobre el técnico.</td>
+                <td>Clientes</td>
+                <td>Media</td>
+            </tr>
+            <tr>
+                <td><strong>RF-08</strong></td>
+                <td>Carga de informe de campo de los técnicos.</td>
+                <td>El técnico puede ingresar detalles de inspección y materiales en la base de datos al culminar.</td>
+                <td>Técnicos</td>
+                <td>Media</td>
+            </tr>
+            <tr>
                 <td><strong>RNF-01</strong></td>
-                <td>El sistema web debe tener un estilo visual Glassmorphism responsivo y moderno.</td>
-                <td>Uso de transparencias con desenfoque de fondo y tipografía Outfit/Inter sin recargas bruscas.</td>
+                <td>Diseño responsivo moderno estilo Glassmorphism.</td>
+                <td>Carga veloz, fuentes Outfit/Inter y transparencias fluidas con CSS nativo.</td>
                 <td>Todos</td>
                 <td>Alta</td>
             </tr>
             <tr>
                 <td><strong>RNF-02</strong></td>
-                <td>Cifrado de credenciales de administradores y tokens de sesión JWT.</td>
-                <td>Las contraseñas se almacenan con hash en PostgreSQL y se requiere token JWT para endpoints protegidos.</td>
+                <td>Seguridad y cifrado de sesión mediante JWT.</td>
+                <td>El panel web administrativo exige login JWT y guarda el token local de manera segura.</td>
                 <td>Administrador / TI</td>
+                <td>Alta</td>
+            </tr>
+            <tr>
+                <td><strong>RNF-03</strong></td>
+                <td>Persistencia de sesión Baileys en almacenamiento local.</td>
+                <td>Las credenciales de WhatsApp se guardan cifradas en la carpeta `.wabaileys` evitando re-escanear el QR tras apagar.</td>
+                <td>TI</td>
                 <td>Alta</td>
             </tr>
         </tbody>
@@ -545,55 +564,60 @@
 
     <!-- ==================== HISTORIAS DE USUARIO EN PLANTILLA OFICIAL ==================== -->
     <div class="section-header">
-        <p>Especificación de Historias</p>
+        <p>Capítulo 4</p>
         <h2>Historias de Usuario (Plantillas Oficiales)</h2>
     </div>
 
     <!-- HU-01 -->
     <table class="hu-table">
         <tr>
-            <td rowspan="2" class="tmpl-logo-cell" style="width: 140px;">
-                <svg width="35" height="35" viewBox="0 0 100 100">
-                    <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#0f172a" stroke="#ffffff" stroke-width="2"/>
-                </svg>
-                <div class="tmpl-logo-title" style="font-size:6.5pt;">I.S.T.A.</div>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 140px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:left;">
+                    <svg width="35" height="35" viewBox="0 0 100 100" style="margin-right:5px;">
+                        <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
+                    </svg>
+                    <div style="font-family:'Outfit', sans-serif; font-size:5pt; font-weight:800; color:#002e6e; line-height:1.2; text-transform:uppercase;">
+                        I.S.T.A.
+                    </div>
+                </div>
             </td>
-            <td class="tmpl-main-title" style="font-size: 1rem; padding: 6px !important;">
+            <td class="tmpl-main-title" style="font-size: 0.95rem; padding: 6px !important; vertical-align: middle !important;">
                 DESCRIPCIÓN DE HISTORIAS DE USUARIO
             </td>
-            <td rowspan="2" class="tmpl-logo-cell" style="width: 120px;">
-                <svg width="30" height="30" viewBox="0 0 100 100">
-                    <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="5"/>
-                </svg>
-                <div class="tmpl-logo-title" style="color:#ef4444; font-size:6.5pt;">Desarrollo de Software</div>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 120px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:right; justify-content:flex-end;">
+                    <svg width="30" height="30" viewBox="0 0 100 100">
+                        <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="4"/>
+                    </svg>
+                </div>
             </td>
         </tr>
         <tr class="hu-bg-header">
-            <td style="padding: 4px !important;">
-                <strong>ID:</strong> HU-01 &nbsp;|&nbsp; <strong>Título:</strong> Formulario de Agendamiento e IA por Voz
+            <td style="padding: 4px !important; font-size: 8.5pt;">
+                <strong>ID:</strong> HU-01 &nbsp;|&nbsp; <strong>Título:</strong> Formulario de Agendamiento con Dictado por Voz
             </td>
         </tr>
         <tr>
-            <td class="hu-bg-header" style="font-weight: 700;">Descripción:</td>
-            <td colspan="2">
-                Como <strong>Cliente de Hidrosys</strong>, quiero un formulario web responsivo donde pueda registrar los datos de mi domicilio y dictar los detalles del problema por voz, para agilizar mi solicitud de visita técnica y evitar escribir textos extensos.
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Descripción:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                Como <strong>Cliente de Hidrosys</strong>, quiero un formulario web responsivo donde pueda ingresar mis datos de ubicación y dictar los detalles del problema técnico por voz, para registrar mi solicitud de manera rápida y sin complicaciones de escritura.
             </td>
         </tr>
         <tr>
-            <td class="hu-bg-header" style="font-weight: 700;">Atributos:</td>
-            <td colspan="2">
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Atributos:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
                 <strong>Estimación:</strong> 8 puntos de historia &nbsp;|&nbsp; 
                 <strong>Prioridad:</strong> Alta (100) &nbsp;|&nbsp; 
                 <strong>Dependiente de:</strong> Ninguna
             </td>
         </tr>
         <tr>
-            <td class="hu-bg-header" style="font-weight: 700;">Pruebas de Aceptación:</td>
-            <td colspan="2">
-                1. El sistema debe contar con un botón "🎙️" para activar el micrófono.<br>
-                2. Debe transcribir el dictado de voz de forma legible en el campo de texto.<br>
-                3. Debe validar que la parroquia y cantón correspondan a la provincia del Cañar.<br>
-                4. Debe guardar el registro en la base de datos PostgreSQL en estado "Pre-agendado".
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Pruebas de Aceptación:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                1. El sistema debe contar con un botón "🎙️" para iniciar grabación en observaciones.<br>
+                2. La transcripción debe generarse en tiempo real utilizando la API WebSpeech.<br>
+                3. Validar obligatoriedad de campos residenciales en los cantones del Cañar.<br>
+                4. Almacenar el registro en PostgreSQL en estado "Pre-agendado".
             </td>
         </tr>
     </table>
@@ -601,48 +625,53 @@
     <!-- HU-02 -->
     <table class="hu-table">
         <tr>
-            <td rowspan="2" class="tmpl-logo-cell" style="width: 140px;">
-                <svg width="35" height="35" viewBox="0 0 100 100">
-                    <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#0f172a" stroke="#ffffff" stroke-width="2"/>
-                </svg>
-                <div class="tmpl-logo-title" style="font-size:6.5pt;">I.S.T.A.</div>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 140px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:left;">
+                    <svg width="35" height="35" viewBox="0 0 100 100" style="margin-right:5px;">
+                        <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
+                    </svg>
+                    <div style="font-family:'Outfit', sans-serif; font-size:5pt; font-weight:800; color:#002e6e; line-height:1.2; text-transform:uppercase;">
+                        I.S.T.A.
+                    </div>
+                </div>
             </td>
-            <td class="tmpl-main-title" style="font-size: 1rem; padding: 6px !important;">
+            <td class="tmpl-main-title" style="font-size: 0.95rem; padding: 6px !important; vertical-align: middle !important;">
                 DESCRIPCIÓN DE HISTORIAS DE USUARIO
             </td>
-            <td rowspan="2" class="tmpl-logo-cell" style="width: 120px;">
-                <svg width="30" height="30" viewBox="0 0 100 100">
-                    <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="5"/>
-                </svg>
-                <div class="tmpl-logo-title" style="color:#ef4444; font-size:6.5pt;">Desarrollo de Software</div>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 120px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:right; justify-content:flex-end;">
+                    <svg width="30" height="30" viewBox="0 0 100 100">
+                        <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="4"/>
+                    </svg>
+                </div>
             </td>
         </tr>
         <tr class="hu-bg-header">
-            <td style="padding: 4px !important;">
-                <strong>ID:</strong> HU-02 &nbsp;|&nbsp; <strong>Título:</strong> Asistente de WhatsApp y Notificación de Pagos
+            <td style="padding: 4px !important; font-size: 8.5pt;">
+                <strong>ID:</strong> HU-02 &nbsp;|&nbsp; <strong>Título:</strong> Chatbot Interactivo en WhatsApp (Estructurado)
             </td>
         </tr>
         <tr>
-            <td class="hu-bg-header" style="font-weight: 700;">Descripción:</td>
-            <td colspan="2">
-                Como <strong>Cliente de Hidrosys</strong>, quiero chatear con un bot interactivo de WhatsApp que me permita consultar opciones escribiendo números simples (1, 2, 3, 4) y recibir una notificación automática en cuanto el administrador valide mi comprobante de pago.
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Descripción:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                Como <strong>Cliente de Hidrosys</strong>, quiero que al escribir "Hola" al WhatsApp corporativo (0968245633) el bot me devuelva un menú numerado para agendar, reportar pagos o consultar estados digitando simplemente números de opción, evitando que tenga que redactar.
             </td>
         </tr>
         <tr>
-            <td class="hu-bg-header" style="font-weight: 700;">Atributos:</td>
-            <td colspan="2">
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Atributos:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
                 <strong>Estimación:</strong> 9 puntos de historia &nbsp;|&nbsp; 
                 <strong>Prioridad:</strong> Alta (95) &nbsp;|&nbsp; 
                 <strong>Dependiente de:</strong> HU-01
             </td>
         </tr>
         <tr>
-            <td class="hu-bg-header" style="font-weight: 700;">Pruebas de Aceptación:</td>
-            <td colspan="2">
-                1. El bot debe responder de inmediato al mensaje "Hola" con el menú de opciones principal.<br>
-                2. Debe permitir procesar números de teléfonos válidos para reportar pagos.<br>
-                3. Al cambiar el estado de pago a "Aprobado" en el panel administrativo, el bot debe despachar la notificación al WhatsApp del cliente.<br>
-                4. Las respuestas deben enrutarse correctamente al JID activo del emisor.
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Pruebas de Aceptación:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                1. El bot debe responder de inmediato con opciones numeradas claras.<br>
+                2. Reconocer y guiar al usuario si presiona o digita "1", "2", "3" o "4".<br>
+                3. Si el bot recibe una opción incorrecta, debe responder amablemente con el menú de nuevo.<br>
+                4. Cero desconexiones del bot durante flujos cruzados de mensajes.
             </td>
         </tr>
     </table>
@@ -650,48 +679,266 @@
     <!-- HU-03 -->
     <table class="hu-table">
         <tr>
-            <td rowspan="2" class="tmpl-logo-cell" style="width: 140px;">
-                <svg width="35" height="35" viewBox="0 0 100 100">
-                    <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#0f172a" stroke="#ffffff" stroke-width="2"/>
-                </svg>
-                <div class="tmpl-logo-title" style="font-size:6.5pt;">I.S.T.A.</div>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 140px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:left;">
+                    <svg width="35" height="35" viewBox="0 0 100 100" style="margin-right:5px;">
+                        <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
+                    </svg>
+                    <div style="font-family:'Outfit', sans-serif; font-size:5pt; font-weight:800; color:#002e6e; line-height:1.2; text-transform:uppercase;">
+                        I.S.T.A.
+                    </div>
+                </div>
             </td>
-            <td class="tmpl-main-title" style="font-size: 1rem; padding: 6px !important;">
+            <td class="tmpl-main-title" style="font-size: 0.95rem; padding: 6px !important; vertical-align: middle !important;">
                 DESCRIPCIÓN DE HISTORIAS DE USUARIO
             </td>
-            <td rowspan="2" class="tmpl-logo-cell" style="width: 120px;">
-                <svg width="30" height="30" viewBox="0 0 100 100">
-                    <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="5"/>
-                </svg>
-                <div class="tmpl-logo-title" style="color:#ef4444; font-size:6.5pt;">Desarrollo de Software</div>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 120px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:right; justify-content:flex-end;">
+                    <svg width="30" height="30" viewBox="0 0 100 100">
+                        <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="4"/>
+                    </svg>
+                </div>
             </td>
         </tr>
         <tr class="hu-bg-header">
-            <td style="padding: 4px !important;">
-                <strong>ID:</strong> HU-03 &nbsp;|&nbsp; <strong>Título:</strong> Monitoreo de Código QR y Estado del Bot
+            <td style="padding: 4px !important; font-size: 8.5pt;">
+                <strong>ID:</strong> HU-03 &nbsp;|&nbsp; <strong>Título:</strong> Reporte de Pago y Comprobante
             </td>
         </tr>
         <tr>
-            <td class="hu-bg-header" style="font-weight: 700;">Descripción:</td>
-            <td colspan="2">
-                Como <strong>Administrador del Sistema</strong>, quiero una interfaz web específica en mi panel donde pueda ver el código QR y comprobar el estado de conexión del bot de WhatsApp corporativo en tiempo real, para poder vincular o reiniciar el bot sin requerir asistencia de soporte técnico.
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Descripción:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                Como <strong>Cliente de Hidrosys</strong>, quiero reportar el pago de mi visita cargando la imagen de mi transferencia (ya sea por el portal web o enviando la imagen del recibo al chat de WhatsApp), para que validen mi agendamiento sin tener que ir a la oficina.
             </td>
         </tr>
         <tr>
-            <td class="hu-bg-header" style="font-weight: 700;">Atributos:</td>
-            <td colspan="2">
-                <strong>Estimación:</strong> 6 puntos de historia &nbsp;|&nbsp; 
-                <strong>Prioridad:</strong> Alta (85) &nbsp;|&nbsp; 
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Atributos:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                <strong>Estimación:</strong> 7 puntos de historia &nbsp;|&nbsp; 
+                <strong>Prioridad:</strong> Alta (90) &nbsp;|&nbsp; 
                 <strong>Dependiente de:</strong> HU-02
             </td>
         </tr>
         <tr>
-            <td class="hu-bg-header" style="font-weight: 700;">Pruebas de Aceptación:</td>
-            <td colspan="2">
-                1. El sistema debe pintar la pestaña "Escanear QR / WhatsApp" en el panel administrativo seguro.<br>
-                2. Si el bot se desvincula, la pantalla debe cargar automáticamente el código QR generado por Baileys.<br>
-                3. Al vincular el celular corporativo, la interfaz debe actualizarse a "CONECTADO" sin recargar.<br>
-                4. El botón "Reiniciar Conexión / Generar QR" debe requerir confirmación antes de borrar la sesión local.
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Pruebas de Aceptación:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                1. El bot de WhatsApp debe procesar y guardar imágenes de comprobantes cuando el cliente esté en el flujo de pagos.<br>
+                2. Guardar la imagen en el directorio del servidor de manera única.<br>
+                3. Cambiar el estado de la cita técnica a "Reportado" en la base de datos.<br>
+                4. Mostrar visualmente la imagen del comprobante en el panel del administrador.
+            </td>
+        </tr>
+    </table>
+
+    <!-- HU-04 -->
+    <table class="hu-table">
+        <tr>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 140px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:left;">
+                    <svg width="35" height="35" viewBox="0 0 100 100" style="margin-right:5px;">
+                        <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
+                    </svg>
+                    <div style="font-family:'Outfit', sans-serif; font-size:5pt; font-weight:800; color:#002e6e; line-height:1.2; text-transform:uppercase;">
+                        I.S.T.A.
+                    </div>
+                </div>
+            </td>
+            <td class="tmpl-main-title" style="font-size: 0.95rem; padding: 6px !important; vertical-align: middle !important;">
+                DESCRIPCIÓN DE HISTORIAS DE USUARIO
+            </td>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 120px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:right; justify-content:flex-end;">
+                    <svg width="30" height="30" viewBox="0 0 100 100">
+                        <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="4"/>
+                    </svg>
+                </div>
+            </td>
+        </tr>
+        <tr class="hu-bg-header">
+            <td style="padding: 4px !important; font-size: 8.5pt;">
+                <strong>ID:</strong> HU-04 &nbsp;|&nbsp; <strong>Título:</strong> Visualización de Recientes y Agenda en Administración
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Descripción:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                Como <strong>Administrador de Hidrosys</strong>, quiero que las citas técnicas y mensajes entrantes de clientes se ordenen anteponiendo siempre las más recientes en la parte superior del listado, para dar respuesta prioritaria a los comprobantes de pago recién subidos.
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Atributos:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                <strong>Estimación:</strong> 5 puntos de historia &nbsp;|&nbsp; 
+                <strong>Prioridad:</strong> Alta (90) &nbsp;|&nbsp; 
+                <strong>Dependiente de:</strong> HU-03
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Pruebas de Aceptación:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                1. La base de datos debe consultar ordenando por fecha de creación descendente (`ORDER BY created_at DESC`).<br>
+                2. Las nuevas citas deben aparecer en la parte superior de la vista web sin requerir re-ordenaciones manuales.<br>
+                3. Alerta visual resaltada en amarillo para estados "Reportado" recién llegados.
+            </td>
+        </tr>
+    </table>
+
+    <!-- HU-05 -->
+    <table class="hu-table">
+        <tr>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 140px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:left;">
+                    <svg width="35" height="35" viewBox="0 0 100 100" style="margin-right:5px;">
+                        <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
+                    </svg>
+                    <div style="font-family:'Outfit', sans-serif; font-size:5pt; font-weight:800; color:#002e6e; line-height:1.2; text-transform:uppercase;">
+                        I.S.T.A.
+                    </div>
+                </div>
+            </td>
+            <td class="tmpl-main-title" style="font-size: 0.95rem; padding: 6px !important; vertical-align: middle !important;">
+                DESCRIPCIÓN DE HISTORIAS DE USUARIO
+            </td>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 120px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:right; justify-content:flex-end;">
+                    <svg width="30" height="30" viewBox="0 0 100 100">
+                        <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="4"/>
+                    </svg>
+                </div>
+            </td>
+        </tr>
+        <tr class="hu-bg-header">
+            <td style="padding: 4px !important; font-size: 8.5pt;">
+                <strong>ID:</strong> HU-05 &nbsp;|&nbsp; <strong>Título:</strong> Aprobación y Asignación de Técnico de Campo
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Descripción:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                Como <strong>Administrador de Hidrosys</strong>, quiero revisar la imagen de la transferencia subida por el cliente, asignarle un técnico de campo de la lista y aprobar su pago con un solo botón, actualizando de forma segura su cita a "Confirmado".
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Atributos:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                <strong>Estimación:</strong> 6 puntos de historia &nbsp;|&nbsp; 
+                <strong>Prioridad:</strong> Alta (95) &nbsp;|&nbsp; 
+                <strong>Dependiente de:</strong> HU-04
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Pruebas de Aceptación:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                1. Mostrar modal emergente con el comprobante de transferencia bancaria.<br>
+                2. Impedir la aprobación sin haber seleccionado previamente un Técnico de la lista.<br>
+                3. Al dar clic en "Aprobar", la base de datos cambia el estado a "Confirmado" e inserta la relación técnico-cita.
+            </td>
+        </tr>
+    </table>
+
+    <!-- HU-06 -->
+    <table class="hu-table">
+        <tr>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 140px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:left;">
+                    <svg width="35" height="35" viewBox="0 0 100 100" style="margin-right:5px;">
+                        <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
+                    </svg>
+                    <div style="font-family:'Outfit', sans-serif; font-size:5pt; font-weight:800; color:#002e6e; line-height:1.2; text-transform:uppercase;">
+                        I.S.T.A.
+                    </div>
+                </div>
+            </td>
+            <td class="tmpl-main-title" style="font-size: 0.95rem; padding: 6px !important; vertical-align: middle !important;">
+                DESCRIPCIÓN DE HISTORIAS DE USUARIO
+            </td>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 120px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:right; justify-content:flex-end;">
+                    <svg width="30" height="30" viewBox="0 0 100 100">
+                        <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="4"/>
+                    </svg>
+                </div>
+            </td>
+        </tr>
+        <tr class="hu-bg-header">
+            <td style="padding: 4px !important; font-size: 8.5pt;">
+                <strong>ID:</strong> HU-06 &nbsp;|&nbsp; <strong>Título:</strong> Notificación WhatsApp y Confirmación de Disponibilidad del Cliente
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Descripción:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                Como <strong>Cliente de Hidrosys</strong>, quiero recibir una notificación automática en mi WhatsApp en cuanto se apruebe mi pago y que el bot me pregunte mi disponibilidad, para que al responder "SÍ" la cita se actualice inmediatamente a "Confirmado por Cliente".
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Atributos:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                <strong>Estimación:</strong> 7 puntos de historia &nbsp;|&nbsp; 
+                <strong>Prioridad:</strong> Alta (90) &nbsp;|&nbsp; 
+                <strong>Dependiente de:</strong> HU-05
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Pruebas de Aceptación:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                1. El bot despacha el mensaje incluyendo el nombre del técnico y la fecha pactada.<br>
+                2. Si el cliente escribe "SÍ", el bot actualiza el estado a "Conf. Cliente" (Confirmado por Cliente).<br>
+                3. Si responde "NO", el bot indica que se reagendará la cita mediante soporte.<br>
+                4. Toda la validación de JID multidispositivo o linked device debe enrutarse correctamente al móvil.
+            </td>
+        </tr>
+    </table>
+
+    <!-- HU-07 -->
+    <table class="hu-table">
+        <tr>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 140px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:left;">
+                    <svg width="35" height="35" viewBox="0 0 100 100" style="margin-right:5px;">
+                        <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
+                    </svg>
+                    <div style="font-family:'Outfit', sans-serif; font-size:5pt; font-weight:800; color:#002e6e; line-height:1.2; text-transform:uppercase;">
+                        I.S.T.A.
+                    </div>
+                </div>
+            </td>
+            <td class="tmpl-main-title" style="font-size: 0.95rem; padding: 6px !important; vertical-align: middle !important;">
+                DESCRIPCIÓN DE HISTORIAS DE USUARIO
+            </td>
+            <td rowspan="2" class="tmpl-logo-cell" style="width: 120px; vertical-align: middle !important;">
+                <div style="display:flex; align-items:center; text-align:right; justify-content:flex-end;">
+                    <svg width="30" height="30" viewBox="0 0 100 100">
+                        <polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="#ef4444" stroke-width="4"/>
+                    </svg>
+                </div>
+            </td>
+        </tr>
+        <tr class="hu-bg-header">
+            <td style="padding: 4px !important; font-size: 8.5pt;">
+                <strong>ID:</strong> HU-07 &nbsp;|&nbsp; <strong>Título:</strong> Módulo de Código QR y Control de Conexión del Bot
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Descripción:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                Como <strong>Administrador de Sistemas</strong>, quiero que el panel web incluya una pestaña llamada "Escanear QR / WhatsApp" que dibuje el código QR de Baileys cuando el bot esté desconectado y se actualice en tiempo real, para poder vincular la cuenta sin tocar el código fuente.
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Atributos:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                <strong>Estimación:</strong> 6 puntos de historia &nbsp;|&nbsp; 
+                <strong>Prioridad:</strong> Alta (95) &nbsp;|&nbsp; 
+                <strong>Dependiente de:</strong> Ninguna
+            </td>
+        </tr>
+        <tr>
+            <td class="hu-bg-header" style="font-weight: 700; font-size: 8.5pt;">Pruebas de Aceptación:</td>
+            <td colspan="2" style="font-size: 8.5pt;">
+                1. El visualizador de QR debe consultar cada 4 segundos el endpoint `/api/wa/status`.<br>
+                2. Si el bot se vincula desde el móvil del dueño, el modal de QR debe transformarse automáticamente a "CONECTADO".<br>
+                3. Incluir un botón seguro "Reiniciar Conexión / Generar QR" para borrar sesiones corruptas.
             </td>
         </tr>
     </table>
@@ -699,7 +946,7 @@
 
     <!-- ==================== CASOS DE USO ==================== -->
     <div class="section-header">
-        <p>Modelado UML</p>
+        <p>Capítulo 5</p>
         <h2>Diagrama de Casos de Uso Cero</h2>
     </div>
 
@@ -747,8 +994,8 @@
 
     <!-- ==================== DIAGRAMA DE ACTIVIDADES ==================== -->
     <div class="section-header">
-        <p>Flujo del Negocio</p>
-        <h2>8. Diagrama de Actividades (Secuencia de Operaciones)</h2>
+        <p>Capítulo 6</p>
+        <h2>Diagrama de Actividades (Secuencia de Operaciones)</h2>
     </div>
     
     <svg width="750" height="380" viewBox="0 0 750 380" style="background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0; margin:20px auto; display:block;">
@@ -798,15 +1045,18 @@
 
     <!-- ==================== MOCKUPS Y PROTOTIPO ==================== -->
     <div class="section-header">
-        <p>Fronteras del Software</p>
-        <h2>9 y 10. Mockup y Prototipo del Sistema</h2>
+        <p>Capítulo 7</p>
+        <h2>Mockup y Prototipo del Sistema</h2>
     </div>
     <p class="intro-text">
-        El diseño del panel administrativo se implementó mediante una arquitectura de componentes responsivos utilizando **CSS Custom Properties** para un modo claro y estilizado de alto impacto visual (Glassmorphism). Las tarjetas de métricas muestran en tiempo real las estadísticas almacenadas en la base de datos PostgreSQL, mientras que la sección **Agenda y Citas** re-ordena los registros anteponiendo siempre las solicitudes más recientes en la parte superior para evitar que la secretaria pierda visibilidad de los comprobantes recién subidos.
+        El prototipo de HIDROSYS EC. está completamente desarrollado utilizando una arquitectura de comunicación en tiempo real. La base de datos relacional PostgreSQL contiene esquemas estructurados para resguardar la consistencia transaccional:
     </p>
-    <p class="intro-text">
-        El prototipo actual está completamente operativo en el entorno de desarrollo local y desplegado en Render, garantizando que el bot de WhatsApp se reconecte automáticamente leyendo las credenciales cifradas y validadas de la carpeta `.wabaileys` ante reinicios fortuitos del servidor.
-    </p>
+    <ul style="margin-left: 20px; margin-bottom: 12px; font-size: 9pt; line-height: 1.6;">
+        <li><strong>Tabla `appointments`:</strong> Almacena ID único, datos de contacto del cliente, dirección georreferenciada en Cañar, observaciones transcritas por voz, ruta del comprobante de transferencia y estado logístico (Pre-agendado, Reportado, Confirmado, Confirmado por Cliente).</li>
+        <li><strong>Tabla `technicians`:</strong> Almacena ID, nombre del técnico de campo, especialidad y zonas geográficas asignadas.</li>
+        <li><strong>Tabla `clients`:</strong> Resguarda historial de contactos de clientes para agilizar agendamientos recurrentes.</li>
+        <li><strong>Tabla `surveys`:</strong> Almacena las encuestas de satisfacción (estrellas y comentarios) que los clientes envían tras completarse la visita.</li>
+    </ul>
 
 </div>
 </body>
