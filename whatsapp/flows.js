@@ -61,18 +61,7 @@ function clearSession(phone) {
 // MENÚ PRINCIPAL
 // ============================================================
 function menuPrincipal(prefix = '') {
-    return {
-        isButtons: true,
-        title: '💧 HIDROSYS EC. – Asistente Virtual',
-        footer: 'HIDROSYS EC. • Atención al Cliente',
-        text: `${prefix ? prefix + '\n\n' : ''}¿En qué podemos ayudarte hoy?\nPulsa uno de los *botones de respuesta rápida* abajo o escribe el número de tu opción:\n\n1️⃣ Agendar visita técnica\n2️⃣ Reportar comprobante de pago\n3️⃣ Consultar estado de mi cita\n4️⃣ Ver catálogo / precios`,
-        buttons: [
-            { id: '1', label: '1️⃣ Agendar visita' },
-            { id: '2', label: '2️⃣ Reportar pago' },
-            { id: '3', label: '3️⃣ Estado de cita' },
-            { id: '4', label: '4️⃣ Catálogo precios' }
-        ]
-    };
+    return `${prefix ? prefix + '\n\n' : ''}💧 *HIDROSYS EC. – Asistente Virtual*\n_Atención al Cliente • Sistemas de Agua y Gas_\n\n¿En qué podemos ayudarte hoy? Escribe el *número* de tu opción:\n\n1️⃣ *Agendar visita técnica*\n2️⃣ *Reportar comprobante de pago*\n3️⃣ *Consultar estado de mi cita*\n4️⃣ *Ver catálogo / precios*\n\n_Escribe 1, 2, 3 o 4 para continuar._`;
 }
 
 // ============================================================
