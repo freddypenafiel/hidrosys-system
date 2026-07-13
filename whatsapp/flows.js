@@ -71,10 +71,10 @@ function menuPrincipal(prefix = '') {
             {
                 title: 'Servicios de HIDROSYS EC.',
                 rows: [
-                    { rowId: '1', title: '1. Agendar visita técnica', description: 'Programar instalación o reparación ($15.00)' },
-                    { rowId: '2', title: '2. Reportar comprobante', description: 'Registrar pago de tu cita técnica' },
-                    { rowId: '3', title: '3. Consultar estado de cita', description: 'Verificar confirmación y técnico asignado' },
-                    { rowId: '4', title: '4. Ver catálogo / precios', description: 'Listado oficial de servicios y tarifas' }
+                    { rowId: '1', title: '1. Agendar visita', description: 'Programar instalación o reparación ($15.00)' },
+                    { rowId: '2', title: '2. Reportar pago', description: 'Registrar pago de tu cita técnica' },
+                    { rowId: '3', title: '3. Estado de cita', description: 'Verificar confirmación y técnico asignado' },
+                    { rowId: '4', title: '4. Ver catálogo', description: 'Listado oficial de servicios y tarifas' }
                 ]
             }
         ]

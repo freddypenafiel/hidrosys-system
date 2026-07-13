@@ -8,6 +8,8 @@ const {
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     makeInMemoryStore,
+    proto,
+    generateWAMessageFromContent,
 } = require('@whiskeysockets/baileys');
 
 const { Boom }          = require('@hapi/boom');
@@ -216,15 +218,50 @@ async function sendMessage(jidOrPhone, text) {
 
     try {
         if (typeof text === 'object' && text !== null && text.isList) {
-            const listMsg = {
-                text: text.text,
-                footer: text.footer || 'HIDROSYS EC. • Atención al Cliente',
-                title: text.title || 'Menú de Opciones',
-                buttonText: text.buttonText || '📋 Seleccionar opción',
-                sections: text.sections
-            };
-            await waSocket.sendMessage(jid, listMsg);
-            console.log(`[WA Bot] ✅ Lista interactiva (List Message) enviada a: ${jid}`);
+            const sections = (text.sections || []).map(sec => ({
+                title: String(sec.title || 'Opciones').slice(0, 24),
+                rows: (sec.rows || []).map(r => ({
+                    id: String(r.rowId || r.id || ''),
+                    title: String(r.title || '').slice(0, 24),
+                    description: String(r.description || '').slice(0, 72)
+                }))
+            }));
+
+            const interactiveMessage = proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({ text: text.text }),
+                footer: proto.Message.InteractiveMessage.Footer.create({ text: text.footer || 'HIDROSYS EC. • Atención al Cliente' }),
+                header: text.title ? proto.Message.InteractiveMessage.Header.create({ title: text.title.slice(0, 60), subtitle: '' }) : undefined,
+                nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: [
+                        {
+                            name: 'single_select',
+                            buttonParamsJson: JSON.stringify({
+                                title: (text.buttonText || '☰ Ver opciones').slice(0, 20),
+                                sections: sections
+                            })
+                        }
+                    ]
+                })
+            });
+
+            const msg = generateWAMessageFromContent(
+                jid,
+                {
+                    viewOnceMessage: {
+                        message: {
+                            messageContextInfo: {
+                                deviceListMetadata: {},
+                                deviceListMetadataVersion: 2
+                            },
+                            interactiveMessage: interactiveMessage
+                        }
+                    }
+                },
+                { userJid: waSocket.user.id }
+            );
+
+            await waSocket.relayMessage(jid, msg.message, { messageId: msg.key.id });
+            console.log(`[WA Bot] ✅ Menú interactivo nativo (single_select) enviado a: ${jid}`);
             return true;
         }
 
