@@ -244,6 +244,7 @@ const PAGE_TITLES = {
     'admin-clients':       ['Clientes Activos', 'Base de datos de clientes'],
     'admin-leads':         ['Prospectos', 'Solicitudes de proyectos'],
     'admin-surveys':       ['Satisfacción', 'Encuestas de calidad del servicio'],
+    'admin-wa':            ['Vincular WhatsApp / QR', 'Sincronización corporativa en vivo (+593968245633)'],
 };
 
 function navigateTo(pageId) {
@@ -268,6 +269,7 @@ function navigateTo(pageId) {
         'admin-clients':      loadClients,
         'admin-leads':        loadLeads,
         'admin-surveys':      loadSurveys,
+        'admin-wa':           loadAdminWAStatus,
         'payments':           loadPaymentDropdown,
         'survey':             loadSurveyDropdown,
     };
@@ -1394,3 +1396,100 @@ function statusBadge(status) {
     };
     return `<span class="badge ${map[status]||'badge-gray'}">${status||'—'}</span>`;
 }
+
+// ============================================================
+// ADMIN WHATSAPP QR & CONEXIÓN EN VIVO
+// ============================================================
+let waPollInterval = null;
+
+async function loadAdminWAStatus() {
+    clearInterval(waPollInterval);
+    await fetchAdminWAStatus();
+
+    // Auto-refrescar cada 4 segundos mientras se esté en la pestaña admin-wa
+    waPollInterval = setInterval(() => {
+        const page = document.getElementById('page-admin-wa');
+        if (page && page.classList.contains('active')) {
+            fetchAdminWAStatus(true);
+        } else {
+            clearInterval(waPollInterval);
+        }
+    }, 4000);
+}
+
+async function fetchAdminWAStatus(silent = false) {
+    const badge = document.getElementById('wa-panel-status-badge');
+    const phoneEl = document.getElementById('wa-panel-phone');
+    const detailEl = document.getElementById('wa-panel-detail');
+    const navBadge = document.getElementById('wa-nav-badge');
+    const qrLoading = document.getElementById('wa-qr-loading');
+    const qrImg = document.getElementById('wa-qr-img');
+    const qrSuccess = document.getElementById('wa-qr-success');
+
+    try {
+        const res = await fetch('/api/wa/status');
+        const data = await res.json();
+
+        if (!data.enabled) {
+            if (badge) { badge.textContent = 'Deshabilitado'; badge.style.background = '#fee2e2'; badge.style.color = '#991b1b'; }
+            if (detailEl) detailEl.textContent = 'El servicio de WhatsApp está apagado en el servidor';
+            return;
+        }
+
+        if (data.connected) {
+            if (badge) { badge.textContent = '🟢 CONECTADO'; badge.style.background = '#d1fae5'; badge.style.color = '#065f46'; }
+            if (navBadge) { navBadge.textContent = 'Conectado'; navBadge.style.background = '#10B981'; }
+            if (phoneEl) phoneEl.textContent = `+${data.phone || '593968245633'}`;
+            if (detailEl) { detailEl.textContent = '✅ Sesión activa. Procesando citas y flujos en tiempo real.'; detailEl.style.color = '#10b981'; }
+
+            if (qrLoading) qrLoading.style.display = 'none';
+            if (qrImg) qrImg.style.display = 'none';
+            if (qrSuccess) qrSuccess.style.display = 'flex';
+        } else {
+            if (badge) { badge.textContent = '🟡 ESPERANDO ESCANEO'; badge.style.background = '#fef3c7'; badge.style.color = '#92400e'; }
+            if (navBadge) { navBadge.textContent = 'QR Listo'; navBadge.style.background = '#f59e0b'; }
+            if (detailEl) { detailEl.textContent = '⚠️ Desconectado. Escanea el código QR de la derecha para vincular.'; detailEl.style.color = '#f59e0b'; }
+            if (qrSuccess) qrSuccess.style.display = 'none';
+
+            if (data.qr) {
+                if (qrLoading) qrLoading.style.display = 'none';
+                if (qrImg) {
+                    const newUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(data.qr)}`;
+                    if (qrImg.src !== newUrl) qrImg.src = newUrl;
+                    qrImg.style.display = 'block';
+                }
+            } else {
+                if (qrImg) qrImg.style.display = 'none';
+                if (qrLoading) {
+                    qrLoading.textContent = '⏳ Generando código QR en el servidor...';
+                    qrLoading.style.display = 'block';
+                }
+            }
+        }
+    } catch (err) {
+        if (!silent) console.error('Error cargando estado de WhatsApp:', err);
+    }
+}
+
+async function restartWAConnection() {
+    const btn = document.getElementById('btn-wa-restart');
+    if (!confirm('¿Deseas reiniciar la conexión y generar un nuevo código QR de vinculación?')) return;
+
+    try {
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Generando nuevo QR...'; }
+        const res = await api('POST', '/wa/restart');
+        toast('🔄 Reiniciando bot. El nuevo código QR aparecerá en unos segundos.', 'info', 5000);
+        setTimeout(() => {
+            fetchAdminWAStatus();
+            if (btn) { btn.disabled = false; btn.innerHTML = '<span>🔄</span> Reiniciar Conexión / Generar Nuevo QR'; }
+        }, 3500);
+    } catch (err) {
+        toast(`Error al reiniciar: ${err.message}`, 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>🔄</span> Reiniciar Conexión / Generar Nuevo QR'; }
+    }
+}
+
+window.loadAdminWAStatus = loadAdminWAStatus;
+window.fetchAdminWAStatus = fetchAdminWAStatus;
+window.restartWAConnection = restartWAConnection;
+

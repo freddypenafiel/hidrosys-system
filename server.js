@@ -513,6 +513,16 @@ app.get('/api/wa/status', (req, res) => {
     res.json({ enabled: true, ...status });
 });
 
+app.post('/api/wa/restart', authMiddleware, async (req, res) => {
+    if (!waBot) return res.status(400).json({ success: false, error: 'Bot de WhatsApp no habilitado' });
+    try {
+        await waBot.restartWhatsAppBot();
+        res.json({ success: true, message: 'Reinicio iniciado. Generando nuevo código QR...' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // Endpoint temporal para pruebas de envío manual
 app.get('/api/wa/test-send', async (req, res) => {
     const { phone, text } = req.query;

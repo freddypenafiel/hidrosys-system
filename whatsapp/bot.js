@@ -343,7 +343,8 @@ let lastQr = null;
 function getBotStatus() {
     return {
         connected: isConnected,
-        phone: waSocket?.user?.id?.split(':')[0] || null,
+        phone: waSocket?.user?.id?.split(':')[0] || '593968245633',
+        qr: lastQr
     };
 }
 
@@ -351,4 +352,21 @@ function getLastQr() {
     return lastQr;
 }
 
-module.exports = { startWhatsAppBot, sendMessage, notifyPaymentApproved, getBotStatus, getLastQr };
+async function restartWhatsAppBot() {
+    console.log('[WA Bot] Reinicio solicitado por administrador...');
+    try {
+        if (waSocket) {
+            waSocket.end(undefined);
+        }
+    } catch(e) {}
+    isConnected = false;
+    lastQr = null;
+    const fs = require('fs');
+    if (fs.existsSync(AUTH_FOLDER)) {
+        fs.rmSync(AUTH_FOLDER, { recursive: true, force: true });
+    }
+    setTimeout(startWhatsAppBot, 1000);
+    return true;
+}
+
+module.exports = { startWhatsAppBot, sendMessage, notifyPaymentApproved, getBotStatus, getLastQr, restartWhatsAppBot };

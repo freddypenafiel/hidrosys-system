@@ -89,6 +89,10 @@
             <button class="nav-item" data-page="admin-surveys">
                 <span class="nav-icon">📊</span> Satisfacción
             </button>
+            <button class="nav-item" data-page="admin-wa">
+                <span class="nav-icon">📱</span> Escanear QR / WhatsApp
+                <span class="nav-badge" id="wa-nav-badge" style="background:#10B981;">Activo</span>
+            </button>
         </div>
     </nav>
 
@@ -638,6 +642,66 @@
                 <div><h2>Resultados de Satisfacción</h2><p>Calificaciones y retroalimentación del personal técnico post-servicio</p></div>
             </div>
             <div id="surveys-container" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
+        </div>
+
+        <!-- ==================== ADMIN: WHATSAPP QR & CONEXIÓN ==================== -->
+        <div class="page" id="page-admin-wa">
+            <div class="page-header">
+                <div>
+                    <h2>Vincular WhatsApp Bot (Escanear QR) 📱</h2>
+                    <p>Sincroniza y monitorea la conexión oficial con el celular corporativo (+593968245633)</p>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="loadAdminWAStatus()">🔄 Refrescar Estado</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:16px;">
+                <!-- Tarjeta de Estado e Instrucciones -->
+                <div class="card" style="padding:28px; border-radius:16px; background:white;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                        <h3 style="font-size:1.15rem; font-weight:700; color:#0f172a; margin:0;">Estado del Sistema WhatsApp</h3>
+                        <span id="wa-panel-status-badge" style="padding:6px 14px; border-radius:20px; font-size:0.82rem; font-weight:700; background:#e2e8f0; color:#475569;">Verificando...</span>
+                    </div>
+
+                    <div style="background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:24px;">
+                        <div style="font-size:0.75rem; font-weight:700; color:#64748b; letter-spacing:0.5px; margin-bottom:6px;">NÚMERO VINCULADO OFICIAL</div>
+                        <div id="wa-panel-phone" style="font-size:1.35rem; font-weight:800; color:#0f172a;">+593 96 824 5633</div>
+                        <div id="wa-panel-detail" style="font-size:0.82rem; color:#10b981; margin-top:6px; font-weight:600;">Comprobando sesión en tiempo real...</div>
+                    </div>
+
+                    <div style="margin-bottom:24px;">
+                        <h4 style="font-size:0.95rem; font-weight:700; color:#1e293b; margin-bottom:10px;">🛡️ Blindaje & Seguridad</h4>
+                        <p style="font-size:0.85rem; color:#64748b; line-height:1.5;">
+                            Este módulo está protegido con cifrado de sesión JWT. Si la conexión de WhatsApp Business se pierde o el teléfono se desconecta, cualquier administrador puede restaurar la sincronización al instante sin depender de un programador.
+                        </p>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="restartWAConnection()" id="btn-wa-restart" style="width:100%; padding:14px; font-weight:700; background:#0f172a; border:none; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <span>🔄</span> Reiniciar Conexión / Generar Nuevo QR
+                    </button>
+                </div>
+
+                <!-- Tarjeta de Código QR en Vivo -->
+                <div class="card" style="padding:28px; border-radius:16px; background:white; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+                    <h3 style="font-size:1.15rem; font-weight:700; color:#0f172a; margin-bottom:6px;">Escáner Oficial QR</h3>
+                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:24px;">
+                        Abre WhatsApp &gt; Dispositivos vinculados &gt; <strong>Vincular un dispositivo</strong>
+                    </p>
+
+                    <div id="wa-qr-container" style="min-height:280px; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%;">
+                        <div id="wa-qr-loading" style="color:#64748b; font-size:0.95rem; font-weight:600;">⏳ Cargando estado del código QR...</div>
+                        <img id="wa-qr-img" src="" alt="WhatsApp QR Code" style="display:none; width:260px; height:260px; border-radius:12px; border:2px solid #e2e8f0; padding:10px; background:white; box-shadow:0 4px 12px rgba(0,0,0,0.06);" />
+                        <div id="wa-qr-success" style="display:none; flex-direction:column; align-items:center; color:#10b981;">
+                            <div style="font-size:3.5rem; margin-bottom:10px;">✅</div>
+                            <div style="font-size:1.1rem; font-weight:700; color:#065f46;">¡Dispositivo Conectado!</div>
+                            <div style="font-size:0.85rem; color:#047857; margin-top:6px;">El bot está activo y sincronizado con Hidrosys</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px; font-size:0.78rem; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                        <span>⏱️</span> Sincronización automática en tiempo real activada
+                    </div>
+                </div>
+            </div>
         </div>
 
     </main>
