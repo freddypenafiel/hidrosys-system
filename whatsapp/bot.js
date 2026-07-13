@@ -161,11 +161,10 @@ async function startWhatsAppBot() {
                         await waSocket.sendPresenceUpdate('composing', jid);
                     } catch (e) {}
 
-                    const targetReplyJid = jid.includes('@lid') ? `${phone}@s.whatsapp.net` : jid;
-                    const response = await processAudioMessage(phone, msg, targetReplyJid, waSocket);
+                    const response = await processAudioMessage(phone, msg, jid, waSocket);
                     if (response) {
                         await new Promise(r => setTimeout(r, 600));
-                        await sendMessage(targetReplyJid, response);
+                        await sendMessage(jid, response);
                         console.log(`[WA] ✅ Respuesta a nota de voz enviada a +${phone}`);
                     }
                     continue;
@@ -173,19 +172,18 @@ async function startWhatsAppBot() {
 
                 console.log(`[WA] 📨 Mensaje de +${phone}: "${text}"`);
 
-                const targetReplyJid = jid.includes('@lid') ? `${phone}@s.whatsapp.net` : jid;
                 // Indicador de "escribiendo"
-                await waSocket.sendPresenceUpdate('composing', targetReplyJid);
+                await waSocket.sendPresenceUpdate('composing', jid);
 
                 // Procesar mensaje con el motor de flujos
                 // Pasamos el JID completo original para que se pueda guardar en wa_sender
-                const response = await processMessage(phone, text, targetReplyJid);
+                const response = await processMessage(phone, text, jid);
 
                 if (response) {
                     // Pequeña pausa para que se vea natural
                     await new Promise(r => setTimeout(r, 800));
-                    await sendMessage(targetReplyJid, response);
-                    console.log(`[WA] ✅ Respuesta enviada a +${phone} (${targetReplyJid})`);
+                    await sendMessage(jid, response);
+                    console.log(`[WA] ✅ Respuesta enviada a +${phone}`);
                 }
             } catch (err) {
                 console.error(`[WA] ❌ Error procesando mensaje de +${phone}:`, err.message);
@@ -220,90 +218,102 @@ async function sendMessage(jidOrPhone, text) {
 
     try {
         if (typeof text === 'object' && text !== null && (text.isButtons || text.buttons)) {
-            const buttons = (text.buttons || []).slice(0, 4).map(b => ({
-                name: 'quick_reply',
-                buttonParamsJson: JSON.stringify({
-                    display_text: String(b.label || b.title || '').slice(0, 20),
-                    id: String(b.id || '')
-                })
-            }));
+            try {
+                const buttons = (text.buttons || []).slice(0, 4).map(b => ({
+                    name: 'quick_reply',
+                    buttonParamsJson: JSON.stringify({
+                        display_text: String(b.label || b.title || '').slice(0, 20),
+                        id: String(b.id || '')
+                    })
+                }));
 
-            const interactiveMessage = proto.Message.InteractiveMessage.create({
-                body: proto.Message.InteractiveMessage.Body.create({ text: text.text }),
-                footer: proto.Message.InteractiveMessage.Footer.create({ text: text.footer || 'HIDROSYS EC. • Atención al Cliente' }),
-                header: text.title ? proto.Message.InteractiveMessage.Header.create({ title: text.title.slice(0, 60), subtitle: '' }) : undefined,
-                nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                    buttons: buttons
-                })
-            });
+                const interactiveMessage = proto.Message.InteractiveMessage.create({
+                    body: proto.Message.InteractiveMessage.Body.create({ text: text.text }),
+                    footer: proto.Message.InteractiveMessage.Footer.create({ text: text.footer || 'HIDROSYS EC. • Atención al Cliente' }),
+                    header: text.title ? proto.Message.InteractiveMessage.Header.create({ title: text.title.slice(0, 60), subtitle: '' }) : undefined,
+                    nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                        buttons: buttons
+                    })
+                });
 
-            const msg = generateWAMessageFromContent(
-                jid,
-                {
-                    viewOnceMessage: {
-                        message: {
-                            messageContextInfo: {
-                                deviceListMetadata: {},
-                                deviceListMetadataVersion: 2
-                            },
-                            interactiveMessage: interactiveMessage
+                const msg = generateWAMessageFromContent(
+                    jid,
+                    {
+                        viewOnceMessage: {
+                            message: {
+                                messageContextInfo: {
+                                    deviceListMetadata: {},
+                                    deviceListMetadataVersion: 2
+                                },
+                                interactiveMessage: interactiveMessage
+                            }
                         }
-                    }
-                },
-                { userJid: waSocket.user.id }
-            );
+                    },
+                    { userJid: waSocket.user.id }
+                );
 
-            await waSocket.relayMessage(jid, msg.message, { messageId: msg.key.id });
-            console.log(`[WA Bot] ✅ Botones interactivos (quick_reply) enviados a: ${jid}`);
-            return true;
+                await waSocket.relayMessage(jid, msg.message, { messageId: msg.key.id });
+                console.log(`[WA Bot] ✅ Botones interactivos (quick_reply) enviados a: ${jid}`);
+                return true;
+            } catch (err) {
+                console.warn('[WA Bot] Envío interactivo falló, enviando como texto:', err.message);
+                await waSocket.sendMessage(jid, { text: text.text });
+                return true;
+            }
         }
 
         if (typeof text === 'object' && text !== null && text.isList) {
-            const sections = (text.sections || []).map(sec => ({
-                title: String(sec.title || 'Opciones').slice(0, 24),
-                rows: (sec.rows || []).map(r => ({
-                    id: String(r.rowId || r.id || ''),
-                    title: String(r.title || '').slice(0, 24),
-                    description: String(r.description || '').slice(0, 72)
-                }))
-            }));
+            try {
+                const sections = (text.sections || []).map(sec => ({
+                    title: String(sec.title || 'Opciones').slice(0, 24),
+                    rows: (sec.rows || []).map(r => ({
+                        id: String(r.rowId || r.id || ''),
+                        title: String(r.title || '').slice(0, 24),
+                        description: String(r.description || '').slice(0, 72)
+                    }))
+                }));
 
-            const interactiveMessage = proto.Message.InteractiveMessage.create({
-                body: proto.Message.InteractiveMessage.Body.create({ text: text.text }),
-                footer: proto.Message.InteractiveMessage.Footer.create({ text: text.footer || 'HIDROSYS EC. • Atención al Cliente' }),
-                header: text.title ? proto.Message.InteractiveMessage.Header.create({ title: text.title.slice(0, 60), subtitle: '' }) : undefined,
-                nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                    buttons: [
-                        {
-                            name: 'single_select',
-                            buttonParamsJson: JSON.stringify({
-                                title: (text.buttonText || '☰ Ver opciones').slice(0, 20),
-                                sections: sections
-                            })
+                const interactiveMessage = proto.Message.InteractiveMessage.create({
+                    body: proto.Message.InteractiveMessage.Body.create({ text: text.text }),
+                    footer: proto.Message.InteractiveMessage.Footer.create({ text: text.footer || 'HIDROSYS EC. • Atención al Cliente' }),
+                    header: text.title ? proto.Message.InteractiveMessage.Header.create({ title: text.title.slice(0, 60), subtitle: '' }) : undefined,
+                    nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                        buttons: [
+                            {
+                                name: 'single_select',
+                                buttonParamsJson: JSON.stringify({
+                                    title: (text.buttonText || '☰ Ver opciones').slice(0, 20),
+                                    sections: sections
+                                })
+                            }
+                        ]
+                    })
+                });
+
+                const msg = generateWAMessageFromContent(
+                    jid,
+                    {
+                        viewOnceMessage: {
+                            message: {
+                                messageContextInfo: {
+                                    deviceListMetadata: {},
+                                    deviceListMetadataVersion: 2
+                                },
+                                interactiveMessage: interactiveMessage
+                            }
                         }
-                    ]
-                })
-            });
+                    },
+                    { userJid: waSocket.user.id }
+                );
 
-            const msg = generateWAMessageFromContent(
-                jid,
-                {
-                    viewOnceMessage: {
-                        message: {
-                            messageContextInfo: {
-                                deviceListMetadata: {},
-                                deviceListMetadataVersion: 2
-                            },
-                            interactiveMessage: interactiveMessage
-                        }
-                    }
-                },
-                { userJid: waSocket.user.id }
-            );
-
-            await waSocket.relayMessage(jid, msg.message, { messageId: msg.key.id });
-            console.log(`[WA Bot] ✅ Menú interactivo nativo (single_select) enviado a: ${jid}`);
-            return true;
+                await waSocket.relayMessage(jid, msg.message, { messageId: msg.key.id });
+                console.log(`[WA Bot] ✅ Menú interactivo nativo (single_select) enviado a: ${jid}`);
+                return true;
+            } catch (err) {
+                console.warn('[WA Bot] Envío de lista falló, enviando como texto:', err.message);
+                await waSocket.sendMessage(jid, { text: text.text });
+                return true;
+            }
         }
 
         const payload = typeof text === 'object' && text !== null ? text : { text };
