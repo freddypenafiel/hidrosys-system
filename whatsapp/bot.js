@@ -128,13 +128,25 @@ async function startWhatsAppBot() {
             const cleanJid = jid.split(':')[0];
             const phone = cleanJid.split('@')[0].replace(/\D/g,'');
 
-            // Extraer texto del mensaje o detectar nota de voz
+            // Extraer texto del mensaje (lista interactiva, botones o texto libre)
             const isAudio = Boolean(msg.message?.audioMessage || msg.message?.audioMessage?.url);
-            let text = msg.message?.conversation
-                || msg.message?.extendedTextMessage?.text
-                || msg.message?.buttonsResponseMessage?.selectedButtonId
-                || msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId
-                || '';
+
+            let text = '';
+            if (msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId) {
+                text = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
+            } else if (msg.message?.buttonsResponseMessage?.selectedButtonId) {
+                text = msg.message.buttonsResponseMessage.selectedButtonId;
+            } else if (msg.message?.templateButtonReplyMessage?.selectedId) {
+                text = msg.message.templateButtonReplyMessage.selectedId;
+            } else if (msg.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson) {
+                try {
+                    const params = JSON.parse(msg.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson);
+                    if (params.id) text = params.id;
+                } catch (e) {}
+            }
+            if (!text) {
+                text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+            }
 
             if (!text.trim() && !isAudio) continue;
 
@@ -203,22 +215,16 @@ async function sendMessage(jidOrPhone, text) {
     }
 
     try {
-        if (typeof text === 'object' && text !== null && text.sendPollMenu) {
-            await waSocket.sendMessage(jid, { text: text.text });
-            await new Promise(r => setTimeout(r, 450));
-            await waSocket.sendMessage(jid, {
-                poll: {
-                    name: '👆 HIDROSYS EC. – Toca una opción para continuar:',
-                    values: [
-                        '1️⃣ Agendar visita técnica',
-                        '2️⃣ Reportar comprobante de pago',
-                        '3️⃣ Consultar estado de mi cita',
-                        '4️⃣ Ver catálogo / precios'
-                    ],
-                    selectableCount: 1
-                }
-            });
-            console.log(`[WA Bot] ✅ Menú interactivo tocable (Poll) enviado a: ${jid}`);
+        if (typeof text === 'object' && text !== null && text.isList) {
+            const listMsg = {
+                text: text.text,
+                footer: text.footer || 'HIDROSYS EC. • Atención al Cliente',
+                title: text.title || 'Menú de Opciones',
+                buttonText: text.buttonText || '📋 Seleccionar opción',
+                sections: text.sections
+            };
+            await waSocket.sendMessage(jid, listMsg);
+            console.log(`[WA Bot] ✅ Lista interactiva (List Message) enviada a: ${jid}`);
             return true;
         }
 

@@ -62,8 +62,22 @@ function clearSession(phone) {
 // ============================================================
 function menuPrincipal(prefix = '') {
     return {
-        sendPollMenu: true,
-        text: `${prefix ? prefix + '\n\n' : ''}💧 *HIDROSYS EC.* – Asistente Virtual\n\n¿En qué podemos ayudarte?\nSelecciona una opción tocando directamente en el menú interactivo o escribe el número de tu opción:\n\n1️⃣ Agendar visita técnica\n2️⃣ Reportar comprobante de pago\n3️⃣ Consultar estado de mi cita\n4️⃣ Ver catálogo / precios`
+        isList: true,
+        title: 'Menú Principal HIDROSYS',
+        buttonText: '📋 Ver opciones',
+        footer: 'HIDROSYS EC. • Asistente Virtual',
+        text: `${prefix ? prefix + '\n\n' : ''}💧 *HIDROSYS EC.* – Asistente Virtual\n\n¿En qué podemos ayudarte hoy?\nPulsa el botón *📋 Ver opciones* para desplegar el menú interactivo o escribe el número de tu opción:\n\n1️⃣ Agendar visita técnica\n2️⃣ Reportar comprobante de pago\n3️⃣ Consultar estado de mi cita\n4️⃣ Ver catálogo / precios`,
+        sections: [
+            {
+                title: 'Servicios de HIDROSYS EC.',
+                rows: [
+                    { rowId: '1', title: '1. Agendar visita técnica', description: 'Programar instalación o reparación ($15.00)' },
+                    { rowId: '2', title: '2. Reportar comprobante', description: 'Registrar pago de tu cita técnica' },
+                    { rowId: '3', title: '3. Consultar estado de cita', description: 'Verificar confirmación y técnico asignado' },
+                    { rowId: '4', title: '4. Ver catálogo / precios', description: 'Listado oficial de servicios y tarifas' }
+                ]
+            }
+        ]
     };
 }
 
@@ -170,7 +184,23 @@ async function processMessage(phone, text, senderJid) {
         if (msg.length < 5) return `⚠️ Por favor escribe una dirección más detallada.`;
         setSession(phone, 'book_canton', { address: msg });
         const lista = Object.entries(CANTONES).map(([k,v]) => `${k}️⃣ ${v.nombre}`).join('\n');
-        return `📍 *Cantón de la Provincia del Cañar:*\n\n${lista}\n\nEscribe el número de tu cantón:`;
+        return {
+            isList: true,
+            title: 'Cantón del Cañar',
+            buttonText: '🏘️ Elegir Cantón',
+            footer: 'HIDROSYS EC. • Agendamiento',
+            text: `📍 *Cantón de la Provincia del Cañar:*\n\n${lista}\n\nPulsa el botón *🏘️ Elegir Cantón* para seleccionar en la lista o escribe el número:`,
+            sections: [
+                {
+                    title: 'Provincia del Cañar',
+                    rows: Object.entries(CANTONES).map(([k,v]) => ({
+                        rowId: k,
+                        title: `${k}. ${v.nombre}`,
+                        description: `Atención técnica en ${v.nombre}`
+                    }))
+                }
+            ]
+        };
     }
 
     if (step === 'book_canton') {
@@ -178,7 +208,23 @@ async function processMessage(phone, text, senderJid) {
         const canton = CANTONES[msg];
         setSession(phone, 'book_parish', { canton: canton.nombre, parroquias: canton.parroquias });
         const lista = canton.parroquias.map((p, i) => `${i+1}. ${p}`).join('\n');
-        return `🏘️ *Parroquia de ${canton.nombre}:*\n\n${lista}\n\nEscribe el número de tu parroquia:`;
+        return {
+            isList: true,
+            title: `Parroquias (${canton.nombre})`,
+            buttonText: '🏘️ Elegir Parroquia',
+            footer: 'HIDROSYS EC. • Agendamiento',
+            text: `🏘️ *Parroquia de ${canton.nombre}:*\n\n${lista}\n\nPulsa el botón *🏘️ Elegir Parroquia* o escribe el número:`,
+            sections: [
+                {
+                    title: canton.nombre,
+                    rows: canton.parroquias.map((p, i) => ({
+                        rowId: String(i+1),
+                        title: `${i+1}. ${p}`,
+                        description: `Parroquia ${p}`
+                    }))
+                }
+            ]
+        };
     }
 
     if (step === 'book_parish') {
@@ -187,7 +233,23 @@ async function processMessage(phone, text, senderJid) {
         if (isNaN(idx) || idx < 0 || idx >= parroquias.length) return `❌ Opción inválida. Escribe un número del 1 al ${parroquias.length}.`;
         setSession(phone, 'book_service', { parish: parroquias[idx], zone: `${sess.data.canton} - ${parroquias[idx]}` });
         const lista = Object.entries(SERVICIOS).map(([k,v]) => `${k}️⃣ ${v}`).join('\n');
-        return `🔧 *Tipo de Servicio:*\n\n${lista}\n\nEscribe el número del servicio que necesitas:`;
+        return {
+            isList: true,
+            title: 'Servicio HIDROSYS',
+            buttonText: '🔧 Elegir Servicio',
+            footer: 'HIDROSYS EC. • Agendamiento',
+            text: `🔧 *Tipo de Servicio:*\n\n${lista}\n\nPulsa el botón *🔧 Elegir Servicio* o escribe el número:`,
+            sections: [
+                {
+                    title: 'Servicios Disponibles',
+                    rows: Object.entries(SERVICIOS).map(([k,v]) => ({
+                        rowId: k,
+                        title: `${k}. ${v}`,
+                        description: 'Tarifa básica $15.00'
+                    }))
+                }
+            ]
+        };
     }
 
     if (step === 'book_service') {
