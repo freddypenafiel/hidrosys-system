@@ -203,7 +203,27 @@ async function sendMessage(jidOrPhone, text) {
     }
 
     try {
-        await waSocket.sendMessage(jid, { text });
+        if (typeof text === 'object' && text !== null && text.sendPollMenu) {
+            await waSocket.sendMessage(jid, { text: text.text });
+            await new Promise(r => setTimeout(r, 450));
+            await waSocket.sendMessage(jid, {
+                poll: {
+                    name: '👆 HIDROSYS EC. – Toca una opción para continuar:',
+                    values: [
+                        '1️⃣ Agendar visita técnica',
+                        '2️⃣ Reportar comprobante de pago',
+                        '3️⃣ Consultar estado de mi cita',
+                        '4️⃣ Ver catálogo / precios'
+                    ],
+                    selectableCount: 1
+                }
+            });
+            console.log(`[WA Bot] ✅ Menú interactivo tocable (Poll) enviado a: ${jid}`);
+            return true;
+        }
+
+        const payload = typeof text === 'object' && text !== null ? text : { text };
+        await waSocket.sendMessage(jid, payload);
         console.log(`[WA Bot] ✅ Mensaje enviado exitosamente a: ${jid}`);
         return true;
     } catch (err) {

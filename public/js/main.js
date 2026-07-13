@@ -720,6 +720,7 @@ async function loadAppointments() {
     const q      = document.getElementById('apt-search')?.value || '';
     try {
         const apts = await api('GET', `/appointments?status=${encodeURIComponent(status)}&zone=${encodeURIComponent(zone)}&q=${encodeURIComponent(q)}`);
+        apts.sort((a,b) => b.id - a.id);
         const techs = await api('GET', '/technicians');
 
         container.innerHTML = apts.length ? apts.map(a => {

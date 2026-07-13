@@ -60,8 +60,11 @@ function clearSession(phone) {
 // ============================================================
 // MENÚ PRINCIPAL
 // ============================================================
-function menuPrincipal() {
-    return `💧 *HIDROSYS EC.* – Asistente Virtual\n\n¿En qué podemos ayudarte?\n\n1️⃣ Agendar visita técnica\n2️⃣ Reportar comprobante de pago\n3️⃣ Consultar estado de mi cita\n4️⃣ Ver catálogo / precios\n\n_Responde con el número de tu opción_`;
+function menuPrincipal(prefix = '') {
+    return {
+        sendPollMenu: true,
+        text: `${prefix ? prefix + '\n\n' : ''}💧 *HIDROSYS EC.* – Asistente Virtual\n\n¿En qué podemos ayudarte?\nSelecciona una opción tocando directamente en el menú interactivo o escribe el número de tu opción:\n\n1️⃣ Agendar visita técnica\n2️⃣ Reportar comprobante de pago\n3️⃣ Consultar estado de mi cita\n4️⃣ Ver catálogo / precios`
+    };
 }
 
 // ============================================================
@@ -130,14 +133,14 @@ async function processMessage(phone, text, senderJid) {
         }
     }
 
-    // ── Si el usuario envía opción numérica (1, 2, 3 o 4) desde 'idle' o 'main_menu' ──
+    // ── Si el usuario envía opción numérica o toca botón en pantalla (1, 2, 3 o 4) desde 'idle' o 'main_menu' ──
     if (step === 'idle' || step === 'main_menu') {
-        if (msg === '1') { setSession(phone, 'book_name', { senderJid }); return `📝 *Agendar Visita Técnica*\n\nPor favor, escribe tu *nombre completo*:`; }
-        if (msg === '2') { setSession(phone, 'pay_phone', { senderJid }); return `💳 *Reportar Comprobante de Pago*\n\nEscribe el *número de teléfono* con el que registraste tu cita (ej. 0987654321):`; }
-        if (msg === '3') { setSession(phone, 'status_phone', { senderJid }); return `🔍 *Consultar Estado de Cita*\n\nEscribe el *número de teléfono* con el que te registraste:`; }
-        if (msg === '4') { clearSession(phone); setSession(phone, 'idle'); return `📦 *Catálogo de Servicios HIDROSYS:*\n\n🔧 Instalación medidor agua: $15.00\n🔧 Reparación de tubería: $15.00\n⛽ Red de gas domiciliario: $15.00\n🔩 Mant. sistema hidráulico: $15.00\n🔍 Inspección técnica: $15.00\n\n_Precio incluye visita técnica. Materiales adicionales se cotizan en sitio._\n\nEscribe *menu* para volver.`; }
+        if (msg === '1' || msg.startsWith('1') || msgClean.includes('agendar visita')) { setSession(phone, 'book_name', { senderJid }); return `📝 *Agendar Visita Técnica*\n\nPor favor, escribe tu *nombre completo*:`; }
+        if (msg === '2' || msg.startsWith('2') || msgClean.includes('reportar comprobante') || msgClean.includes('reportar pago')) { setSession(phone, 'pay_phone', { senderJid }); return `💳 *Reportar Comprobante de Pago*\n\nEscribe el *número de teléfono* con el que registraste tu cita (ej. 0987654321):`; }
+        if (msg === '3' || msg.startsWith('3') || msgClean.includes('consultar estado')) { setSession(phone, 'status_phone', { senderJid }); return `🔍 *Consultar Estado de Cita*\n\nEscribe el *número de teléfono* con el que te registraste:`; }
+        if (msg === '4' || msg.startsWith('4') || msgClean.includes('ver catalogo') || msgClean.includes('catalogo')) { clearSession(phone); setSession(phone, 'idle'); return `📦 *Catálogo de Servicios HIDROSYS:*\n\n🔧 Instalación medidor agua: $15.00\n🔧 Reparación de tubería: $15.00\n⛽ Red de gas domiciliario: $15.00\n🔩 Mant. sistema hidráulico: $15.00\n🔍 Inspección técnica: $15.00\n\n_Precio incluye visita técnica. Materiales adicionales se cotizan en sitio._\n\nEscribe *menu* para volver.`; }
         if (step === 'main_menu') {
-            return `❓ Opción no válida. Responde con 1, 2, 3 o 4.\n\n` + menuPrincipal();
+            return menuPrincipal('❓ Opción no válida. Toca una de las 4 opciones:');
         }
     }
 
@@ -145,7 +148,7 @@ async function processMessage(phone, text, senderJid) {
     if (step === 'idle') {
         clearSession(phone);
         setSession(phone, 'main_menu', { senderJid });
-        return `👋 ¡Hola! Bienvenido al sistema de atención de *HIDROSYS EC.*\n\n` + menuPrincipal();
+        return menuPrincipal('👋 ¡Hola! Bienvenido al sistema de atención de *HIDROSYS EC.*');
     }
 
     // ══════════════════════════════════════════════════════════
@@ -330,7 +333,7 @@ async function processMessage(phone, text, senderJid) {
     // ── Fallback ───────────────────────────────────────────────
     clearSession(phone);
     setSession(phone, 'main_menu');
-    return `❓ No entendí tu mensaje. Selecciona una opción:\n\n` + menuPrincipal();
+    return menuPrincipal('❓ No entendí tu mensaje. Selecciona una opción:');
 }
 
 // ============================================================
@@ -349,8 +352,8 @@ async function buildConfirmationMessage(aptId) {
 
         // Determinar el destino del mensaje:
         // Si wa_sender ya tiene '@' es un JID completo (ej: 593990328940@s.whatsapp.net) → usarlo directo
-        // Si no, reconstruir el JID desde el numero del cliente
-        let targetJid = a.wa_sender || '';
+        // Si no, reconstruir el JID desde el numero del cliente (sea de web o whatsapp)
+        let targetJid = a.wa_sender || a.client_phone || '';
         if (!targetJid.includes('@')) {
             // Reconstruir: quitar ceros y no-digitos, agregar 593 si es local
             const digits = targetJid.replace(/\D/g,'');

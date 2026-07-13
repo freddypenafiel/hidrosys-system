@@ -254,7 +254,7 @@ app.get('/api/appointments', async (req, res) => {
             query += ` AND (client_name ILIKE $${params.length} OR client_phone ILIKE $${params.length} OR service_type ILIKE $${params.length})`;
         }
 
-        query += ` ORDER BY apt_date DESC, apt_time DESC LIMIT $${params.length+1} OFFSET $${params.length+2}`;
+        query += ` ORDER BY id DESC LIMIT $${params.length+1} OFFSET $${params.length+2}`;
         params.push(limit, offset);
 
         const result = await pool.query(query, params);
@@ -333,7 +333,22 @@ app.put('/api/appointments/:id', async (req, res) => {
         );
 
         if (!result.rows.length) return res.status(404).json({ error: 'Cita no encontrada' });
-        res.json(result.rows[0]);
+
+        const updatedApt = result.rows[0];
+        // Si el estado o pago se actualiza a Confirmado / Pagado, enviar automáticamente confirmación de WhatsApp
+        if (waBot && waBot.notifyPaymentApproved && (
+            updatedApt.status === 'Confirmado' ||
+            updatedApt.payment_status === 'Pagado' ||
+            updatedApt.payment_status === 'Aprobado' ||
+            fields.status === 'Confirmado' ||
+            fields.paymentStatus === 'Pagado'
+        )) {
+            waBot.notifyPaymentApproved(parseInt(id)).catch(err => {
+                console.error('[WA Bot] Error en notificación automática PUT /appointments/:id:', err.message);
+            });
+        }
+
+        res.json(updatedApt);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
