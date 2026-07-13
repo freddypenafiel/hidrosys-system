@@ -112,6 +112,15 @@ app.post('/api/logout', (req, res) => {
     res.json({ ok: true });
 });
 
+function requireAuth(req, res, next) {
+    const token = req.headers['x-session-token'];
+    if (!token || !activeSessions.has(token)) {
+        return res.status(401).json({ error: 'No autenticado. Inicie sesión como administrador.' });
+    }
+    req.user = activeSessions.get(token);
+    next();
+}
+
 
 
 // ============================================================
@@ -513,7 +522,7 @@ app.get('/api/wa/status', (req, res) => {
     res.json({ enabled: true, ...status });
 });
 
-app.post('/api/wa/restart', authMiddleware, async (req, res) => {
+app.post('/api/wa/restart', requireAuth, async (req, res) => {
     if (!waBot) return res.status(400).json({ success: false, error: 'Bot de WhatsApp no habilitado' });
     try {
         await waBot.restartWhatsAppBot();
