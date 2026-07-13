@@ -122,15 +122,15 @@
     /* Estilos del Contenido */
     .page-break { page-break-after: always; }
     h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.5rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.25rem; color: var(--ista-blue); }
+    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
+    h2 { font-size: 1.2rem; color: var(--ista-blue); }
     h3 { font-size: 1.05rem; }
     p { margin-bottom: 10px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 10px 8px; text-align: left; font-weight: 600; }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
+    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
     .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
@@ -147,10 +147,18 @@
         background: #ffffff;
         border: 2px solid var(--gray-200);
         border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
+        padding: 16px 10px;
+        margin: 16px 0;
         text-align: center;
         page-break-inside: avoid;
+    }
+    .diagram-caption {
+        font-weight: 700;
+        font-size: 9pt;
+        color: var(--ista-blue);
+        margin-top: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     </style>
@@ -214,37 +222,33 @@
 
 <h1>9. MOCKUPS Y PROTOTIPO ALTA FIDELIDAD DEL SISTEMA</h1>
 <p>
-El prototipo visual de <strong>Hidrosys EC.</strong> refleja un estándar de diseño web moderno, tipografía institucional y una experiencia de usuario optimizada tanto para los clientes en WhatsApp como para los operadores en el Dashboard Web.
+Esquema visual y maquetación de interfaces gráficas del panel administrativo y el flujo en WhatsApp.
 </p>
 
-<h2>9.1 Diseño y Vistas de la Interfaz Web (Dashboard)</h2>
-<div class="card">
-    <div class="card-title">Vista Principal: Panel de Control y Pestaña "📱 Escanear QR / WhatsApp"</div>
-    <p>
-    El menú lateral de navegación integra de forma destacada la opción de vinculación QR. La interfaz presenta tarjetas de estado en colores verdes e indicadores instantáneos que muestran:
-    </p>
-    <ul>
-        <li><strong>Estado del Bot:</strong> "¡Dispositivo Conectado! ✅" o "Código QR Listo para Escanear".</li>
-        <li><strong>Botón de Acción Rápida:</strong> "🔄 Reiniciar Conexión / Generar Nuevo QR" protegido por autenticación de administrador.</li>
-        <li><strong>Gestión de Citas:</strong> Tabla interactiva con filtros para citas pendientes, confirmadas y completadas.</li>
-    </ul>
-</div>
+<h2>9.1 Mockup de UI: Pestaña "📱 Escanear QR / WhatsApp" en Panel Web</h2>
+<div class="diagram-box">
+    <svg width="660" height="240" viewBox="0 0 660 240">
+        <!-- Marco de Navegador -->
+        <rect x="30" y="15" width="600" height="210" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+        <rect x="30" y="15" width="600" height="28" rx="8" fill="#002e6e"/>
+        <text x="50" y="33" font-size="10" font-weight="bold" fill="white">HIDROSYS EC. • Panel de Control Administrador</text>
 
-<h2>9.2 Diseño del Flujo en WhatsApp Asistente Virtual</h2>
-<div class="card" style="background:#f0fdf4; border-color:#86efac;">
-    <div class="card-title" style="color:#166534;">Simulación Real de Interacción en Chat de WhatsApp</div>
-    <p style="font-family:monospace; font-size:9.5pt; color:#14532d;">
-    <strong>Cliente:</strong> Hola<br><br>
-    <strong>HIDROSYS EC. – Asistente Virtual:</strong><br>
-    💧 <em>HIDROSYS EC. – Asistente Virtual</em><br>
-    Atención al Cliente • Sistemas de Agua y Gas<br><br>
-    ¿En qué podemos ayudarte hoy? Escribe el <strong>número</strong> de tu opción:<br><br>
-    1️⃣ <strong>Agendar Cita / Inspección Técnica</strong><br>
-    2️⃣ <strong>Consultar Zonas de Cobertura y Horarios</strong><br>
-    3️⃣ <strong>Soporte Directo con Asesor (+593 968245633)</strong><br><br>
-    <strong>Cliente:</strong> 1<br>
-    <strong>HIDROSYS EC.:</strong> Excelente. Por favor indícame tu Nombre Completo para iniciar el agendamiento.
-    </p>
+        <!-- Sidebar -->
+        <rect x="30" y="43" width="150" height="182" fill="#1e293b"/>
+        <text x="45" y="75" font-size="9.5" fill="#cbd5e1">📊 Dashboard</text>
+        <text x="45" y="105" font-size="9.5" fill="#cbd5e1">📅 Citas Médicas</text>
+        <rect x="35" y="125" width="140" height="26" rx="4" fill="#2563eb"/>
+        <text x="45" y="142" font-size="9.5" font-weight="bold" fill="white">📱 Escanear QR</text>
+
+        <!-- Contenido principal -->
+        <rect x="200" y="60" width="410" height="150" rx="8" fill="white" stroke="#cbd5e1"/>
+        <text x="220" y="88" font-size="12" font-weight="bold" fill="#002e6e">Conexión en Vivo con WhatsApp Bot</text>
+        <rect x="220" y="105" width="180" height="35" rx="6" fill="#d1fae5" stroke="#065f46"/>
+        <text x="310" y="127" font-size="10" font-weight="bold" fill="#065f46" text-anchor="middle">¡Dispositivo Conectado! ✅</text>
+        <rect x="220" y="155" width="240" height="32" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+        <text x="340" y="175" font-size="9.5" font-weight="bold" fill="#1e40af" text-anchor="middle">🔄 Reiniciar Conexión / Generar QR</text>
+    </svg>
+    <div class="diagram-caption">Fig 9.1 - Mockup Estructural de la Pestaña de Conexión QR en Panel Web</div>
 </div>
 
 </div>

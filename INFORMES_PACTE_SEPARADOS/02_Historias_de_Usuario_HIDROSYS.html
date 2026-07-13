@@ -122,15 +122,15 @@
     /* Estilos del Contenido */
     .page-break { page-break-after: always; }
     h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.5rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.25rem; color: var(--ista-blue); }
+    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
+    h2 { font-size: 1.2rem; color: var(--ista-blue); }
     h3 { font-size: 1.05rem; }
     p { margin-bottom: 10px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 10px 8px; text-align: left; font-weight: 600; }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
+    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
     .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
@@ -147,10 +147,18 @@
         background: #ffffff;
         border: 2px solid var(--gray-200);
         border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
+        padding: 16px 10px;
+        margin: 16px 0;
         text-align: center;
         page-break-inside: avoid;
+    }
+    .diagram-caption {
+        font-weight: 700;
+        font-size: 9pt;
+        color: var(--ista-blue);
+        margin-top: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     </style>
@@ -212,121 +220,77 @@
 
 <div class="content-body">
 
-<h1>2. HISTORIAS DE USUARIO (AGILE / SCRUM)</h1>
+<h1>2. HISTORIAS DE USUARIO Y FLUJO DE VALOR ÁGIL</h1>
 <p>
-Las Historias de Usuario de <strong>Hidrosys EC.</strong> estructuran los requerimientos funcionales desde la perspectiva de valor que reciben los diferentes actores involucrados. Cada historia cumple con el estándar de calidad <strong>INVEST</strong> (Independiente, Negociable, Valiosa, Estimable, Pequeña y Comprobable).
+Las Historias de Usuario de <strong>Hidrosys EC.</strong> articulan las funcionalidades bajo el estándar INVEST del marco Scrum, garantizando una trazabilidad completa desde la necesidad del usuario hasta la entrega verificada.
 </p>
 
-<h2>2.1 Catálogo y Fichas de Historias de Usuario</h2>
+<h2>2.1 Diagrama de Flujo de Valor y Sprints (Agile Scrum)</h2>
+<div class="diagram-box">
+    <svg width="680" height="210" viewBox="0 0 680 210">
+        <!-- Muñeco Cliente -->
+        
+    <g transform="translate(60, 85)">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Actor Usuario</text>
+    </g>
+    
+        <line x1="95" y1="85" x2="160" y2="85" stroke="#2563eb" stroke-width="2.5"/>
+
+        <!-- Backlog -->
+        <rect x="160" y="45" width="130" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="225" y="75" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">Product Backlog</text>
+        <text x="225" y="95" font-size="9.5" fill="#1e40af" text-anchor="middle">HU-01 a HU-06</text>
+
+        <line x1="290" y1="85" x2="350" y2="85" stroke="#2563eb" stroke-width="2.5"/>
+
+        <!-- Sprint Execution -->
+        <rect x="350" y="45" width="140" height="80" rx="40" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+        <text x="420" y="75" font-size="11" font-weight="bold" fill="#92400e" text-anchor="middle">Sprint Iterativo</text>
+        <text x="420" y="95" font-size="9.5" fill="#92400e" text-anchor="middle">Desarrollo & Pruebas</text>
+
+        <line x1="490" y1="85" x2="550" y2="85" stroke="#10b981" stroke-width="2.5"/>
+
+        <!-- Incremento -->
+        <rect x="550" y="45" width="110" height="80" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="2"/>
+        <text x="605" y="75" font-size="11" font-weight="bold" fill="#065f46" text-anchor="middle">Entrega Final</text>
+        <text x="605" y="95" font-size="9.5" fill="#065f46" text-anchor="middle">Sistema Funcional</text>
+    </svg>
+    <div class="diagram-caption">Fig 2.1 - Flujo Ágil de Implementación de Historias de Usuario</div>
+</div>
+
+<h2>2.2 Fichas Técnicas de Historias de Usuario</h2>
 
 <div class="card">
-    <div class="card-title">HU-01: Navegación del Cliente por WhatsApp mediante Menú Numérico</div>
+    <div class="card-title">HU-01: Menú Numérico Confiable en WhatsApp</div>
     <p><strong>Como</strong> cliente de Hidrosys EC.,<br>
-    <strong>Quiero</strong> interactuar con el bot de WhatsApp enviando opciones numéricas simples (ej. 1, 2, 3),<br>
-    <strong>Para</strong> obtener respuestas rápidas desde cualquier teléfono celular sin que se bloqueen los mensajes en listas o botones incompatibles.</p>
-    <p><strong>Criterios de Aceptación:</strong></p>
-    <ul>
-        <li>El sistema debe enviar un mensaje de texto plano estructurado con opciones numeradas claras.</li>
-        <li>Al recibir un número válido ('1', '2', '3'), el bot debe responder con el flujo correspondiente en menos de 1.5 segundos.</li>
-        <li>Si el cliente escribe texto no numérico en el menú principal, el bot debe indicar cortésmente cómo seleccionar una opción.</li>
-    </ul>
+    <strong>Quiero</strong> recibir opciones numeradas claras en texto simple al escribir al bot,<br>
+    <strong>Para</strong> poder seleccionar con un número (1, 2, 3) sin bloqueos por incompatibilidad de botones en mi celular.</p>
+    <p><strong>Criterios de Aceptación:</strong> Envío en &lt; 1.5s, respuesta correcta a opciones numéricas, tolerancia a errores.</p>
 </div>
 
 <div class="card">
-    <div class="card-title">HU-02: Agendamiento Rápido de Inspecciones y Citas</div>
-    <p><strong>Como</strong> usuario final,<br>
-    <strong>Quiero</strong> agendar una cita técnica proporcionando mis datos básicos por el chat de WhatsApp,<br>
-    <strong>Para</strong> coordinar una visita de mantenimiento de agua o gas sin tener que llamar por teléfono.</p>
-    <p><strong>Criterios de Aceptación:</strong></p>
-    <ul>
-        <li>El bot solicita secuencialmente: Nombre, Dirección, Tipo de Servicio y Fecha/Hora preferida.</li>
-        <li>Una vez confirmados los datos, el sistema almacena el registro en la base de datos con estado "Pendiente".</li>
-        <li>Se envía un comprobante en texto por WhatsApp al cliente con el ID de su cita agendada.</li>
-    </ul>
+    <div class="card-title">HU-02: Agendamiento Paso a Paso vía WhatsApp</div>
+    <p><strong>Como</strong> cliente o empresa solicitante,<br>
+    <strong>Quiero</strong> registrar mi Nombre, Dirección, Servicio y Fecha/Hora conversando con el bot,<br>
+    <strong>Para</strong> coordinar mi visita técnica sin esperas telefónicas.</p>
 </div>
 
 <div class="card">
-    <div class="card-title">HU-03: Reconexión Autónoma del Bot mediante Pestaña "Escanear QR"</div>
-    <p><strong>Como</strong> Administrador / Dueño de la empresa Hidrosys,<br>
-    <strong>Quiero</strong> acceder a una pestaña específica en mi panel web que muestre el código QR de WhatsApp en vivo,<br>
-    <p><strong>Para</strong> escanearlo desde el celular corporativo y reconectar el bot instantáneamente en caso de pérdida de sesión.</p>
-    <p><strong>Criterios de Aceptación:</strong></p>
-    <ul>
-        <li>El panel web debe incluir en el menú lateral de Administración la pestaña <code>📱 Escanear QR / WhatsApp</code>.</li>
-        <li>El sistema consulta al servidor en tiempo real el estado de conexión de Baileys.</li>
-        <li>Si está desconectado, renderiza el código QR actualizado; si se conecta, muestra automáticamente "¡Dispositivo Conectado! ✅".</li>
-        <li>Incluye un botón seguro "Reiniciar Conexión / Generar Nuevo QR" protegido por autenticación.</li>
-    </ul>
+    <div class="card-title">HU-03: Reconexión QR en Tiempo Real desde Panel Web</div>
+    <p><strong>Como</strong> Administrador / Dueño de Hidrosys EC.,<br>
+    <strong>Quiero</strong> disponer de la pestaña <code>📱 Escanear QR / WhatsApp</code> en el panel web con el QR en vivo,<br>
+    <strong>Para</strong> vincular el celular corporativo al instante ante cualquier desconexión sin asistencia de programadores.</p>
 </div>
-
-<div class="card">
-    <div class="card-title">HU-04: Autenticación y Seguridad en Endpoints Administrativos</div>
-    <p><strong>Como</strong> Administrador del Sistema,<br>
-    <strong>Quiero</strong> que todas las operaciones sensibles (reinicio de bot, gestión de usuarios y citas) requieran un token de sesión,<br>
-    <strong>Para</strong> evitar que usuarios externos o atacantes ejecuten comandos en el servidor.</p>
-    <p><strong>Criterios de Aceptación:</strong></p>
-    <ul>
-        <li>El middleware <code>requireAuth</code> debe verificar la cabecera <code>x-session-token</code> en cada petición POST/PUT/DELETE.</li>
-        <li>Si el token no está activo en sesión, retornar un error HTTP 401 Unauthorized.</li>
-    </ul>
-</div>
-
-<h2>2.2 Matriz de Resumen de Historias de Usuario</h2>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nombre de la Historia</th>
-            <th>Rol</th>
-            <th>Puntos de Historia</th>
-            <th>Estado</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>HU-01</td>
-            <td>Menú Numérico de WhatsApp Confiable</td>
-            <td>Cliente</td>
-            <td>3 pt</td>
-            <td>Completado</td>
-        </tr>
-        <tr>
-            <td>HU-02</td>
-            <td>Agendamiento Automatizado de Citas</td>
-            <td>Cliente</td>
-            <td>5 pt</td>
-            <td>Completado</td>
-        </tr>
-        <tr>
-            <td>HU-03</td>
-            <td>Panel Web: Escanear QR y Reconectar WhatsApp</td>
-            <td>Administrador</td>
-            <td>8 pt</td>
-            <td>Completado</td>
-        </tr>
-        <tr>
-            <td>HU-04</td>
-            <td>Seguridad Middleware requireAuth en APIs</td>
-            <td>Admin / Sistema</td>
-            <td>5 pt</td>
-            <td>Completado</td>
-        </tr>
-        <tr>
-            <td>HU-05</td>
-            <td>Consulta de Coberturas de Agua/Gas</td>
-            <td>Cliente</td>
-            <td>3 pt</td>
-            <td>Completado</td>
-        </tr>
-        <tr>
-            <td>HU-06</td>
-            <td>Gestión de Órdenes y Reportes PDF</td>
-            <td>Administrador</td>
-            <td>5 pt</td>
-            <td>Completado</td>
-        </tr>
-    </tbody>
-</table>
 
 </div>
 </div>

@@ -122,15 +122,15 @@
     /* Estilos del Contenido */
     .page-break { page-break-after: always; }
     h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.5rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.25rem; color: var(--ista-blue); }
+    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
+    h2 { font-size: 1.2rem; color: var(--ista-blue); }
     h3 { font-size: 1.05rem; }
     p { margin-bottom: 10px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 10px 8px; text-align: left; font-weight: 600; }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
+    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
     .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
@@ -147,10 +147,18 @@
         background: #ffffff;
         border: 2px solid var(--gray-200);
         border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
+        padding: 16px 10px;
+        margin: 16px 0;
         text-align: center;
         page-break-inside: avoid;
+    }
+    .diagram-caption {
+        font-weight: 700;
+        font-size: 9pt;
+        color: var(--ista-blue);
+        margin-top: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     </style>
@@ -212,62 +220,39 @@
 
 <div class="content-body">
 
-<h1>5. CASOS DE USO DE ESCENARIO (ESCENARIOS OPERATIVOS)</h1>
+<h1>5. CASOS DE USO DE ESCENARIO (DIAGRAMAS DE SECUENCIA)</h1>
 <p>
-Los escenarios describen las trayectorias concretas (flujos normales, alternativos y de excepción) que ocurren durante la ejecución de los casos de uso críticos en <strong>Hidrosys EC.</strong>
+Los escenarios operativos describen cronológicamente la colaboración entre componentes en flujos normales y de excepción.
 </p>
 
-<h2>5.1 Escenario 1: Agendamiento Exitoso y Gestión de Cita</h2>
-<table>
-    <thead>
-        <tr>
-            <th style="width:25%;">Fase del Escenario</th>
-            <th>Descripción Operativa</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Escenario Principal (Happy Path)</strong></td>
-            <td>
-                1. Cliente escribe "Hola" al WhatsApp de Hidrosys.<br>
-                2. El bot responde instantáneamente con las opciones numeradas (1. Agendar Cita, 2. Consultar Cobertura, 3. Soporte).<br>
-                3. Cliente envía "1". El bot solicita su Nombre.<br>
-                4. Cliente envía "Carlos Mendoza". El bot solicita Dirección.<br>
-                5. Cliente envía "Av. Solano y Diez de Agosto". El bot solicita Fecha y Hora.<br>
-                6. El bot confirma y registra la cita en la base de datos con estado <em>Pendiente</em>.
-            </td>
-        </tr>
-        <tr>
-            <td><strong>Escenario Alternativo (Dato erróneo)</strong></td>
-            <td>Si el cliente ingresa un número fuera de rango en el menú principal (ej. "9"), el bot indica la lista válida de opciones de forma clara.</td>
-        </tr>
-    </tbody>
-</table>
+<h2>5.1 Diagrama de Secuencia: Escenario de Agendamiento por WhatsApp</h2>
+<div class="diagram-box">
+    <svg width="660" height="230" viewBox="0 0 660 230">
+        <!-- Nodos superiores -->
+        <rect x="30" y="20" width="110" height="35" rx="6" fill="#002e6e"/>
+        <text x="85" y="42" font-size="10.5" font-weight="bold" fill="white" text-anchor="middle">Cliente</text>
+        <line x1="85" y1="55" x2="85" y2="210" stroke="#64748b" stroke-dasharray="4"/>
 
-<h2>5.2 Escenario 2: Reconexión Rápida de WhatsApp tras Reinicio del Móvil</h2>
-<table>
-    <thead>
-        <tr>
-            <th style="width:25%;">Fase del Escenario</th>
-            <th>Descripción Operativa</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Contexto de Excepción</strong></td>
-            <td>El teléfono celular de la empresa se queda sin batería o se cierra la sesión web por actualización de WhatsApp.</td>
-        </tr>
-        <tr>
-            <td><strong>Resolución Administrativa</strong></td>
-            <td>
-                1. El Administrador entra a <code>http://localhost:3000</code> y va a la pestaña <strong>📱 Escanear QR / WhatsApp</strong>.<br>
-                2. El sistema detecta el estado <em>Desconectado</em>.<br>
-                3. El Administrador pulsa en <strong>🔄 Reiniciar Conexión / Generar Nuevo QR</strong>.<br>
-                4. Escanea el código QR fresco con el móvil en segundos, recuperando el 100% de la operatividad del bot.
-            </td>
-        </tr>
-    </tbody>
-</table>
+        <rect x="200" y="20" width="120" height="35" rx="6" fill="#2563eb"/>
+        <text x="260" y="42" font-size="10.5" font-weight="bold" fill="white" text-anchor="middle">Bot WhatsApp</text>
+        <line x1="260" y1="55" x2="260" y2="210" stroke="#64748b" stroke-dasharray="4"/>
+
+        <rect x="380" y="20" width="120" height="35" rx="6" fill="#10b981"/>
+        <text x="440" y="42" font-size="10.5" font-weight="bold" fill="white" text-anchor="middle">Servidor API</text>
+        <line x1="440" y1="55" x2="440" y2="210" stroke="#64748b" stroke-dasharray="4"/>
+
+        <!-- Mensajes -->
+        <line x1="85" y1="85" x2="260" y2="85" stroke="#002e6e" stroke-width="2"/>
+        <text x="172" y="78" font-size="9" fill="#002e6e" text-anchor="middle">1. Escribe "Hola" / Opción '1'</text>
+
+        <line x1="260" y1="130" x2="440" y2="130" stroke="#2563eb" stroke-width="2"/>
+        <text x="350" y="123" font-size="9" fill="#2563eb" text-anchor="middle">2. Envía Parámetros de Cita</text>
+
+        <line x1="440" y1="175" x2="85" y2="175" stroke="#10b981" stroke-width="2"/>
+        <text x="262" y="168" font-size="9" font-weight="bold" fill="#065f46" text-anchor="middle">3. Confirmación: Cita Registrada Exitosamente ✅</text>
+    </svg>
+    <div class="diagram-caption">Fig 5.1 - Secuencia Operativa del Agendamiento Automático</div>
+</div>
 
 </div>
 </div>

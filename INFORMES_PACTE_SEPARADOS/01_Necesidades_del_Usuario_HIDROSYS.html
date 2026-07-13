@@ -122,15 +122,15 @@
     /* Estilos del Contenido */
     .page-break { page-break-after: always; }
     h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.5rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.25rem; color: var(--ista-blue); }
+    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
+    h2 { font-size: 1.2rem; color: var(--ista-blue); }
     h3 { font-size: 1.05rem; }
     p { margin-bottom: 10px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 10px 8px; text-align: left; font-weight: 600; }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
+    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
     .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
@@ -147,10 +147,18 @@
         background: #ffffff;
         border: 2px solid var(--gray-200);
         border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
+        padding: 16px 10px;
+        margin: 16px 0;
         text-align: center;
         page-break-inside: avoid;
+    }
+    .diagram-caption {
+        font-weight: 700;
+        font-size: 9pt;
+        color: var(--ista-blue);
+        margin-top: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     </style>
@@ -212,108 +220,134 @@
 
 <div class="content-body">
 
-<h1>1. ANÁLISIS DE NECESIDADES DEL USUARIO</h1>
+<h1>1. ANÁLISIS DE NECESIDADES DEL USUARIO Y STAKEHOLDERS</h1>
 <p>
-El presente documento describe de manera sistemática y rigurosa las necesidades reales identificadas para el proyecto <strong>Hidrosys EC.</strong>, un sistema integral diseñado para solucionar la saturación en la atención al cliente, el agendamiento de citas técnicas y el monitoreo operativo en empresas proveedoras y de mantenimiento de sistemas de agua potable y gas.
+El presente informe documenta el estudio de requerimientos y necesidades operativas para <strong>Hidrosys EC.</strong>, plataforma integral de gestión de citas, asistencia virtual por WhatsApp y control de cuadrillas para servicios de agua y gas.
 </p>
 
-<h2>1.1 Identificación de Actores e Interesados (Stakeholders)</h2>
+<h2>1.1 Diagrama Estructural de Actores e Interesados (UML Stakeholders)</h2>
 <p>
-Para una correcta delimitación funcional, se realizó una clasificación exhaustiva de los actores que interactúan directa e indirectamente con la plataforma Hidrosys EC.:
+El siguiente diagrama ilustra la interacción visual entre los actores humanos (muñecos UML) y la arquitectura central del sistema Hidrosys EC.:
 </p>
+
+<div class="diagram-box">
+    <svg width="680" height="260" viewBox="0 0 680 260">
+        <!-- Actor 1: Cliente -->
+        
+    <g transform="translate(70, 75)">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Cliente / Usuario</text>
+    </g>
+    
+        
+        <!-- Actor 2: Administrador Principal -->
+        
+    <g transform="translate(70, 195)">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Super Administrador</text>
+    </g>
+    
+
+        <!-- Actor 3: Administrador Secundario -->
+        
+    <g transform="translate(610, 75)">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Operador Oficina</text>
+    </g>
+    
+
+        <!-- Actor 4: Trabajador Técnico -->
+        
+    <g transform="translate(610, 195)">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Trabajador Técnico</text>
+    </g>
+    
+
+        <!-- Sistema Central -->
+        <rect x="180" y="30" width="320" height="195" rx="14" fill="#f8fafc" stroke="#002e6e" stroke-width="2.5"/>
+        <text x="340" y="60" font-family="'Outfit', sans-serif" font-size="13" font-weight="800" fill="#002e6e" text-anchor="middle">ECOSISTEMA HIDROSYS EC.</text>
+
+        <rect x="205" y="80" width="270" height="40" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="340" y="105" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">Asistente Virtual WhatsApp Bot</text>
+
+        <rect x="205" y="135" width="270" height="40" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="340" y="160" font-size="11" font-weight="700" fill="#065f46" text-anchor="middle">Panel Web & Reconexión QR Vivo</text>
+
+        <!-- Líneas de Interacción -->
+        <line x1="110" y1="75" x2="205" y2="95" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+        <line x1="110" y1="195" x2="205" y2="155" stroke="#334155" stroke-width="2"/>
+        <line x1="570" y1="75" x2="475" y2="100" stroke="#334155" stroke-width="2"/>
+        <line x1="570" y1="195" x2="475" y2="155" stroke="#334155" stroke-width="2"/>
+    </svg>
+    <div class="diagram-caption">Fig 1.1 - Mapa Relacional de Actores e Interacción con Hidrosys EC.</div>
+</div>
+
+<h2>1.2 Matriz Detallada de Necesidades por Actor</h2>
 <table>
     <thead>
         <tr>
             <th style="width:18%;">Actor / Rol</th>
-            <th style="width:25%;">Tipo de Interacción</th>
-            <th>Descripción y Perfil Operativo</th>
+            <th style="width:25%;">Canal Principal</th>
+            <th>Necesidad Identificada y Solución Tecnológica</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td><strong>Cliente / Usuario Final</strong></td>
-            <td>WhatsApp Asistente Virtual</td>
-            <td>Ciudadanos y empresas que solicitan servicios de revisión, instalación, reclamos o consulta de coberturas de agua y gas. Requieren una interfaz accesible 24/7 sin necesidad de instalar aplicaciones nuevas.</td>
+            <td>WhatsApp Messenger</td>
+            <td>Requiere agendar citas técnicas sin esperas telefónicas. Solución: Bot conversacional con menú numérico (1, 2, 3) compatible 100% con todos los móviles.</td>
         </tr>
         <tr>
             <td><strong>Administrador Principal</strong></td>
             <td>Dashboard Web (Super Admin)</td>
-            <td>Responsable del control total de la plataforma, auditoría del sistema, gestión de seguridad, visualización del estado del bot de WhatsApp y vinculación mediante código QR.</td>
+            <td>Requiere autogestionar la reconexión de WhatsApp sin depender de programadores. Solución: Pestaña <code>📱 Escanear QR / WhatsApp</code> en tiempo real.</td>
         </tr>
         <tr>
             <td><strong>Administrador Secundario</strong></td>
             <td>Dashboard Web (Operador)</td>
-            <td>Personal de atención en oficina encargado de revisar citas agendadas, asignar órdenes de trabajo a cuadrillas técnicas y confirmar horarios.</td>
+            <td>Requiere revisar citas pendientes y asignar órdenes de trabajo a cuadrillas técnicas.</td>
         </tr>
         <tr>
             <td><strong>Trabajador Técnico</strong></td>
-            <td>WhatsApp / Panel Móvil</td>
-            <td>Personal de campo encargado de visitar el domicilio o empresa del cliente, realizar el mantenimiento/inspección y registrar el avance de la orden de trabajo.</td>
-        </tr>
-    </tbody>
-</table>
-
-<h2>1.2 Matriz de Necesidades Específicas por Rol</h2>
-<p>A continuación se detallan las problemáticas detectadas en el entorno operativo tradicional y la solución que aporta Hidrosys EC.:</p>
-
-<div class="card">
-    <div class="card-title">1. Necesidad de Agilidad en la Atención al Cliente (24/7)</div>
-    <p><strong>Problema Actual:</strong> Los usuarios finales sufren largas esperas en líneas telefónicas de soporte para consultar horarios o agendar una cita técnica, generando insatisfacción.</p>
-    <p><strong>Solución Hidrosys:</strong> Implementación de un Asistente Virtual automatizado en WhatsApp basado en Baileys, capaz de guiar al cliente mediante un menú numérico intuitivo y 100% compatible con todos los dispositivos.</p>
-</div>
-
-<div class="card">
-    <div class="card-title">2. Necesidad de Agendamiento Sin Errores ni Conflicto de Horarios</div>
-    <p><strong>Problema Actual:</strong> El registro manual en agendas físicas u hojas de cálculo ocasiona citas duplicadas en una misma franja horaria y confusión de direcciones.</p>
-    <p><strong>Solución Hidrosys:</strong> Motor de citas conectado a base de datos que valida disponibilidad, registra nombre, teléfono, fecha y hora, y notifica automáticamente al Administrador.</p>
-</div>
-
-<div class="card">
-    <div class="card-title">3. Necesidad de Autonomía en la Vinculación del Bot (Escanear QR)</div>
-    <p><strong>Problema Actual:</strong> Cuando el dispositivo móvil de la empresa pierde conexión o reinicia WhatsApp, el personal de oficina dependía del programador para volver a enlazar el bot.</p>
-    <p><strong>Solución Hidrosys:</strong> Integración de la pestaña dedicada <em>"📱 Escanear QR / WhatsApp"</em> en el Panel de Administración web, permitiendo al dueño o administrador sincronizar en tiempo real el QR con seguridad y cifrado.</p>
-</div>
-
-<h2>1.3 Priorización de Necesidades (Metodología MoSCoW)</h2>
-<table>
-    <thead>
-        <tr>
-            <th>Prioridad MoSCoW</th>
-            <th>Código</th>
-            <th>Necesidad / Requisito Asociado</th>
-            <th>Impacto en el Sistema</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE (Esencial)</span></td>
-            <td>NEC-01</td>
-            <td>Comunicación automatizada bidireccional por WhatsApp (Menú Numérico confiable)</td>
-            <td>Alto (Núcleo del servicio de atención)</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE (Esencial)</span></td>
-            <td>NEC-02</td>
-            <td>Agendamiento y persistencia de citas técnicas en base de datos</td>
-            <td>Alto (Operatividad del negocio)</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE (Esencial)</span></td>
-            <td>NEC-03</td>
-            <td>Pestaña administrativa de reconexión y escaneo QR de WhatsApp en vivo</td>
-            <td>Alto (Autonomía del cliente corporativo)</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req">SHOULD HAVE (Importante)</span></td>
-            <td>NEC-04</td>
-            <td>Autenticación segura con JWT/Token en endpoints administrativos</td>
-            <td>Alto (Integridad de datos)</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-warning">COULD HAVE (Deseable)</span></td>
-            <td>NEC-05</td>
-            <td>Exportación de listados de citas e informes en formatos PDF y Excel</td>
-            <td>Medio (Gestión gerencial)</td>
+            <td>WhatsApp / Móvil</td>
+            <td>Requiere visualizar la dirección del cliente y registrar el cierre del trabajo en campo.</td>
         </tr>
     </tbody>
 </table>

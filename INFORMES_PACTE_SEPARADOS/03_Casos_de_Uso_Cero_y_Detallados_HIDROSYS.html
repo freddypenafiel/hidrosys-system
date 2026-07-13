@@ -122,15 +122,15 @@
     /* Estilos del Contenido */
     .page-break { page-break-after: always; }
     h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.5rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.25rem; color: var(--ista-blue); }
+    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
+    h2 { font-size: 1.2rem; color: var(--ista-blue); }
     h3 { font-size: 1.05rem; }
     p { margin-bottom: 10px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 10px 8px; text-align: left; font-weight: 600; }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
+    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
     .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
@@ -147,10 +147,18 @@
         background: #ffffff;
         border: 2px solid var(--gray-200);
         border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
+        padding: 16px 10px;
+        margin: 16px 0;
         text-align: center;
         page-break-inside: avoid;
+    }
+    .diagram-caption {
+        font-weight: 700;
+        font-size: 9pt;
+        color: var(--ista-blue);
+        margin-top: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     </style>
@@ -212,135 +220,170 @@
 
 <div class="content-body">
 
-<h1>3. CASOS DE USO CERO Y CASOS DE USO DETALLADOS</h1>
+<h1>3. CASOS DE USO CERO Y DETALLADOS POR ROL (UML COMPLETO)</h1>
 <p>
-Este documento formaliza la estructura comportamental del sistema <strong>Hidrosys EC.</strong> mediante Casos de Uso Cero (visión de frontera y contexto global) y los Casos de Uso Detallados por cada uno de los roles institucionales: <strong>Administrador Principal, Administrador Secundario y Trabajador</strong>.
+Este informe documenta formalmente la estructura conductual del sistema <strong>Hidrosys EC.</strong> a través del <strong>Diagrama de Casos de Uso Cero (Vista Global de Frontera)</strong> y los diagramas específicos por cada rol institucional.
 </p>
 
-<h2>3.1 Caso de Uso Cero (Diagrama Global del Sistema)</h2>
+<h2>3.1 Diagrama de Casos de Uso Cero (Vista General del Sistema con Muñecos UML)</h2>
 <p>
-El Caso de Uso Cero representa la interacción general del ecosistema tecnológico, integrando los canales de mensajería (WhatsApp Cloud/Baileys), el backend transaccional en Node.js y las interfaces de administración web.
+El siguiente diagrama UML ilustra a los cuatro actores principales (muñecos) interactuando con las elipses de frontera dentro del límite del sistema Hidrosys EC.:
 </p>
 
 <div class="diagram-box">
-    <h3 style="color:var(--ista-blue); margin-bottom:10px;">ARQUITECTURA FUNCIONAL DE CASOS DE USO CERO</h3>
-    <svg width="600" height="240" viewBox="0 0 600 240">
-        <!-- Actores -->
-        <circle cx="60" cy="50" r="18" fill="#002e6e" />
-        <text x="60" y="85" font-size="11" text-anchor="middle" font-weight="bold">Cliente WhatsApp</text>
+    <svg width="680" height="340" viewBox="0 0 680 340">
+        <!-- Muñeco 1: Cliente WhatsApp -->
         
-        <circle cx="60" cy="170" r="18" fill="#2563eb" />
-        <text x="60" y="205" font-size="11" text-anchor="middle" font-weight="bold">Administrador</text>
+    <g transform="translate(65, 80)">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Cliente WhatsApp</text>
+    </g>
+    
 
-        <!-- Sistema -->
-        <rect x="180" y="20" width="380" height="200" rx="12" fill="#f8fafc" stroke="#002e6e" stroke-width="2"/>
-        <text x="370" y="45" font-size="13" font-weight="bold" fill="#002e6e" text-anchor="middle">SISTEMA HIDROSYS EC. (BACKEND & WEB)</text>
+        <!-- Muñeco 2: Administrador Principal -->
+        
+    <g transform="translate(65, 235)">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Super Administrador</text>
+    </g>
+    
 
-        <!-- Elipses UC -->
-        <ellipse cx="370" cy="85" rx="140" ry="22" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
-        <text x="370" y="89" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">UC-01: Interactuar con Bot y Agendar Cita</text>
+        <!-- Muñeco 3: Administrador Secundario -->
+        
+    <g transform="translate(615, 80)">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Operador Oficina</text>
+    </g>
+    
 
-        <ellipse cx="370" cy="140" rx="140" ry="22" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
-        <text x="370" y="144" font-size="11" font-weight="bold" fill="#065f46" text-anchor="middle">UC-02: Escanear QR y Administrar Citas</text>
+        <!-- Muñeco 4: Trabajador Técnico -->
+        
+    <g transform="translate(615, 235)">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Trabajador Técnico</text>
+    </g>
+    
 
-        <!-- Líneas -->
-        <line x1="85" y1="55" x2="230" y2="80" stroke="#64748b" stroke-width="2"/>
-        <line x1="85" y1="170" x2="230" y2="145" stroke="#64748b" stroke-width="2"/>
+        <!-- Caja Frontera del Sistema -->
+        <rect x="155" y="15" width="370" height="310" rx="14" fill="#f8fafc" stroke="#002e6e" stroke-width="2.5"/>
+        <text x="340" y="42" font-family="'Outfit', sans-serif" font-size="12.5" font-weight="800" fill="#002e6e" text-anchor="middle">SISTEMA INTEGRAL HIDROSYS EC.</text>
+
+        <!-- Elipse 1: Agendar Cita y Consultar -->
+        <ellipse cx="340" cy="85" rx="135" ry="24" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="340" y="89" font-size="10.5" font-weight="700" fill="#1e40af" text-anchor="middle">UC-01: Interactuar Bot & Agendar Cita</text>
+
+        <!-- Elipse 2: Escanear QR WhatsApp -->
+        <ellipse cx="340" cy="148" rx="135" ry="24" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="340" y="152" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">UC-02: Escanear QR y Reconectar Bot</text>
+
+        <!-- Elipse 3: Gestión de Citas y Órdenes -->
+        <ellipse cx="340" cy="211" rx="135" ry="24" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="340" y="215" font-size="10.5" font-weight="700" fill="#92400e" text-anchor="middle">UC-03: Gestionar Órdenes y Cuadrillas</text>
+
+        <!-- Elipse 4: Registrar Avance en Campo -->
+        <ellipse cx="340" cy="274" rx="135" ry="24" fill="#f3e8ff" stroke="#7e22ce" stroke-width="1.5"/>
+        <text x="340" y="278" font-size="10.5" font-weight="700" fill="#6b21a8" text-anchor="middle">UC-04: Ejecución y Reporte en Campo</text>
+
+        <!-- Líneas Actor - Elipses -->
+        <line x1="95" y1="80" x2="205" y2="85" stroke="#334155" stroke-width="2"/>
+        <line x1="95" y1="235" x2="205" y2="148" stroke="#334155" stroke-width="2"/>
+        <line x1="95" y1="235" x2="205" y2="211" stroke="#334155" stroke-width="2"/>
+        <line x1="585" y1="80" x2="475" y2="211" stroke="#334155" stroke-width="2"/>
+        <line x1="585" y1="235" x2="475" y2="274" stroke="#334155" stroke-width="2"/>
     </svg>
+    <div class="diagram-caption">Fig 3.1 - Diagrama UML de Casos de Uso Cero (Vista de Frontera Global)</div>
 </div>
 
-<h2>3.2 Detalle de Casos de Uso por Rol</h2>
+<h2>3.2 Casos de Uso Detallados por Rol</h2>
 
-<h3>3.2.1 Rol: Administrador Principal (Super Admin)</h3>
+<h3>3.2.1 Rol: Administrador Principal (Diagrama y Detalle CUD-01)</h3>
+<div class="diagram-box">
+    <svg width="600" height="150" viewBox="0 0 600 150">
+        
+    <g transform="translate(70, 70)">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="#002e6e" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="#002e6e" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">Admin Principal</text>
+    </g>
+    
+        <rect x="180" y="20" width="380" height="110" rx="10" fill="#f8fafc" stroke="#002e6e" stroke-width="2"/>
+        <ellipse cx="370" cy="55" rx="140" ry="20" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="370" y="59" font-size="10.5" font-weight="bold" fill="#065f46" text-anchor="middle">CUD-01: Escanear QR en Pestaña Admin</text>
+        <ellipse cx="370" cy="100" rx="140" ry="20" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="370" y="104" font-size="10.5" font-weight="bold" fill="#1e40af" text-anchor="middle">CUD-02: Control Middleware requireAuth</text>
+        <line x1="100" y1="70" x2="230" y2="55" stroke="#334155" stroke-width="2"/>
+        <line x1="100" y1="70" x2="230" y2="100" stroke="#334155" stroke-width="2"/>
+    </svg>
+    <div class="diagram-caption">Fig 3.2 - Casos de Uso Específicos del Administrador Principal</div>
+</div>
+
 <table>
     <thead>
         <tr>
             <th style="width:25%;">Atributo</th>
-            <th>Especificación Detallada</th>
+            <th>Especificación Operativa</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td><strong>Código y Nombre</strong></td>
-            <td><strong>CUD-01: Gestión Global y Vinculación de WhatsApp (QR)</strong></td>
+            <td><strong>Identificador</strong></td>
+            <td><strong>CUD-01: Sincronización QR de WhatsApp desde el Panel Web</strong></td>
         </tr>
         <tr>
             <td><strong>Actor Principal</strong></td>
-            <td>Administrador Principal (Dueño / Supervisor de Sistema)</td>
+            <td>Administrador Principal / Dueño de Empresa</td>
         </tr>
         <tr>
-            <td><strong>Precondición</strong></td>
-            <td>El usuario debe haber iniciado sesión con credenciales de Administrador en <code>localhost:3000</code>.</td>
-        </tr>
-        <tr>
-            <td><strong>Flujo Principal</strong></td>
+            <td><strong>Flujo Normal</strong></td>
             <td>
-                1. El Administrador hace clic en la opción <strong>📱 Escanear QR / WhatsApp</strong> en el menú de Administración.<br>
-                2. El sistema consulta a <code>/api/wa/status</code> la condición actual del servicio Baileys.<br>
-                3. Si el bot requiere vinculación, el servidor devuelve un código QR en base64.<br>
-                4. El Administrador abre WhatsApp en el celular corporativo, selecciona "Dispositivos vinculados" y escanea el QR.<br>
-                5. El servidor detecta la sincronización exitosa y notifica al panel, mostrando el indicador verde <strong>¡Dispositivo Conectado! ✅</strong>.
-            </td>
-        </tr>
-        <tr>
-            <td><strong>Postcondición</strong></td>
-            <td>El bot de WhatsApp queda operativo y listo para atender a clientes automáticamente.</td>
-        </tr>
-    </tbody>
-</table>
-
-<h3>3.2.2 Rol: Administrador Secundario (Operador de Oficina)</h3>
-<table>
-    <thead>
-        <tr>
-            <th style="width:25%;">Atributo</th>
-            <th>Especificación Detallada</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Código y Nombre</strong></td>
-            <td><strong>CUD-02: Administración de Citas y Coordinación de Órdenes</strong></td>
-        </tr>
-        <tr>
-            <td><strong>Actor Principal</strong></td>
-            <td>Administrador Secundario (Personal de Atención y Logística)</td>
-        </tr>
-        <tr>
-            <td><strong>Flujo Principal</strong></td>
-            <td>
-                1. El Operador ingresa a la sección <strong>📅 Gestión de Citas</strong>.<br>
-                2. Visualiza la tabla filtrada por citas "Pendientes" generadas vía WhatsApp.<br>
-                3. Selecciona una cita, asigna una cuadrilla técnica responsable y cambia el estado a "Confirmado".<br>
-                4. El sistema envía una notificación automática en tiempo real.
-            </td>
-        </tr>
-    </tbody>
-</table>
-
-<h3>3.2.3 Rol: Trabajador Técnico (Personal de Campo)</h3>
-<table>
-    <thead>
-        <tr>
-            <th style="width:25%;">Atributo</th>
-            <th>Especificación Detallada</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Código y Nombre</strong></td>
-            <td><strong>CUD-03: Ejecución y Cierre de Orden de Trabajo en Campo</strong></td>
-        </tr>
-        <tr>
-            <td><strong>Actor Principal</strong></td>
-            <td>Trabajador Técnico de Hidrosys EC.</td>
-        </tr>
-        <tr>
-            <td><strong>Flujo Principal</strong></td>
-            <td>
-                1. El técnico acude a la dirección registrada en la cita del cliente.<br>
-                2. Realiza la inspección o reparación del sistema hidráulico o de gas.<br>
-                3. Registra en el sistema el resultado de la visita y marca el servicio como "Completado".
+                1. El administrador ingresa a su sesión web y hace clic en <strong>📱 Escanear QR / WhatsApp</strong>.<br>
+                2. El servidor consulta en vivo el socket de Baileys.<br>
+                3. Si el bot está desconectado, se renderiza el QR en pantalla.<br>
+                4. El administrador escanea con su celular corporativo y el sistema actualiza automáticamente a <strong>¡Dispositivo Conectado! ✅</strong>.
             </td>
         </tr>
     </tbody>

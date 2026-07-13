@@ -122,15 +122,15 @@
     /* Estilos del Contenido */
     .page-break { page-break-after: always; }
     h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.5rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.25rem; color: var(--ista-blue); }
+    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
+    h2 { font-size: 1.2rem; color: var(--ista-blue); }
     h3 { font-size: 1.05rem; }
     p { margin-bottom: 10px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 10px 8px; text-align: left; font-weight: 600; }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
+    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
     .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
@@ -147,10 +147,18 @@
         background: #ffffff;
         border: 2px solid var(--gray-200);
         border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
+        padding: 16px 10px;
+        margin: 16px 0;
         text-align: center;
         page-break-inside: avoid;
+    }
+    .diagram-caption {
+        font-weight: 700;
+        font-size: 9pt;
+        color: var(--ista-blue);
+        margin-top: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     </style>
@@ -214,53 +222,38 @@
 
 <h1>4. CASOS DE USO DE CONTEXTO Y ARQUITECTURA DE FRONTERA</h1>
 <p>
-El análisis de contexto define las fronteras físicas y lógicas entre el entorno informático de <strong>Hidrosys EC.</strong> y las entidades externas (usuarios, servidores de Meta/WhatsApp, base de datos y navegadores web).
+El análisis de contexto especifica las fronteras tecnológicas e interconexiones entre los clientes móviles, el motor conversacional y la persistencia institucional.
 </p>
 
-<h2>4.1 Fronteras del Ecosistema y Componentes</h2>
-<p>La plataforma se articula en cuatro capas claramente delimitadas en la arquitectura modular:</p>
+<h2>4.1 Diagrama Arquitectónico de Contexto y Fronteras</h2>
+<div class="diagram-box">
+    <svg width="680" height="220" viewBox="0 0 680 220">
+        <!-- Bloque 1: Cliente WhatsApp -->
+        <rect x="25" y="70" width="130" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="90" y="105" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">WhatsApp App</text>
+        <text x="90" y="125" font-size="9" fill="#1e40af" text-anchor="middle">(Cliente Android/iOS)</text>
 
-<table>
-    <thead>
-        <tr>
-            <th>Capa / Componente</th>
-            <th>Tecnología</th>
-            <th>Responsabilidad Contextual</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Frontera Exterior (Cliente)</strong></td>
-            <td>WhatsApp Messenger / WhatsApp Business</td>
-            <td>Interfaz cliente universal en teléfonos móviles Android e iOS. Transmite comandos numéricos y texto.</td>
-        </tr>
-        <tr>
-            <td><strong>Capa de Enlace y Bot</strong></td>
-            <td>Baileys WebSockets (@whiskeysockets)</td>
-            <td>Motor que mantiene la sesión de WhatsApp de la empresa cifrada, emite códigos QR y procesa eventos de mensajes entrantes.</td>
-        </tr>
-        <tr>
-            <td><strong>Servidor Central API REST</strong></td>
-            <td>Node.js / Express / Middleware requireAuth</td>
-            <td>Núcleo de lógica de negocio, control de rutas protegidas mediante tokens de sesión y orquestación de flujos.</td>
-        </tr>
-        <tr>
-            <td><strong>Capa de Persistencia y Datos</strong></td>
-            <td>Almacenamiento JSON / SQLite / PostgreSQL</td>
-            <td>Persistencia de citas agendadas, usuarios administradores, configuraciones del sistema e historial de interacciones.</td>
-        </tr>
-    </tbody>
-</table>
+        <!-- Flecha 1 -->
+        <line x1="155" y1="110" x2="225" y2="110" stroke="#334155" stroke-width="2"/>
+        <text x="190" y="100" font-size="8.5" fill="#64748b" text-anchor="middle">WebSocket</text>
 
-<h2>4.2 Flujo Contextual de Comunicación Segura</h2>
-<div class="card">
-    <div class="card-title">Protocolo de Interacción Cliente - Servidor - WhatsApp</div>
-    <p>
-    1. El usuario envía una consulta al número corporativo de Hidrosys EC.<br>
-    2. El evento es interceptado por el módulo Baileys en el servidor Express.<br>
-    3. El motor de flujos (<code>whatsapp/flows.js</code>) evalúa el texto y retorna el menú plano estructurado.<br>
-    4. Las solicitudes administrativas web viajan mediante peticiones HTTP seguras con cabecera <code>x-session-token</code>.
-    </p>
+        <!-- Bloque 2: Servidor Node.js -->
+        <rect x="225" y="40" width="220" height="140" rx="12" fill="#f8fafc" stroke="#002e6e" stroke-width="2.5"/>
+        <text x="335" y="70" font-size="12" font-weight="800" fill="#002e6e" text-anchor="middle">BACKEND HIDROSYS EC.</text>
+        <rect x="245" y="85" width="180" height="32" rx="6" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="335" y="105" font-size="10" font-weight="bold" fill="#065f46" text-anchor="middle">Motor Baileys / QR Stream</text>
+        <rect x="245" y="128" width="180" height="32" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="335" y="148" font-size="10" font-weight="bold" fill="#92400e" text-anchor="middle">API REST & requireAuth</text>
+
+        <!-- Flecha 2 -->
+        <line x1="445" y1="110" x2="515" y2="110" stroke="#334155" stroke-width="2"/>
+
+        <!-- Bloque 3: Base de Datos & Web -->
+        <rect x="515" y="70" width="140" height="80" rx="8" fill="#f3e8ff" stroke="#7e22ce" stroke-width="2"/>
+        <text x="585" y="105" font-size="11" font-weight="bold" fill="#6b21a8" text-anchor="middle">Base de Datos</text>
+        <text x="585" y="125" font-size="9" fill="#6b21a8" text-anchor="middle">& Panel Admin Web</text>
+    </svg>
+    <div class="diagram-caption">Fig 4.1 - Fronteras de Interconexión Contextual del Sistema</div>
 </div>
 
 </div>

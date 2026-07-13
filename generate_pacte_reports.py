@@ -5,6 +5,24 @@ import subprocess
 OUTPUT_DIR = r"C:\Users\fredd\.gemini\antigravity\scratch\hidrosys-system\INFORMES_PACTE_SEPARADOS"
 EDGE_PATH = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 
+# Helper SVG para dibujar Muñeco de Caso de Uso UML (Actor Stick Figure)
+def svg_uml_actor(x, y, name, color="#002e6e"):
+    return f"""
+    <g transform="translate({x}, {y})">
+        <!-- Cabeza -->
+        <circle cx="0" cy="-32" r="12" fill="{color}" stroke="#1e40af" stroke-width="2"/>
+        <!-- Cuerpo -->
+        <line x1="0" y1="-20" x2="0" y2="14" stroke="{color}" stroke-width="3" stroke-linecap="round"/>
+        <!-- Brazos -->
+        <line x1="-18" y1="-8" x2="18" y2="-8" stroke="{color}" stroke-width="3" stroke-linecap="round"/>
+        <!-- Piernas -->
+        <line x1="0" y1="14" x2="-15" y2="38" stroke="{color}" stroke-width="3" stroke-linecap="round"/>
+        <line x1="0" y1="14" x2="15" y2="38" stroke="{color}" stroke-width="3" stroke-linecap="round"/>
+        <!-- Nombre Actor -->
+        <text x="0" y="56" font-family="'Outfit', sans-serif" font-size="11.5" font-weight="700" fill="#0f172a" text-anchor="middle">{name}</text>
+    </g>
+    """
+
 COVER_TEMPLATE = """
     <!-- ==================== PORTADA OFICIAL ==================== -->
     <div class="cover-page">
@@ -176,15 +194,15 @@ CSS_STYLES = """
     /* Estilos del Contenido */
     .page-break { page-break-after: always; }
     h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.5rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.25rem; color: var(--ista-blue); }
+    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
+    h2 { font-size: 1.2rem; color: var(--ista-blue); }
     h3 { font-size: 1.05rem; }
     p { margin-bottom: 10px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 10px 8px; text-align: left; font-weight: 600; }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
+    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
     .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
@@ -201,10 +219,18 @@ CSS_STYLES = """
         background: #ffffff;
         border: 2px solid var(--gray-200);
         border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
+        padding: 16px 10px;
+        margin: 16px 0;
         text-align: center;
         page-break-inside: avoid;
+    }
+    .diagram-caption {
+        font-weight: 700;
+        font-size: 9pt;
+        color: var(--ista-blue);
+        margin-top: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 """
 
@@ -233,370 +259,247 @@ def wrap_html(doc_code, doc_title, doc_summary, content_body):
     return html
 
 # -------------------------------------------------------------------------
-# DOCUMENTO 1: NECESIDADES DEL USUARIO
+# DOCUMENTO 1: NECESIDADES DEL USUARIO (CON DIAGRAMA DE ACTORES UML)
 # -------------------------------------------------------------------------
-DOC1_CONTENT = """
-<h1>1. ANÁLISIS DE NECESIDADES DEL USUARIO</h1>
+DOC1_CONTENT = f"""
+<h1>1. ANÁLISIS DE NECESIDADES DEL USUARIO Y STAKEHOLDERS</h1>
 <p>
-El presente documento describe de manera sistemática y rigurosa las necesidades reales identificadas para el proyecto <strong>Hidrosys EC.</strong>, un sistema integral diseñado para solucionar la saturación en la atención al cliente, el agendamiento de citas técnicas y el monitoreo operativo en empresas proveedoras y de mantenimiento de sistemas de agua potable y gas.
+El presente informe documenta el estudio de requerimientos y necesidades operativas para <strong>Hidrosys EC.</strong>, plataforma integral de gestión de citas, asistencia virtual por WhatsApp y control de cuadrillas para servicios de agua y gas.
 </p>
 
-<h2>1.1 Identificación de Actores e Interesados (Stakeholders)</h2>
+<h2>1.1 Diagrama Estructural de Actores e Interesados (UML Stakeholders)</h2>
 <p>
-Para una correcta delimitación funcional, se realizó una clasificación exhaustiva de los actores que interactúan directa e indirectamente con la plataforma Hidrosys EC.:
+El siguiente diagrama ilustra la interacción visual entre los actores humanos (muñecos UML) y la arquitectura central del sistema Hidrosys EC.:
 </p>
+
+<div class="diagram-box">
+    <svg width="680" height="260" viewBox="0 0 680 260">
+        <!-- Actor 1: Cliente -->
+        {svg_uml_actor(70, 75, "Cliente / Usuario")}
+        
+        <!-- Actor 2: Administrador Principal -->
+        {svg_uml_actor(70, 195, "Super Administrador")}
+
+        <!-- Actor 3: Administrador Secundario -->
+        {svg_uml_actor(610, 75, "Operador Oficina")}
+
+        <!-- Actor 4: Trabajador Técnico -->
+        {svg_uml_actor(610, 195, "Trabajador Técnico")}
+
+        <!-- Sistema Central -->
+        <rect x="180" y="30" width="320" height="195" rx="14" fill="#f8fafc" stroke="#002e6e" stroke-width="2.5"/>
+        <text x="340" y="60" font-family="'Outfit', sans-serif" font-size="13" font-weight="800" fill="#002e6e" text-anchor="middle">ECOSISTEMA HIDROSYS EC.</text>
+
+        <rect x="205" y="80" width="270" height="40" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="340" y="105" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">Asistente Virtual WhatsApp Bot</text>
+
+        <rect x="205" y="135" width="270" height="40" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="340" y="160" font-size="11" font-weight="700" fill="#065f46" text-anchor="middle">Panel Web & Reconexión QR Vivo</text>
+
+        <!-- Líneas de Interacción -->
+        <line x1="110" y1="75" x2="205" y2="95" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+        <line x1="110" y1="195" x2="205" y2="155" stroke="#334155" stroke-width="2"/>
+        <line x1="570" y1="75" x2="475" y2="100" stroke="#334155" stroke-width="2"/>
+        <line x1="570" y1="195" x2="475" y2="155" stroke="#334155" stroke-width="2"/>
+    </svg>
+    <div class="diagram-caption">Fig 1.1 - Mapa Relacional de Actores e Interacción con Hidrosys EC.</div>
+</div>
+
+<h2>1.2 Matriz Detallada de Necesidades por Actor</h2>
 <table>
     <thead>
         <tr>
             <th style="width:18%;">Actor / Rol</th>
-            <th style="width:25%;">Tipo de Interacción</th>
-            <th>Descripción y Perfil Operativo</th>
+            <th style="width:25%;">Canal Principal</th>
+            <th>Necesidad Identificada y Solución Tecnológica</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td><strong>Cliente / Usuario Final</strong></td>
-            <td>WhatsApp Asistente Virtual</td>
-            <td>Ciudadanos y empresas que solicitan servicios de revisión, instalación, reclamos o consulta de coberturas de agua y gas. Requieren una interfaz accesible 24/7 sin necesidad de instalar aplicaciones nuevas.</td>
+            <td>WhatsApp Messenger</td>
+            <td>Requiere agendar citas técnicas sin esperas telefónicas. Solución: Bot conversacional con menú numérico (1, 2, 3) compatible 100% con todos los móviles.</td>
         </tr>
         <tr>
             <td><strong>Administrador Principal</strong></td>
             <td>Dashboard Web (Super Admin)</td>
-            <td>Responsable del control total de la plataforma, auditoría del sistema, gestión de seguridad, visualización del estado del bot de WhatsApp y vinculación mediante código QR.</td>
+            <td>Requiere autogestionar la reconexión de WhatsApp sin depender de programadores. Solución: Pestaña <code>📱 Escanear QR / WhatsApp</code> en tiempo real.</td>
         </tr>
         <tr>
             <td><strong>Administrador Secundario</strong></td>
             <td>Dashboard Web (Operador)</td>
-            <td>Personal de atención en oficina encargado de revisar citas agendadas, asignar órdenes de trabajo a cuadrillas técnicas y confirmar horarios.</td>
+            <td>Requiere revisar citas pendientes y asignar órdenes de trabajo a cuadrillas técnicas.</td>
         </tr>
         <tr>
             <td><strong>Trabajador Técnico</strong></td>
-            <td>WhatsApp / Panel Móvil</td>
-            <td>Personal de campo encargado de visitar el domicilio o empresa del cliente, realizar el mantenimiento/inspección y registrar el avance de la orden de trabajo.</td>
-        </tr>
-    </tbody>
-</table>
-
-<h2>1.2 Matriz de Necesidades Específicas por Rol</h2>
-<p>A continuación se detallan las problemáticas detectadas en el entorno operativo tradicional y la solución que aporta Hidrosys EC.:</p>
-
-<div class="card">
-    <div class="card-title">1. Necesidad de Agilidad en la Atención al Cliente (24/7)</div>
-    <p><strong>Problema Actual:</strong> Los usuarios finales sufren largas esperas en líneas telefónicas de soporte para consultar horarios o agendar una cita técnica, generando insatisfacción.</p>
-    <p><strong>Solución Hidrosys:</strong> Implementación de un Asistente Virtual automatizado en WhatsApp basado en Baileys, capaz de guiar al cliente mediante un menú numérico intuitivo y 100% compatible con todos los dispositivos.</p>
-</div>
-
-<div class="card">
-    <div class="card-title">2. Necesidad de Agendamiento Sin Errores ni Conflicto de Horarios</div>
-    <p><strong>Problema Actual:</strong> El registro manual en agendas físicas u hojas de cálculo ocasiona citas duplicadas en una misma franja horaria y confusión de direcciones.</p>
-    <p><strong>Solución Hidrosys:</strong> Motor de citas conectado a base de datos que valida disponibilidad, registra nombre, teléfono, fecha y hora, y notifica automáticamente al Administrador.</p>
-</div>
-
-<div class="card">
-    <div class="card-title">3. Necesidad de Autonomía en la Vinculación del Bot (Escanear QR)</div>
-    <p><strong>Problema Actual:</strong> Cuando el dispositivo móvil de la empresa pierde conexión o reinicia WhatsApp, el personal de oficina dependía del programador para volver a enlazar el bot.</p>
-    <p><strong>Solución Hidrosys:</strong> Integración de la pestaña dedicada <em>"📱 Escanear QR / WhatsApp"</em> en el Panel de Administración web, permitiendo al dueño o administrador sincronizar en tiempo real el QR con seguridad y cifrado.</p>
-</div>
-
-<h2>1.3 Priorización de Necesidades (Metodología MoSCoW)</h2>
-<table>
-    <thead>
-        <tr>
-            <th>Prioridad MoSCoW</th>
-            <th>Código</th>
-            <th>Necesidad / Requisito Asociado</th>
-            <th>Impacto en el Sistema</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE (Esencial)</span></td>
-            <td>NEC-01</td>
-            <td>Comunicación automatizada bidireccional por WhatsApp (Menú Numérico confiable)</td>
-            <td>Alto (Núcleo del servicio de atención)</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE (Esencial)</span></td>
-            <td>NEC-02</td>
-            <td>Agendamiento y persistencia de citas técnicas en base de datos</td>
-            <td>Alto (Operatividad del negocio)</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE (Esencial)</span></td>
-            <td>NEC-03</td>
-            <td>Pestaña administrativa de reconexión y escaneo QR de WhatsApp en vivo</td>
-            <td>Alto (Autonomía del cliente corporativo)</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req">SHOULD HAVE (Importante)</span></td>
-            <td>NEC-04</td>
-            <td>Autenticación segura con JWT/Token en endpoints administrativos</td>
-            <td>Alto (Integridad de datos)</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-warning">COULD HAVE (Deseable)</span></td>
-            <td>NEC-05</td>
-            <td>Exportación de listados de citas e informes en formatos PDF y Excel</td>
-            <td>Medio (Gestión gerencial)</td>
+            <td>WhatsApp / Móvil</td>
+            <td>Requiere visualizar la dirección del cliente y registrar el cierre del trabajo en campo.</td>
         </tr>
     </tbody>
 </table>
 """
 
 # -------------------------------------------------------------------------
-# DOCUMENTO 2: HISTORIAS DE USUARIO
+# DOCUMENTO 2: HISTORIAS DE USUARIO (CON DIAGRAMA AGILE SCRUM)
 # -------------------------------------------------------------------------
-DOC2_CONTENT = """
-<h1>2. HISTORIAS DE USUARIO (AGILE / SCRUM)</h1>
+DOC2_CONTENT = f"""
+<h1>2. HISTORIAS DE USUARIO Y FLUJO DE VALOR ÁGIL</h1>
 <p>
-Las Historias de Usuario de <strong>Hidrosys EC.</strong> estructuran los requerimientos funcionales desde la perspectiva de valor que reciben los diferentes actores involucrados. Cada historia cumple con el estándar de calidad <strong>INVEST</strong> (Independiente, Negociable, Valiosa, Estimable, Pequeña y Comprobable).
+Las Historias de Usuario de <strong>Hidrosys EC.</strong> articulan las funcionalidades bajo el estándar INVEST del marco Scrum, garantizando una trazabilidad completa desde la necesidad del usuario hasta la entrega verificada.
 </p>
 
-<h2>2.1 Catálogo y Fichas de Historias de Usuario</h2>
+<h2>2.1 Diagrama de Flujo de Valor y Sprints (Agile Scrum)</h2>
+<div class="diagram-box">
+    <svg width="680" height="210" viewBox="0 0 680 210">
+        <!-- Muñeco Cliente -->
+        {svg_uml_actor(60, 85, "Actor Usuario")}
+        <line x1="95" y1="85" x2="160" y2="85" stroke="#2563eb" stroke-width="2.5"/>
+
+        <!-- Backlog -->
+        <rect x="160" y="45" width="130" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="225" y="75" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">Product Backlog</text>
+        <text x="225" y="95" font-size="9.5" fill="#1e40af" text-anchor="middle">HU-01 a HU-06</text>
+
+        <line x1="290" y1="85" x2="350" y2="85" stroke="#2563eb" stroke-width="2.5"/>
+
+        <!-- Sprint Execution -->
+        <rect x="350" y="45" width="140" height="80" rx="40" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+        <text x="420" y="75" font-size="11" font-weight="bold" fill="#92400e" text-anchor="middle">Sprint Iterativo</text>
+        <text x="420" y="95" font-size="9.5" fill="#92400e" text-anchor="middle">Desarrollo & Pruebas</text>
+
+        <line x1="490" y1="85" x2="550" y2="85" stroke="#10b981" stroke-width="2.5"/>
+
+        <!-- Incremento -->
+        <rect x="550" y="45" width="110" height="80" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="2"/>
+        <text x="605" y="75" font-size="11" font-weight="bold" fill="#065f46" text-anchor="middle">Entrega Final</text>
+        <text x="605" y="95" font-size="9.5" fill="#065f46" text-anchor="middle">Sistema Funcional</text>
+    </svg>
+    <div class="diagram-caption">Fig 2.1 - Flujo Ágil de Implementación de Historias de Usuario</div>
+</div>
+
+<h2>2.2 Fichas Técnicas de Historias de Usuario</h2>
 
 <div class="card">
-    <div class="card-title">HU-01: Navegación del Cliente por WhatsApp mediante Menú Numérico</div>
+    <div class="card-title">HU-01: Menú Numérico Confiable en WhatsApp</div>
     <p><strong>Como</strong> cliente de Hidrosys EC.,<br>
-    <strong>Quiero</strong> interactuar con el bot de WhatsApp enviando opciones numéricas simples (ej. 1, 2, 3),<br>
-    <strong>Para</strong> obtener respuestas rápidas desde cualquier teléfono celular sin que se bloqueen los mensajes en listas o botones incompatibles.</p>
-    <p><strong>Criterios de Aceptación:</strong></p>
-    <ul>
-        <li>El sistema debe enviar un mensaje de texto plano estructurado con opciones numeradas claras.</li>
-        <li>Al recibir un número válido ('1', '2', '3'), el bot debe responder con el flujo correspondiente en menos de 1.5 segundos.</li>
-        <li>Si el cliente escribe texto no numérico en el menú principal, el bot debe indicar cortésmente cómo seleccionar una opción.</li>
-    </ul>
+    <strong>Quiero</strong> recibir opciones numeradas claras en texto simple al escribir al bot,<br>
+    <strong>Para</strong> poder seleccionar con un número (1, 2, 3) sin bloqueos por incompatibilidad de botones en mi celular.</p>
+    <p><strong>Criterios de Aceptación:</strong> Envío en &lt; 1.5s, respuesta correcta a opciones numéricas, tolerancia a errores.</p>
 </div>
 
 <div class="card">
-    <div class="card-title">HU-02: Agendamiento Rápido de Inspecciones y Citas</div>
-    <p><strong>Como</strong> usuario final,<br>
-    <strong>Quiero</strong> agendar una cita técnica proporcionando mis datos básicos por el chat de WhatsApp,<br>
-    <strong>Para</strong> coordinar una visita de mantenimiento de agua o gas sin tener que llamar por teléfono.</p>
-    <p><strong>Criterios de Aceptación:</strong></p>
-    <ul>
-        <li>El bot solicita secuencialmente: Nombre, Dirección, Tipo de Servicio y Fecha/Hora preferida.</li>
-        <li>Una vez confirmados los datos, el sistema almacena el registro en la base de datos con estado "Pendiente".</li>
-        <li>Se envía un comprobante en texto por WhatsApp al cliente con el ID de su cita agendada.</li>
-    </ul>
+    <div class="card-title">HU-02: Agendamiento Paso a Paso vía WhatsApp</div>
+    <p><strong>Como</strong> cliente o empresa solicitante,<br>
+    <strong>Quiero</strong> registrar mi Nombre, Dirección, Servicio y Fecha/Hora conversando con el bot,<br>
+    <strong>Para</strong> coordinar mi visita técnica sin esperas telefónicas.</p>
 </div>
 
 <div class="card">
-    <div class="card-title">HU-03: Reconexión Autónoma del Bot mediante Pestaña "Escanear QR"</div>
-    <p><strong>Como</strong> Administrador / Dueño de la empresa Hidrosys,<br>
-    <strong>Quiero</strong> acceder a una pestaña específica en mi panel web que muestre el código QR de WhatsApp en vivo,<br>
-    <p><strong>Para</strong> escanearlo desde el celular corporativo y reconectar el bot instantáneamente en caso de pérdida de sesión.</p>
-    <p><strong>Criterios de Aceptación:</strong></p>
-    <ul>
-        <li>El panel web debe incluir en el menú lateral de Administración la pestaña <code>📱 Escanear QR / WhatsApp</code>.</li>
-        <li>El sistema consulta al servidor en tiempo real el estado de conexión de Baileys.</li>
-        <li>Si está desconectado, renderiza el código QR actualizado; si se conecta, muestra automáticamente "¡Dispositivo Conectado! ✅".</li>
-        <li>Incluye un botón seguro "Reiniciar Conexión / Generar Nuevo QR" protegido por autenticación.</li>
-    </ul>
+    <div class="card-title">HU-03: Reconexión QR en Tiempo Real desde Panel Web</div>
+    <p><strong>Como</strong> Administrador / Dueño de Hidrosys EC.,<br>
+    <strong>Quiero</strong> disponer de la pestaña <code>📱 Escanear QR / WhatsApp</code> en el panel web con el QR en vivo,<br>
+    <strong>Para</strong> vincular el celular corporativo al instante ante cualquier desconexión sin asistencia de programadores.</p>
 </div>
-
-<div class="card">
-    <div class="card-title">HU-04: Autenticación y Seguridad en Endpoints Administrativos</div>
-    <p><strong>Como</strong> Administrador del Sistema,<br>
-    <strong>Quiero</strong> que todas las operaciones sensibles (reinicio de bot, gestión de usuarios y citas) requieran un token de sesión,<br>
-    <strong>Para</strong> evitar que usuarios externos o atacantes ejecuten comandos en el servidor.</p>
-    <p><strong>Criterios de Aceptación:</strong></p>
-    <ul>
-        <li>El middleware <code>requireAuth</code> debe verificar la cabecera <code>x-session-token</code> en cada petición POST/PUT/DELETE.</li>
-        <li>Si el token no está activo en sesión, retornar un error HTTP 401 Unauthorized.</li>
-    </ul>
-</div>
-
-<h2>2.2 Matriz de Resumen de Historias de Usuario</h2>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nombre de la Historia</th>
-            <th>Rol</th>
-            <th>Puntos de Historia</th>
-            <th>Estado</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>HU-01</td>
-            <td>Menú Numérico de WhatsApp Confiable</td>
-            <td>Cliente</td>
-            <td>3 pt</td>
-            <td>Completado</td>
-        </tr>
-        <tr>
-            <td>HU-02</td>
-            <td>Agendamiento Automatizado de Citas</td>
-            <td>Cliente</td>
-            <td>5 pt</td>
-            <td>Completado</td>
-        </tr>
-        <tr>
-            <td>HU-03</td>
-            <td>Panel Web: Escanear QR y Reconectar WhatsApp</td>
-            <td>Administrador</td>
-            <td>8 pt</td>
-            <td>Completado</td>
-        </tr>
-        <tr>
-            <td>HU-04</td>
-            <td>Seguridad Middleware requireAuth en APIs</td>
-            <td>Admin / Sistema</td>
-            <td>5 pt</td>
-            <td>Completado</td>
-        </tr>
-        <tr>
-            <td>HU-05</td>
-            <td>Consulta de Coberturas de Agua/Gas</td>
-            <td>Cliente</td>
-            <td>3 pt</td>
-            <td>Completado</td>
-        </tr>
-        <tr>
-            <td>HU-06</td>
-            <td>Gestión de Órdenes y Reportes PDF</td>
-            <td>Administrador</td>
-            <td>5 pt</td>
-            <td>Completado</td>
-        </tr>
-    </tbody>
-</table>
 """
 
 # -------------------------------------------------------------------------
-# DOCUMENTO 3: CASOS DE USO CERO Y DETALLADOS
+# DOCUMENTO 3: CASOS DE USO CERO Y DETALLADOS (CON MUÑECOS UML OFICIALES)
 # -------------------------------------------------------------------------
-DOC3_CONTENT = """
-<h1>3. CASOS DE USO CERO Y CASOS DE USO DETALLADOS</h1>
+DOC3_CONTENT = f"""
+<h1>3. CASOS DE USO CERO Y DETALLADOS POR ROL (UML COMPLETO)</h1>
 <p>
-Este documento formaliza la estructura comportamental del sistema <strong>Hidrosys EC.</strong> mediante Casos de Uso Cero (visión de frontera y contexto global) y los Casos de Uso Detallados por cada uno de los roles institucionales: <strong>Administrador Principal, Administrador Secundario y Trabajador</strong>.
+Este informe documenta formalmente la estructura conductual del sistema <strong>Hidrosys EC.</strong> a través del <strong>Diagrama de Casos de Uso Cero (Vista Global de Frontera)</strong> y los diagramas específicos por cada rol institucional.
 </p>
 
-<h2>3.1 Caso de Uso Cero (Diagrama Global del Sistema)</h2>
+<h2>3.1 Diagrama de Casos de Uso Cero (Vista General del Sistema con Muñecos UML)</h2>
 <p>
-El Caso de Uso Cero representa la interacción general del ecosistema tecnológico, integrando los canales de mensajería (WhatsApp Cloud/Baileys), el backend transaccional en Node.js y las interfaces de administración web.
+El siguiente diagrama UML ilustra a los cuatro actores principales (muñecos) interactuando con las elipses de frontera dentro del límite del sistema Hidrosys EC.:
 </p>
 
 <div class="diagram-box">
-    <h3 style="color:var(--ista-blue); margin-bottom:10px;">ARQUITECTURA FUNCIONAL DE CASOS DE USO CERO</h3>
-    <svg width="600" height="240" viewBox="0 0 600 240">
-        <!-- Actores -->
-        <circle cx="60" cy="50" r="18" fill="#002e6e" />
-        <text x="60" y="85" font-size="11" text-anchor="middle" font-weight="bold">Cliente WhatsApp</text>
-        
-        <circle cx="60" cy="170" r="18" fill="#2563eb" />
-        <text x="60" y="205" font-size="11" text-anchor="middle" font-weight="bold">Administrador</text>
+    <svg width="680" height="340" viewBox="0 0 680 340">
+        <!-- Muñeco 1: Cliente WhatsApp -->
+        {svg_uml_actor(65, 80, "Cliente WhatsApp")}
 
-        <!-- Sistema -->
-        <rect x="180" y="20" width="380" height="200" rx="12" fill="#f8fafc" stroke="#002e6e" stroke-width="2"/>
-        <text x="370" y="45" font-size="13" font-weight="bold" fill="#002e6e" text-anchor="middle">SISTEMA HIDROSYS EC. (BACKEND & WEB)</text>
+        <!-- Muñeco 2: Administrador Principal -->
+        {svg_uml_actor(65, 235, "Super Administrador")}
 
-        <!-- Elipses UC -->
-        <ellipse cx="370" cy="85" rx="140" ry="22" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
-        <text x="370" y="89" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">UC-01: Interactuar con Bot y Agendar Cita</text>
+        <!-- Muñeco 3: Administrador Secundario -->
+        {svg_uml_actor(615, 80, "Operador Oficina")}
 
-        <ellipse cx="370" cy="140" rx="140" ry="22" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
-        <text x="370" y="144" font-size="11" font-weight="bold" fill="#065f46" text-anchor="middle">UC-02: Escanear QR y Administrar Citas</text>
+        <!-- Muñeco 4: Trabajador Técnico -->
+        {svg_uml_actor(615, 235, "Trabajador Técnico")}
 
-        <!-- Líneas -->
-        <line x1="85" y1="55" x2="230" y2="80" stroke="#64748b" stroke-width="2"/>
-        <line x1="85" y1="170" x2="230" y2="145" stroke="#64748b" stroke-width="2"/>
+        <!-- Caja Frontera del Sistema -->
+        <rect x="155" y="15" width="370" height="310" rx="14" fill="#f8fafc" stroke="#002e6e" stroke-width="2.5"/>
+        <text x="340" y="42" font-family="'Outfit', sans-serif" font-size="12.5" font-weight="800" fill="#002e6e" text-anchor="middle">SISTEMA INTEGRAL HIDROSYS EC.</text>
+
+        <!-- Elipse 1: Agendar Cita y Consultar -->
+        <ellipse cx="340" cy="85" rx="135" ry="24" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="340" y="89" font-size="10.5" font-weight="700" fill="#1e40af" text-anchor="middle">UC-01: Interactuar Bot & Agendar Cita</text>
+
+        <!-- Elipse 2: Escanear QR WhatsApp -->
+        <ellipse cx="340" cy="148" rx="135" ry="24" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="340" y="152" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">UC-02: Escanear QR y Reconectar Bot</text>
+
+        <!-- Elipse 3: Gestión de Citas y Órdenes -->
+        <ellipse cx="340" cy="211" rx="135" ry="24" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="340" y="215" font-size="10.5" font-weight="700" fill="#92400e" text-anchor="middle">UC-03: Gestionar Órdenes y Cuadrillas</text>
+
+        <!-- Elipse 4: Registrar Avance en Campo -->
+        <ellipse cx="340" cy="274" rx="135" ry="24" fill="#f3e8ff" stroke="#7e22ce" stroke-width="1.5"/>
+        <text x="340" y="278" font-size="10.5" font-weight="700" fill="#6b21a8" text-anchor="middle">UC-04: Ejecución y Reporte en Campo</text>
+
+        <!-- Líneas Actor - Elipses -->
+        <line x1="95" y1="80" x2="205" y2="85" stroke="#334155" stroke-width="2"/>
+        <line x1="95" y1="235" x2="205" y2="148" stroke="#334155" stroke-width="2"/>
+        <line x1="95" y1="235" x2="205" y2="211" stroke="#334155" stroke-width="2"/>
+        <line x1="585" y1="80" x2="475" y2="211" stroke="#334155" stroke-width="2"/>
+        <line x1="585" y1="235" x2="475" y2="274" stroke="#334155" stroke-width="2"/>
     </svg>
+    <div class="diagram-caption">Fig 3.1 - Diagrama UML de Casos de Uso Cero (Vista de Frontera Global)</div>
 </div>
 
-<h2>3.2 Detalle de Casos de Uso por Rol</h2>
+<h2>3.2 Casos de Uso Detallados por Rol</h2>
 
-<h3>3.2.1 Rol: Administrador Principal (Super Admin)</h3>
+<h3>3.2.1 Rol: Administrador Principal (Diagrama y Detalle CUD-01)</h3>
+<div class="diagram-box">
+    <svg width="600" height="150" viewBox="0 0 600 150">
+        {svg_uml_actor(70, 70, "Admin Principal")}
+        <rect x="180" y="20" width="380" height="110" rx="10" fill="#f8fafc" stroke="#002e6e" stroke-width="2"/>
+        <ellipse cx="370" cy="55" rx="140" ry="20" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="370" y="59" font-size="10.5" font-weight="bold" fill="#065f46" text-anchor="middle">CUD-01: Escanear QR en Pestaña Admin</text>
+        <ellipse cx="370" cy="100" rx="140" ry="20" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="370" y="104" font-size="10.5" font-weight="bold" fill="#1e40af" text-anchor="middle">CUD-02: Control Middleware requireAuth</text>
+        <line x1="100" y1="70" x2="230" y2="55" stroke="#334155" stroke-width="2"/>
+        <line x1="100" y1="70" x2="230" y2="100" stroke="#334155" stroke-width="2"/>
+    </svg>
+    <div class="diagram-caption">Fig 3.2 - Casos de Uso Específicos del Administrador Principal</div>
+</div>
+
 <table>
     <thead>
         <tr>
             <th style="width:25%;">Atributo</th>
-            <th>Especificación Detallada</th>
+            <th>Especificación Operativa</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td><strong>Código y Nombre</strong></td>
-            <td><strong>CUD-01: Gestión Global y Vinculación de WhatsApp (QR)</strong></td>
+            <td><strong>Identificador</strong></td>
+            <td><strong>CUD-01: Sincronización QR de WhatsApp desde el Panel Web</strong></td>
         </tr>
         <tr>
             <td><strong>Actor Principal</strong></td>
-            <td>Administrador Principal (Dueño / Supervisor de Sistema)</td>
+            <td>Administrador Principal / Dueño de Empresa</td>
         </tr>
         <tr>
-            <td><strong>Precondición</strong></td>
-            <td>El usuario debe haber iniciado sesión con credenciales de Administrador en <code>localhost:3000</code>.</td>
-        </tr>
-        <tr>
-            <td><strong>Flujo Principal</strong></td>
+            <td><strong>Flujo Normal</strong></td>
             <td>
-                1. El Administrador hace clic en la opción <strong>📱 Escanear QR / WhatsApp</strong> en el menú de Administración.<br>
-                2. El sistema consulta a <code>/api/wa/status</code> la condición actual del servicio Baileys.<br>
-                3. Si el bot requiere vinculación, el servidor devuelve un código QR en base64.<br>
-                4. El Administrador abre WhatsApp en el celular corporativo, selecciona "Dispositivos vinculados" y escanea el QR.<br>
-                5. El servidor detecta la sincronización exitosa y notifica al panel, mostrando el indicador verde <strong>¡Dispositivo Conectado! ✅</strong>.
-            </td>
-        </tr>
-        <tr>
-            <td><strong>Postcondición</strong></td>
-            <td>El bot de WhatsApp queda operativo y listo para atender a clientes automáticamente.</td>
-        </tr>
-    </tbody>
-</table>
-
-<h3>3.2.2 Rol: Administrador Secundario (Operador de Oficina)</h3>
-<table>
-    <thead>
-        <tr>
-            <th style="width:25%;">Atributo</th>
-            <th>Especificación Detallada</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Código y Nombre</strong></td>
-            <td><strong>CUD-02: Administración de Citas y Coordinación de Órdenes</strong></td>
-        </tr>
-        <tr>
-            <td><strong>Actor Principal</strong></td>
-            <td>Administrador Secundario (Personal de Atención y Logística)</td>
-        </tr>
-        <tr>
-            <td><strong>Flujo Principal</strong></td>
-            <td>
-                1. El Operador ingresa a la sección <strong>📅 Gestión de Citas</strong>.<br>
-                2. Visualiza la tabla filtrada por citas "Pendientes" generadas vía WhatsApp.<br>
-                3. Selecciona una cita, asigna una cuadrilla técnica responsable y cambia el estado a "Confirmado".<br>
-                4. El sistema envía una notificación automática en tiempo real.
-            </td>
-        </tr>
-    </tbody>
-</table>
-
-<h3>3.2.3 Rol: Trabajador Técnico (Personal de Campo)</h3>
-<table>
-    <thead>
-        <tr>
-            <th style="width:25%;">Atributo</th>
-            <th>Especificación Detallada</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Código y Nombre</strong></td>
-            <td><strong>CUD-03: Ejecución y Cierre de Orden de Trabajo en Campo</strong></td>
-        </tr>
-        <tr>
-            <td><strong>Actor Principal</strong></td>
-            <td>Trabajador Técnico de Hidrosys EC.</td>
-        </tr>
-        <tr>
-            <td><strong>Flujo Principal</strong></td>
-            <td>
-                1. El técnico acude a la dirección registrada en la cita del cliente.<br>
-                2. Realiza la inspección o reparación del sistema hidráulico o de gas.<br>
-                3. Registra en el sistema el resultado de la visita y marca el servicio como "Completado".
+                1. El administrador ingresa a su sesión web y hace clic en <strong>📱 Escanear QR / WhatsApp</strong>.<br>
+                2. El servidor consulta en vivo el socket de Baileys.<br>
+                3. Si el bot está desconectado, se renderiza el QR en pantalla.<br>
+                4. El administrador escanea con su celular corporativo y el sistema actualiza automáticamente a <strong>¡Dispositivo Conectado! ✅</strong>.
             </td>
         </tr>
     </tbody>
@@ -604,340 +507,219 @@ El Caso de Uso Cero representa la interacción general del ecosistema tecnológi
 """
 
 # -------------------------------------------------------------------------
-# DOCUMENTO 4: CASOS DE USO DE CONTEXTO
+# DOCUMENTO 4: CASOS DE USO DE CONTEXTO (CON DIAGRAMA DE ARQUITECTURA)
 # -------------------------------------------------------------------------
-DOC4_CONTENT = """
+DOC4_CONTENT = f"""
 <h1>4. CASOS DE USO DE CONTEXTO Y ARQUITECTURA DE FRONTERA</h1>
 <p>
-El análisis de contexto define las fronteras físicas y lógicas entre el entorno informático de <strong>Hidrosys EC.</strong> y las entidades externas (usuarios, servidores de Meta/WhatsApp, base de datos y navegadores web).
+El análisis de contexto especifica las fronteras tecnológicas e interconexiones entre los clientes móviles, el motor conversacional y la persistencia institucional.
 </p>
 
-<h2>4.1 Fronteras del Ecosistema y Componentes</h2>
-<p>La plataforma se articula en cuatro capas claramente delimitadas en la arquitectura modular:</p>
+<h2>4.1 Diagrama Arquitectónico de Contexto y Fronteras</h2>
+<div class="diagram-box">
+    <svg width="680" height="220" viewBox="0 0 680 220">
+        <!-- Bloque 1: Cliente WhatsApp -->
+        <rect x="25" y="70" width="130" height="80" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="90" y="105" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">WhatsApp App</text>
+        <text x="90" y="125" font-size="9" fill="#1e40af" text-anchor="middle">(Cliente Android/iOS)</text>
 
-<table>
-    <thead>
-        <tr>
-            <th>Capa / Componente</th>
-            <th>Tecnología</th>
-            <th>Responsabilidad Contextual</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Frontera Exterior (Cliente)</strong></td>
-            <td>WhatsApp Messenger / WhatsApp Business</td>
-            <td>Interfaz cliente universal en teléfonos móviles Android e iOS. Transmite comandos numéricos y texto.</td>
-        </tr>
-        <tr>
-            <td><strong>Capa de Enlace y Bot</strong></td>
-            <td>Baileys WebSockets (@whiskeysockets)</td>
-            <td>Motor que mantiene la sesión de WhatsApp de la empresa cifrada, emite códigos QR y procesa eventos de mensajes entrantes.</td>
-        </tr>
-        <tr>
-            <td><strong>Servidor Central API REST</strong></td>
-            <td>Node.js / Express / Middleware requireAuth</td>
-            <td>Núcleo de lógica de negocio, control de rutas protegidas mediante tokens de sesión y orquestación de flujos.</td>
-        </tr>
-        <tr>
-            <td><strong>Capa de Persistencia y Datos</strong></td>
-            <td>Almacenamiento JSON / SQLite / PostgreSQL</td>
-            <td>Persistencia de citas agendadas, usuarios administradores, configuraciones del sistema e historial de interacciones.</td>
-        </tr>
-    </tbody>
-</table>
+        <!-- Flecha 1 -->
+        <line x1="155" y1="110" x2="225" y2="110" stroke="#334155" stroke-width="2"/>
+        <text x="190" y="100" font-size="8.5" fill="#64748b" text-anchor="middle">WebSocket</text>
 
-<h2>4.2 Flujo Contextual de Comunicación Segura</h2>
-<div class="card">
-    <div class="card-title">Protocolo de Interacción Cliente - Servidor - WhatsApp</div>
-    <p>
-    1. El usuario envía una consulta al número corporativo de Hidrosys EC.<br>
-    2. El evento es interceptado por el módulo Baileys en el servidor Express.<br>
-    3. El motor de flujos (<code>whatsapp/flows.js</code>) evalúa el texto y retorna el menú plano estructurado.<br>
-    4. Las solicitudes administrativas web viajan mediante peticiones HTTP seguras con cabecera <code>x-session-token</code>.
-    </p>
+        <!-- Bloque 2: Servidor Node.js -->
+        <rect x="225" y="40" width="220" height="140" rx="12" fill="#f8fafc" stroke="#002e6e" stroke-width="2.5"/>
+        <text x="335" y="70" font-size="12" font-weight="800" fill="#002e6e" text-anchor="middle">BACKEND HIDROSYS EC.</text>
+        <rect x="245" y="85" width="180" height="32" rx="6" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="335" y="105" font-size="10" font-weight="bold" fill="#065f46" text-anchor="middle">Motor Baileys / QR Stream</text>
+        <rect x="245" y="128" width="180" height="32" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="335" y="148" font-size="10" font-weight="bold" fill="#92400e" text-anchor="middle">API REST & requireAuth</text>
+
+        <!-- Flecha 2 -->
+        <line x1="445" y1="110" x2="515" y2="110" stroke="#334155" stroke-width="2"/>
+
+        <!-- Bloque 3: Base de Datos & Web -->
+        <rect x="515" y="70" width="140" height="80" rx="8" fill="#f3e8ff" stroke="#7e22ce" stroke-width="2"/>
+        <text x="585" y="105" font-size="11" font-weight="bold" fill="#6b21a8" text-anchor="middle">Base de Datos</text>
+        <text x="585" y="125" font-size="9" fill="#6b21a8" text-anchor="middle">& Panel Admin Web</text>
+    </svg>
+    <div class="diagram-caption">Fig 4.1 - Fronteras de Interconexión Contextual del Sistema</div>
 </div>
 """
 
 # -------------------------------------------------------------------------
-# DOCUMENTO 5: CASOS DE USO DE ESCENARIO
+# DOCUMENTO 5: CASOS DE USO DE ESCENARIO (CON DIAGRAMAS DE SECUENCIA)
 # -------------------------------------------------------------------------
-DOC5_CONTENT = """
-<h1>5. CASOS DE USO DE ESCENARIO (ESCENARIOS OPERATIVOS)</h1>
+DOC5_CONTENT = f"""
+<h1>5. CASOS DE USO DE ESCENARIO (DIAGRAMAS DE SECUENCIA)</h1>
 <p>
-Los escenarios describen las trayectorias concretas (flujos normales, alternativos y de excepción) que ocurren durante la ejecución de los casos de uso críticos en <strong>Hidrosys EC.</strong>
+Los escenarios operativos describen cronológicamente la colaboración entre componentes en flujos normales y de excepción.
 </p>
 
-<h2>5.1 Escenario 1: Agendamiento Exitoso y Gestión de Cita</h2>
-<table>
-    <thead>
-        <tr>
-            <th style="width:25%;">Fase del Escenario</th>
-            <th>Descripción Operativa</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Escenario Principal (Happy Path)</strong></td>
-            <td>
-                1. Cliente escribe "Hola" al WhatsApp de Hidrosys.<br>
-                2. El bot responde instantáneamente con las opciones numeradas (1. Agendar Cita, 2. Consultar Cobertura, 3. Soporte).<br>
-                3. Cliente envía "1". El bot solicita su Nombre.<br>
-                4. Cliente envía "Carlos Mendoza". El bot solicita Dirección.<br>
-                5. Cliente envía "Av. Solano y Diez de Agosto". El bot solicita Fecha y Hora.<br>
-                6. El bot confirma y registra la cita en la base de datos con estado <em>Pendiente</em>.
-            </td>
-        </tr>
-        <tr>
-            <td><strong>Escenario Alternativo (Dato erróneo)</strong></td>
-            <td>Si el cliente ingresa un número fuera de rango en el menú principal (ej. "9"), el bot indica la lista válida de opciones de forma clara.</td>
-        </tr>
-    </tbody>
-</table>
+<h2>5.1 Diagrama de Secuencia: Escenario de Agendamiento por WhatsApp</h2>
+<div class="diagram-box">
+    <svg width="660" height="230" viewBox="0 0 660 230">
+        <!-- Nodos superiores -->
+        <rect x="30" y="20" width="110" height="35" rx="6" fill="#002e6e"/>
+        <text x="85" y="42" font-size="10.5" font-weight="bold" fill="white" text-anchor="middle">Cliente</text>
+        <line x1="85" y1="55" x2="85" y2="210" stroke="#64748b" stroke-dasharray="4"/>
 
-<h2>5.2 Escenario 2: Reconexión Rápida de WhatsApp tras Reinicio del Móvil</h2>
-<table>
-    <thead>
-        <tr>
-            <th style="width:25%;">Fase del Escenario</th>
-            <th>Descripción Operativa</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Contexto de Excepción</strong></td>
-            <td>El teléfono celular de la empresa se queda sin batería o se cierra la sesión web por actualización de WhatsApp.</td>
-        </tr>
-        <tr>
-            <td><strong>Resolución Administrativa</strong></td>
-            <td>
-                1. El Administrador entra a <code>http://localhost:3000</code> y va a la pestaña <strong>📱 Escanear QR / WhatsApp</strong>.<br>
-                2. El sistema detecta el estado <em>Desconectado</em>.<br>
-                3. El Administrador pulsa en <strong>🔄 Reiniciar Conexión / Generar Nuevo QR</strong>.<br>
-                4. Escanea el código QR fresco con el móvil en segundos, recuperando el 100% de la operatividad del bot.
-            </td>
-        </tr>
-    </tbody>
-</table>
+        <rect x="200" y="20" width="120" height="35" rx="6" fill="#2563eb"/>
+        <text x="260" y="42" font-size="10.5" font-weight="bold" fill="white" text-anchor="middle">Bot WhatsApp</text>
+        <line x1="260" y1="55" x2="260" y2="210" stroke="#64748b" stroke-dasharray="4"/>
+
+        <rect x="380" y="20" width="120" height="35" rx="6" fill="#10b981"/>
+        <text x="440" y="42" font-size="10.5" font-weight="bold" fill="white" text-anchor="middle">Servidor API</text>
+        <line x1="440" y1="55" x2="440" y2="210" stroke="#64748b" stroke-dasharray="4"/>
+
+        <!-- Mensajes -->
+        <line x1="85" y1="85" x2="260" y2="85" stroke="#002e6e" stroke-width="2"/>
+        <text x="172" y="78" font-size="9" fill="#002e6e" text-anchor="middle">1. Escribe "Hola" / Opción '1'</text>
+
+        <line x1="260" y1="130" x2="440" y2="130" stroke="#2563eb" stroke-width="2"/>
+        <text x="350" y="123" font-size="9" fill="#2563eb" text-anchor="middle">2. Envía Parámetros de Cita</text>
+
+        <line x1="440" y1="175" x2="85" y2="175" stroke="#10b981" stroke-width="2"/>
+        <text x="262" y="168" font-size="9" font-weight="bold" fill="#065f46" text-anchor="middle">3. Confirmación: Cita Registrada Exitosamente ✅</text>
+    </svg>
+    <div class="diagram-caption">Fig 5.1 - Secuencia Operativa del Agendamiento Automático</div>
+</div>
 """
 
 # -------------------------------------------------------------------------
-# DOCUMENTO 6: REQUISITOS FUNCIONALES Y NO FUNCIONALES
+# DOCUMENTO 6: REQUISITOS FUNCIONALES Y NO FUNCIONALES (CON DIAGRAMA)
 # -------------------------------------------------------------------------
-DOC6_CONTENT = """
+DOC6_CONTENT = f"""
 <h1>6. ESPECIFICACIÓN DE REQUISITOS FUNCIONALES Y NO FUNCIONALES</h1>
 <p>
-El presente catálogo de requisitos formaliza las características obligatorias de ingeniería de software implementadas en el sistema integral <strong>Hidrosys EC.</strong>
+Catálogo formal de ingeniería de requerimientos de <strong>Hidrosys EC.</strong> clasificado bajo estándares de calidad y trazabilidad.
 </p>
 
-<h2>6.1 Requisitos Funcionales (RF)</h2>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Módulo</th>
-            <th>Descripción Técnica del Requisito</th>
-            <th>Prioridad</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>RF-01</strong></td>
-            <td>WhatsApp Bot</td>
-            <td>El bot debe responder con un menú en texto numerado 100% compatible con cualquier dispositivo móvil (Android, iOS, Web).</td>
-            <td>Alta</td>
-        </tr>
-        <tr>
-            <td><strong>RF-02</strong></td>
-            <td>Agendamiento</td>
-            <td>El bot debe capturar paso a paso: Nombre, Dirección, Servicio requerido y Horario del cliente y persistirlo en base de datos.</td>
-            <td>Alta</td>
-        </tr>
-        <tr>
-            <td><strong>RF-03</strong></td>
-            <td>Panel Web (QR)</td>
-            <td>El sistema web debe poseer la pestaña <code>📱 Escanear QR / WhatsApp</code> para visualizar el código QR en tiempo real y conocer el estado de sesión de Baileys.</td>
-            <td>Alta</td>
-        </tr>
-        <tr>
-            <td><strong>RF-04</strong></td>
-            <td>Seguridad API</td>
-            <td>El middleware <code>requireAuth</code> debe verificar la presencia y validez del encabezado <code>x-session-token</code> en los endpoints administrativos.</td>
-            <td>Alta</td>
-        </tr>
-        <tr>
-            <td><strong>RF-05</strong></td>
-            <td>Administración</td>
-            <td>El panel debe permitir crear, editar, eliminar y actualizar el estado de las citas y órdenes de trabajo del negocio.</td>
-            <td>Alta</td>
-        </tr>
-        <tr>
-            <td><strong>RF-06</strong></td>
-            <td>Reportes</td>
-            <td>El administrador debe poder exportar el registro técnico en formato PDF oficial y hojas de cálculo Excel.</td>
-            <td>Media</td>
-        </tr>
-    </tbody>
-</table>
+<h2>6.1 Diagrama de Arquitectura de Requisitos</h2>
+<div class="diagram-box">
+    <svg width="660" height="170" viewBox="0 0 660 170">
+        <rect x="40" y="40" width="170" height="90" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="125" y="75" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">Módulo WhatsApp Bot</text>
+        <text x="125" y="98" font-size="9.5" fill="#1e40af" text-anchor="middle">RF-01: Menú Numérico</text>
+        <text x="125" y="115" font-size="9.5" fill="#1e40af" text-anchor="middle">RF-02: Citas Paso a Paso</text>
 
-<h2>6.2 Requisitos No Funcionales (RNF)</h2>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Categoría</th>
-            <th>Especificación y Estándar de Calidad</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>RNF-01</strong></td>
-            <td>Usabilidad UI/UX</td>
-            <td>El panel web debe seguir los estándares de diseño premium moderno, paleta institucional ISTA/Hidrosys, tipografía Google Inter/Outfit y capacidad responsive.</td>
-        </tr>
-        <tr>
-            <td><strong>RNF-02</strong></td>
-            <td>Rendimiento</td>
-            <td>El tiempo de respuesta del servidor API ante las peticiones del bot o panel web no debe superar los 250 milisegundos.</td>
-        </tr>
-        <tr>
-            <td><strong>RNF-03</strong></td>
-            <td>Compatibilidad Universal</td>
-            <td>El menú del bot no debe depender de plantillas cerradas de Meta Cloud API para evitar bloqueos en celulares que no procesan botones interactivos.</td>
-        </tr>
-        <tr>
-            <td><strong>RNF-04</strong></td>
-            <td>Seguridad y Cifrado</td>
-            <td>Toda comunicación del panel web con el backend debe protegerse y aislar las sesiones administrativas de las peticiones públicas.</td>
-        </tr>
-    </tbody>
-</table>
+        <rect x="245" y="40" width="170" height="90" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="2"/>
+        <text x="330" y="75" font-size="11" font-weight="bold" fill="#065f46" text-anchor="middle">Panel Web Admin</text>
+        <text x="330" y="98" font-size="9.5" fill="#065f46" text-anchor="middle">RF-03: Escanear QR en Vivo</text>
+        <text x="330" y="115" font-size="9.5" fill="#065f46" text-anchor="middle">RF-05: Gestión de Órdenes</text>
+
+        <rect x="450" y="40" width="170" height="90" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+        <text x="535" y="75" font-size="11" font-weight="bold" fill="#92400e" text-anchor="middle">Capa de Seguridad</text>
+        <text x="535" y="98" font-size="9.5" fill="#92400e" text-anchor="middle">RF-04: requireAuth Token</text>
+        <text x="535" y="115" font-size="9.5" fill="#92400e" text-anchor="middle">RNF-02: Latencia &lt; 250ms</text>
+    </svg>
+    <div class="diagram-caption">Fig 6.1 - Mapa de Trazabilidad por Módulos Funcionales</div>
+</div>
 """
 
 # -------------------------------------------------------------------------
-# DOCUMENTO 7: DIAGRAMAS DE ACTIVIDADES Y FLUJOS
+# DOCUMENTO 7: DIAGRAMAS DE ACTIVIDADES Y FLUJOS (FLUJOGRAMAS BPMN)
 # -------------------------------------------------------------------------
-DOC7_CONTENT = """
-<h1>7. DIAGRAMAS DE ACTIVIDADES Y FLUJOS DEL SISTEMA</h1>
+DOC7_CONTENT = f"""
+<h1>7. DIAGRAMAS DE ACTIVIDADES Y FLUJOS DE PROCESOS (BPMN)</h1>
 <p>
-Los diagramas de actividades ilustran la secuencia lógica y concurrente de los procesos clave dentro del ecosistema de <strong>Hidrosys EC.</strong>
+Este informe contiene los flujogramas operativos que detallan la secuencia lógica de cada proceso principal.
 </p>
 
-<h2>7.1 Flujo de Actividad: Escaneo y Sincronización QR desde Panel Web</h2>
+<h2>7.1 Flujograma: Sincronización QR desde Panel Web (CU-04)</h2>
 <div class="diagram-box">
-    <svg width="600" height="310" viewBox="0 0 600 310">
-        <!-- Inicio -->
-        <circle cx="300" cy="25" r="12" fill="#002e6e"/>
-        <line x1="300" y1="37" x2="300" y2="60" stroke="#334155" stroke-width="2"/>
+    <svg width="660" height="260" viewBox="0 0 660 260">
+        <circle cx="330" cy="25" r="11" fill="#002e6e"/>
+        <line x1="330" y1="36" x2="330" y2="55" stroke="#334155" stroke-width="2"/>
 
-        <!-- Paso 1 -->
-        <rect x="160" y="60" width="280" height="40" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-        <text x="300" y="85" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">1. Administrador abre pestaña "Escanear QR"</text>
-        <line x1="300" y1="100" x2="300" y2="125" stroke="#334155" stroke-width="2"/>
+        <rect x="180" y="55" width="300" height="38" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="330" y="78" font-size="10.5" font-weight="bold" fill="#1e40af" text-anchor="middle">1. Abrir Pestaña "📱 Escanear QR / WhatsApp"</text>
+        <line x1="330" y1="93" x2="330" y2="115" stroke="#334155" stroke-width="2"/>
 
         <!-- Rombo decisión -->
-        <polygon points="300,125 380,160 300,195 220,160" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
-        <text x="300" y="163" font-size="10.5" font-weight="bold" fill="#92400e" text-anchor="middle">¿Bot ya conectado?</text>
+        <polygon points="330,115 400,145 330,175 260,145" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="330" y="149" font-size="10" font-weight="bold" fill="#92400e" text-anchor="middle">¿Sesión Activa?</text>
 
-        <!-- Rama Si -->
-        <line x1="380" y1="160" x2="480" y2="160" stroke="#10b981" stroke-width="2"/>
-        <text x="430" y="152" font-size="10" font-weight="bold" fill="#065f46">SÍ</text>
-        <rect x="420" y="180" width="160" height="45" rx="6" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
-        <text x="500" y="207" font-size="10.5" font-weight="bold" fill="#065f46" text-anchor="middle">Mostrar: Conectado ✅</text>
+        <!-- Rama SI -->
+        <line x1="400" y1="145" x2="490" y2="145" stroke="#10b981" stroke-width="2"/>
+        <text x="445" y="138" font-size="9.5" font-weight="bold" fill="#065f46">SÍ</text>
+        <rect x="490" y="125" width="145" height="40" rx="6" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="562" y="149" font-size="10" font-weight="bold" fill="#065f46" text-anchor="middle">Conectado ✅</text>
 
-        <!-- Rama No -->
-        <line x1="300" y1="195" x2="300" y2="220" stroke="#2563eb" stroke-width="2"/>
-        <text x="312" y="210" font-size="10" font-weight="bold" fill="#1e40af">NO</text>
-        <rect x="160" y="220" width="280" height="45" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-        <text x="300" y="247" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">2. Renderizar QR y Sincronizar con Móvil</text>
+        <!-- Rama NO -->
+        <line x1="330" y1="175" x2="330" y2="200" stroke="#2563eb" stroke-width="2"/>
+        <text x="342" y="190" font-size="9.5" font-weight="bold" fill="#1e40af">NO</text>
+        <rect x="180" y="200" width="300" height="42" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="330" y="225" font-size="10.5" font-weight="bold" fill="#1e40af" text-anchor="middle">2. Renderizar QR & Sincronizar en Vivo</text>
     </svg>
+    <div class="diagram-caption">Fig 7.1 - Diagrama de Actividad BPMN de la Reconexión QR</div>
 </div>
-
-<h2>7.2 Flujo de Actividad: Agendamiento de Cita vía WhatsApp</h2>
-<p>
-1. <strong>Inicio:</strong> Cliente envía mensaje inicial al bot de Hidrosys EC.<br>
-2. <strong>Evaluación:</strong> El bot despliega el Menú Principal con opciones numeradas.<br>
-3. <strong>Selección:</strong> El cliente envía '1' para Agendar Inspección/Cita.<br>
-4. <strong>Recolección de Parámetros:</strong> Sistema solicita Nombre -> Dirección -> Fecha/Hora.<br>
-5. <strong>Persistencia:</strong> Creación exitosa del registro en base de datos e informando al usuario.
-</p>
 """
 
 # -------------------------------------------------------------------------
-# DOCUMENTO 8: PROBLEMAS ENCONTRADOS Y SOLUCIONES
+# DOCUMENTO 8: PROBLEMAS ENCONTRADOS Y SOLUCIONES (DIAGRAMA COMPARATIVO)
 # -------------------------------------------------------------------------
-DOC8_CONTENT = """
-<h1>8. ANÁLISIS DE PROBLEMAS ENCONTRADOS Y SOLUCIONES INGENIERILES</h1>
+DOC8_CONTENT = f"""
+<h1>8. ANÁLISIS DE PROBLEMAS ENCONTRADOS Y SOLUCIONES</h1>
 <p>
-Durante las fases de diseño, pruebas y despliegue del proyecto <strong>Hidrosys EC.</strong>, se identificaron desafíos técnicos que fueron resueltos aplicando buenas prácticas de desarrollo y arquitectura.
+Documentación del proceso de ingeniería aplicada para superar los retos de compatibilidad y control en el despliegue.
 </p>
 
-<h2>8.1 Matriz de Resolución de Problemas (Troubleshooting)</h2>
-<table>
-    <thead>
-        <tr>
-            <th style="width:25%;">Problema Detectado</th>
-            <th style="width:30%;">Causa Raíz</th>
-            <th>Solución de Ingeniería Aplicada</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Incompatibilidad de Botones Interactivos en WhatsApp</strong></td>
-            <td>Los mensajes de tipo <code>nativeFlowMessage</code> / botones interactivos de Meta Cloud API no se renderizan en versiones de WhatsApp personalizadas o móviles sin plantillas comerciales aprobadas.</td>
-            <td><strong>Migración a Menú Numérico Estructurado:</strong> Se refactorizó <code>menuPrincipal()</code> para retornar opciones claras en texto numerado (1, 2, 3), garantizando 100% de compatibilidad en cualquier cuenta o dispositivo.</td>
-        </tr>
-        <tr>
-            <td><strong>Dependencia del Técnico para Reconexión de WhatsApp</strong></td>
-            <td>Ante desconexiones o cambios en la sesión de WhatsApp del teléfono de la empresa, era necesario acceder a consola o servidor para extraer el código QR.</td>
-            <td><strong>Creación de Pestaña "📱 Escanear QR / WhatsApp":</strong> Se implementó un panel visual de administración que consulta al backend en tiempo real, renderiza el QR en pantalla y permite reconectar en menos de 4 segundos sin tocar código.</td>
-        </tr>
-        <tr>
-            <td><strong>Protección de Endpoints de Control del Servidor</strong></td>
-            <td>Endpoints como <code>POST /api/wa/restart</code> podían ser invocados de manera desprotegida si no se validaban sesiones de usuario.</td>
-            <td><strong>Implementación de Middleware requireAuth:</strong> Se protegió el servidor verificando el encabezado de seguridad <code>x-session-token</code> ante cada petición sensible de administración.</td>
-        </tr>
-    </tbody>
-</table>
+<h2>8.1 Diagrama Comparativo: Antes vs. Después en Hidrosys EC.</h2>
+<div class="diagram-box">
+    <svg width="660" height="190" viewBox="0 0 660 190">
+        <!-- Caja Izquierda: Problema -->
+        <rect x="30" y="30" width="280" height="130" rx="10" fill="#fef2f2" stroke="#ef4444" stroke-width="2"/>
+        <text x="170" y="60" font-size="11.5" font-weight="bold" fill="#b91c1c" text-anchor="middle">PROBLEMA ANTERIOR</text>
+        <text x="170" y="90" font-size="9.5" fill="#991b1b" text-anchor="middle">• Botones interactivos bloqueados en móviles</text>
+        <text x="170" y="115" font-size="9.5" fill="#991b1b" text-anchor="middle">• Dependencia del programador para QR</text>
+
+        <!-- Flecha central -->
+        <line x1="320" y1="95" x2="350" y2="95" stroke="#002e6e" stroke-width="3"/>
+
+        <!-- Caja Derecha: Solución Hidrosys -->
+        <rect x="360" y="30" width="270" height="130" rx="10" fill="#f0fdf4" stroke="#10b981" stroke-width="2"/>
+        <text x="495" y="60" font-size="11.5" font-weight="bold" fill="#166534" text-anchor="middle">SOLUCIÓN HIDROSYS EC. v3.0</text>
+        <text x="495" y="90" font-size="9.5" fill="#14532d" text-anchor="middle">• Menú Numérico plano 100% confiable</text>
+        <text x="495" y="115" font-size="9.5" fill="#14532d" text-anchor="middle">• Pestaña "📱 Escanear QR" autónoma</text>
+    </svg>
+    <div class="diagram-caption">Fig 8.1 - Soluciones de Arquitectura e Interfaz Implementadas</div>
+</div>
 """
 
 # -------------------------------------------------------------------------
-# DOCUMENTO 9: MOCKUPS Y PROTOTIPOS DEL SISTEMA
+# DOCUMENTO 9: MOCKUPS Y PROTOTIPOS DEL SISTEMA (MOCKUP UI ESQUEMÁTICO)
 # -------------------------------------------------------------------------
-DOC9_CONTENT = """
+DOC9_CONTENT = f"""
 <h1>9. MOCKUPS Y PROTOTIPO ALTA FIDELIDAD DEL SISTEMA</h1>
 <p>
-El prototipo visual de <strong>Hidrosys EC.</strong> refleja un estándar de diseño web moderno, tipografía institucional y una experiencia de usuario optimizada tanto para los clientes en WhatsApp como para los operadores en el Dashboard Web.
+Esquema visual y maquetación de interfaces gráficas del panel administrativo y el flujo en WhatsApp.
 </p>
 
-<h2>9.1 Diseño y Vistas de la Interfaz Web (Dashboard)</h2>
-<div class="card">
-    <div class="card-title">Vista Principal: Panel de Control y Pestaña "📱 Escanear QR / WhatsApp"</div>
-    <p>
-    El menú lateral de navegación integra de forma destacada la opción de vinculación QR. La interfaz presenta tarjetas de estado en colores verdes e indicadores instantáneos que muestran:
-    </p>
-    <ul>
-        <li><strong>Estado del Bot:</strong> "¡Dispositivo Conectado! ✅" o "Código QR Listo para Escanear".</li>
-        <li><strong>Botón de Acción Rápida:</strong> "🔄 Reiniciar Conexión / Generar Nuevo QR" protegido por autenticación de administrador.</li>
-        <li><strong>Gestión de Citas:</strong> Tabla interactiva con filtros para citas pendientes, confirmadas y completadas.</li>
-    </ul>
-</div>
+<h2>9.1 Mockup de UI: Pestaña "📱 Escanear QR / WhatsApp" en Panel Web</h2>
+<div class="diagram-box">
+    <svg width="660" height="240" viewBox="0 0 660 240">
+        <!-- Marco de Navegador -->
+        <rect x="30" y="15" width="600" height="210" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+        <rect x="30" y="15" width="600" height="28" rx="8" fill="#002e6e"/>
+        <text x="50" y="33" font-size="10" font-weight="bold" fill="white">HIDROSYS EC. • Panel de Control Administrador</text>
 
-<h2>9.2 Diseño del Flujo en WhatsApp Asistente Virtual</h2>
-<div class="card" style="background:#f0fdf4; border-color:#86efac;">
-    <div class="card-title" style="color:#166534;">Simulación Real de Interacción en Chat de WhatsApp</div>
-    <p style="font-family:monospace; font-size:9.5pt; color:#14532d;">
-    <strong>Cliente:</strong> Hola<br><br>
-    <strong>HIDROSYS EC. – Asistente Virtual:</strong><br>
-    💧 <em>HIDROSYS EC. – Asistente Virtual</em><br>
-    Atención al Cliente • Sistemas de Agua y Gas<br><br>
-    ¿En qué podemos ayudarte hoy? Escribe el <strong>número</strong> de tu opción:<br><br>
-    1️⃣ <strong>Agendar Cita / Inspección Técnica</strong><br>
-    2️⃣ <strong>Consultar Zonas de Cobertura y Horarios</strong><br>
-    3️⃣ <strong>Soporte Directo con Asesor (+593 968245633)</strong><br><br>
-    <strong>Cliente:</strong> 1<br>
-    <strong>HIDROSYS EC.:</strong> Excelente. Por favor indícame tu Nombre Completo para iniciar el agendamiento.
-    </p>
+        <!-- Sidebar -->
+        <rect x="30" y="43" width="150" height="182" fill="#1e293b"/>
+        <text x="45" y="75" font-size="9.5" fill="#cbd5e1">📊 Dashboard</text>
+        <text x="45" y="105" font-size="9.5" fill="#cbd5e1">📅 Citas Médicas</text>
+        <rect x="35" y="125" width="140" height="26" rx="4" fill="#2563eb"/>
+        <text x="45" y="142" font-size="9.5" font-weight="bold" fill="white">📱 Escanear QR</text>
+
+        <!-- Contenido principal -->
+        <rect x="200" y="60" width="410" height="150" rx="8" fill="white" stroke="#cbd5e1"/>
+        <text x="220" y="88" font-size="12" font-weight="bold" fill="#002e6e">Conexión en Vivo con WhatsApp Bot</text>
+        <rect x="220" y="105" width="180" height="35" rx="6" fill="#d1fae5" stroke="#065f46"/>
+        <text x="310" y="127" font-size="10" font-weight="bold" fill="#065f46" text-anchor="middle">¡Dispositivo Conectado! ✅</text>
+        <rect x="220" y="155" width="240" height="32" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+        <text x="340" y="175" font-size="9.5" font-weight="bold" fill="#1e40af" text-anchor="middle">🔄 Reiniciar Conexión / Generar QR</text>
+    </svg>
+    <div class="diagram-caption">Fig 9.1 - Mockup Estructural de la Pestaña de Conexión QR en Panel Web</div>
 </div>
 """
 
@@ -954,7 +736,7 @@ DOCS = [
 ]
 
 def generate_all():
-    print(f"Iniciando generación de {len(DOCS)} informes oficiales separados...")
+    print(f"Iniciando generación de {len(DOCS)} informes oficiales separados con diagramas UML...")
     for doc_code, doc_title, doc_summary, content in DOCS:
         html_path = os.path.join(OUTPUT_DIR, f"{doc_code}.html")
         pdf_path = os.path.join(OUTPUT_DIR, f"{doc_code}.pdf")

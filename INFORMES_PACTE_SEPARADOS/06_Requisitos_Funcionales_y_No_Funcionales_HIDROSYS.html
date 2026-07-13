@@ -122,15 +122,15 @@
     /* Estilos del Contenido */
     .page-break { page-break-after: always; }
     h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
-    h1 { font-size: 1.5rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
-    h2 { font-size: 1.25rem; color: var(--ista-blue); }
+    h1 { font-size: 1.45rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
+    h2 { font-size: 1.2rem; color: var(--ista-blue); }
     h3 { font-size: 1.05rem; }
     p { margin-bottom: 10px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 8.8pt; page-break-inside: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 8.8pt; page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 10px 8px; text-align: left; font-weight: 600; }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    th { background: var(--ista-blue); color: white; padding: 9px 8px; text-align: left; font-weight: 600; }
+    td { padding: 8px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
     tr:nth-child(even) { background: #f8fafc; }
 
     .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
@@ -147,10 +147,18 @@
         background: #ffffff;
         border: 2px solid var(--gray-200);
         border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
+        padding: 16px 10px;
+        margin: 16px 0;
         text-align: center;
         page-break-inside: avoid;
+    }
+    .diagram-caption {
+        font-weight: 700;
+        font-size: 9pt;
+        color: var(--ista-blue);
+        margin-top: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     </style>
@@ -214,91 +222,29 @@
 
 <h1>6. ESPECIFICACIÓN DE REQUISITOS FUNCIONALES Y NO FUNCIONALES</h1>
 <p>
-El presente catálogo de requisitos formaliza las características obligatorias de ingeniería de software implementadas en el sistema integral <strong>Hidrosys EC.</strong>
+Catálogo formal de ingeniería de requerimientos de <strong>Hidrosys EC.</strong> clasificado bajo estándares de calidad y trazabilidad.
 </p>
 
-<h2>6.1 Requisitos Funcionales (RF)</h2>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Módulo</th>
-            <th>Descripción Técnica del Requisito</th>
-            <th>Prioridad</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>RF-01</strong></td>
-            <td>WhatsApp Bot</td>
-            <td>El bot debe responder con un menú en texto numerado 100% compatible con cualquier dispositivo móvil (Android, iOS, Web).</td>
-            <td>Alta</td>
-        </tr>
-        <tr>
-            <td><strong>RF-02</strong></td>
-            <td>Agendamiento</td>
-            <td>El bot debe capturar paso a paso: Nombre, Dirección, Servicio requerido y Horario del cliente y persistirlo en base de datos.</td>
-            <td>Alta</td>
-        </tr>
-        <tr>
-            <td><strong>RF-03</strong></td>
-            <td>Panel Web (QR)</td>
-            <td>El sistema web debe poseer la pestaña <code>📱 Escanear QR / WhatsApp</code> para visualizar el código QR en tiempo real y conocer el estado de sesión de Baileys.</td>
-            <td>Alta</td>
-        </tr>
-        <tr>
-            <td><strong>RF-04</strong></td>
-            <td>Seguridad API</td>
-            <td>El middleware <code>requireAuth</code> debe verificar la presencia y validez del encabezado <code>x-session-token</code> en los endpoints administrativos.</td>
-            <td>Alta</td>
-        </tr>
-        <tr>
-            <td><strong>RF-05</strong></td>
-            <td>Administración</td>
-            <td>El panel debe permitir crear, editar, eliminar y actualizar el estado de las citas y órdenes de trabajo del negocio.</td>
-            <td>Alta</td>
-        </tr>
-        <tr>
-            <td><strong>RF-06</strong></td>
-            <td>Reportes</td>
-            <td>El administrador debe poder exportar el registro técnico en formato PDF oficial y hojas de cálculo Excel.</td>
-            <td>Media</td>
-        </tr>
-    </tbody>
-</table>
+<h2>6.1 Diagrama de Arquitectura de Requisitos</h2>
+<div class="diagram-box">
+    <svg width="660" height="170" viewBox="0 0 660 170">
+        <rect x="40" y="40" width="170" height="90" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="125" y="75" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">Módulo WhatsApp Bot</text>
+        <text x="125" y="98" font-size="9.5" fill="#1e40af" text-anchor="middle">RF-01: Menú Numérico</text>
+        <text x="125" y="115" font-size="9.5" fill="#1e40af" text-anchor="middle">RF-02: Citas Paso a Paso</text>
 
-<h2>6.2 Requisitos No Funcionales (RNF)</h2>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Categoría</th>
-            <th>Especificación y Estándar de Calidad</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>RNF-01</strong></td>
-            <td>Usabilidad UI/UX</td>
-            <td>El panel web debe seguir los estándares de diseño premium moderno, paleta institucional ISTA/Hidrosys, tipografía Google Inter/Outfit y capacidad responsive.</td>
-        </tr>
-        <tr>
-            <td><strong>RNF-02</strong></td>
-            <td>Rendimiento</td>
-            <td>El tiempo de respuesta del servidor API ante las peticiones del bot o panel web no debe superar los 250 milisegundos.</td>
-        </tr>
-        <tr>
-            <td><strong>RNF-03</strong></td>
-            <td>Compatibilidad Universal</td>
-            <td>El menú del bot no debe depender de plantillas cerradas de Meta Cloud API para evitar bloqueos en celulares que no procesan botones interactivos.</td>
-        </tr>
-        <tr>
-            <td><strong>RNF-04</strong></td>
-            <td>Seguridad y Cifrado</td>
-            <td>Toda comunicación del panel web con el backend debe protegerse y aislar las sesiones administrativas de las peticiones públicas.</td>
-        </tr>
-    </tbody>
-</table>
+        <rect x="245" y="40" width="170" height="90" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="2"/>
+        <text x="330" y="75" font-size="11" font-weight="bold" fill="#065f46" text-anchor="middle">Panel Web Admin</text>
+        <text x="330" y="98" font-size="9.5" fill="#065f46" text-anchor="middle">RF-03: Escanear QR en Vivo</text>
+        <text x="330" y="115" font-size="9.5" fill="#065f46" text-anchor="middle">RF-05: Gestión de Órdenes</text>
+
+        <rect x="450" y="40" width="170" height="90" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+        <text x="535" y="75" font-size="11" font-weight="bold" fill="#92400e" text-anchor="middle">Capa de Seguridad</text>
+        <text x="535" y="98" font-size="9.5" fill="#92400e" text-anchor="middle">RF-04: requireAuth Token</text>
+        <text x="535" y="115" font-size="9.5" fill="#92400e" text-anchor="middle">RNF-02: Latencia &lt; 250ms</text>
+    </svg>
+    <div class="diagram-caption">Fig 6.1 - Mapa de Trazabilidad por Módulos Funcionales</div>
+</div>
 
 </div>
 </div>
