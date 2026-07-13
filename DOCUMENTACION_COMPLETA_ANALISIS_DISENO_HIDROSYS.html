@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe Técnico de Análisis y Diseño - HIDROSYS EC.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f172a;
+            --primary-light: #1e293b;
+            --accent: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-100: #f8fafc;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-700: #334155;
+            --gray-900: #0f172a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--gray-700);
+            line-height: 1.6;
+            background: #f1f5f9;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 60px 80px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-radius: 16px;
+        }
+
+        /* cover page */
+        .cover-page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            padding: 40px 0;
+            page-break-after: always;
+        }
+
+        .cover-logo {
+            width: 180px;
+            margin-bottom: 20px;
+        }
+
+        .cover-title-univ {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 50px;
+        }
+
+        .cover-section {
+            margin: 20px 0;
+        }
+
+        .cover-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .cover-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-light);
+        }
+
+        .cover-project-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.2;
+            margin: 30px 0;
+        }
+
+        .cover-students {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--gray-700);
+            line-height: 1.8;
+        }
+
+        /* regular sections */
+        .section-header {
+            margin-top: 60px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--gray-200);
+            padding-bottom: 10px;
+            page-break-before: always;
+        }
+
+        .section-header h2 {
+            font-family: 'Outfit', sans-serif;
+            color: var(--primary);
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .section-header p {
+            color: var(--accent);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        p.intro-text {
+            font-size: 1.05rem;
+            margin-bottom: 20px;
+            color: var(--gray-700);
+            text-align: justify;
+        }
+
+        /* tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) td {
+            background: var(--gray-100);
+        }
+
+        /* badge styles */
+        .badge-green {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+
+        .badge-yellow {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+
+        .badge-red {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+
+        /* user stories cards */
+        .us-card {
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            margin: 24px 0;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .us-header {
+            background: var(--primary-light);
+            color: white;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .us-id {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #3b82f6;
+        }
+
+        .us-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .us-body {
+            padding: 20px;
+        }
+
+        .us-row {
+            display: flex;
+            margin-bottom: 12px;
+            border-bottom: 1px dashed var(--gray-200);
+            padding-bottom: 10px;
+        }
+
+        .us-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .us-label {
+            width: 140px;
+            font-weight: 700;
+            color: var(--primary);
+            flex-shrink: 0;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+        }
+
+        .us-value {
+            font-size: 0.92rem;
+            color: var(--gray-700);
+        }
+
+        /* print adjustments */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            .section-header {
+                page-break-before: always;
+            }
+            table {
+                page-break-inside: avoid;
+            }
+            .us-card {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+    <!-- load mermaid for live diagram rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose'
+        });
+    </script>
+</head>
+<body>
+<div class="container">
+
+    <!-- ==================== PORTADA ==================== -->
+    <div class="cover-page">
+        <div>
+            <div class="cover-title-univ">Instituto Superior Tecnológico del Austro</div>
+        </div>
+        
+        <div class="cover-section">
+            <div class="cover-label">Carrera</div>
+            <div class="cover-value">Desarrollo de Software</div>
+        </div>
+
+        <div class="cover-section">
+            <div class="cover-label">Materia</div>
+            <div class="cover-value">Análisis y Diseño de Sistemas</div>
+        </div>
+
+        <div class="cover-section">
+            <div class="cover-label">Proyecto Técnico</div>
+            <div class="cover-project-title">HIDROSYS EC.<br>Sistema Integral de Gestión de Visitas Técnicas, Agendamiento Automatizado e Interacción WhatsApp Bot</div>
+        </div>
+
+        <div class="cover-section">
+            <div class="cover-label">Docente</div>
+            <div class="cover-value">Ing. Esteban Cáceres</div>
+        </div>
+
+        <div class="cover-section">
+            <div class="cover-label">Estudiantes</div>
+            <div class="cover-students">
+                Ricardo Barba<br>
+                Isaac Anguisaca<br>
+                Andres Idrovo<br>
+                <strong>Freddy Peñafiel</strong>
+            </div>
+        </div>
+
+        <div style="font-size: 0.85rem; color: var(--gray-300);">Cuenca - Ecuador<br>2026</div>
+    </div>
+
+
+    <!-- ==================== INTRODUCCIÓN Y CONTEXTO ==================== -->
+    <div class="section-header">
+        <p>Capítulo 1</p>
+        <h2>Ámbito del Proyecto e Introducción</h2>
+    </div>
+    <p class="intro-text">
+        El presente proyecto, denominado <strong>HIDROSYS EC.</strong>, consiste en el análisis, diseño e implementación de un Sistema de Gestión Integral para la automatización de agendamientos de visitas técnicas de instalación y mantenimiento de sistemas hidráulicos, agua potable y gas. La empresa opera en la provincia del Cañar, atendiendo cantones clave como Azogues, Cañar y Biblián.
+    </p>
+    <p class="intro-text">
+        El sistema destaca por integrar tres componentes fundamentales: un frontend interactivo con arquitectura de micro-animaciones y diseño glassmorphism, un backend robusto conectado a base de datos PostgreSQL, y un asistente automatizado de WhatsApp (WhatsApp Bot) que permite a los usuarios agendar visitas mediante dictado de voz y procesamiento de lenguaje natural o comandos rápidos estructurados.
+    </p>
+
+
+    <!-- ==================== 1. NECESIDADES DEL USUARIO ==================== -->
+    <div class="section-header">
+        <p>Requerimientos</p>
+        <h2>1. Necesidades del Usuario</h2>
+    </div>
+    <p class="intro-text">
+        Tras efectuar el levantamiento de información y entrevistas estructuradas a los stakeholders de HIDROSYS EC., se han detectado los siguientes inconvenientes críticos en el flujo tradicional de la empresa:
+    </p>
+    <ol style="margin-left: 24px; margin-bottom: 24px; font-size: 0.95rem; line-height: 1.8;">
+        <li><strong>Falta de un Canal Automatizado de Agendamiento:</strong> Los clientes debían llamar o enviar mensajes manuales por WhatsApp a la oficina para agendar una visita técnica. Esto generaba cuellos de botella en la atención y tiempos de espera elevados.</li>
+        <li><strong>Coordinación Ineficiente de Pagos por Transferencia:</strong> El proceso de validación de comprobantes de pago se realizaba de manera dispersa. La secretaria debía verificar la cuenta bancaria manualmente y notificar por teléfono la aprobación del pago al cliente.</li>
+        <li><strong>Falta de Seguimiento en Tiempo Real:</strong> El administrador y los técnicos carecían de un panel consolidado de visitas agendadas, lo que dificultaba la asignación del personal técnico según la parroquia/zona del cliente.</li>
+        <li><strong>Ausencia de Registro de Satisfacción Post-Servicio:</strong> La retroalimentación de la calidad del servicio técnico no era registrada formalmente, impidiendo medir el nivel de satisfacción al cliente.</li>
+    </ol>
+
+    <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 12px; font-size: 1.2rem; color: var(--primary);">Usuarios Involucrados y Roles</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Área / Departamento</th>
+                <th style="width: 25%;">Usuarios</th>
+                <th>Rol en el Sistema</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Clientes</strong></td>
+                <td>Público General</td>
+                <td>Agendan visitas desde el portal web o vía dictado de voz/WhatsApp. Reportan sus pagos y califican la satisfacción del servicio.</td>
+            </tr>
+            <tr>
+                <td><strong>Administración</strong></td>
+                <td>Administrador / Secretaria</td>
+                <td>Verifican transferencias reportadas, aprueban pagos, asignan técnicos y analizan métricas de ventas y satisfacción.</td>
+            </tr>
+            <tr>
+                <td><strong>Operaciones Técnicas</strong></td>
+                <td>Técnicos de Campo</td>
+                <td>Visualizan su agenda asignada, realizan las inspecciones hidráulicas y cargan el informe técnico digitalizado al terminar.</td>
+            </tr>
+            <tr>
+                <td><strong>Sistemas / Automatización</strong></td>
+                <td>Asistente Virtual (Bot)</td>
+                <td>Procesa audios e interactúa en tiempo real por WhatsApp para guiar al cliente en el agendamiento y confirmación de citas.</td>
+            </tr>
+        </tbody>
+    </table>
+
+
+    <!-- ==================== MATRIZ DE FACTIBILIDAD ==================== -->
+    <div class="section-header">
+        <p>Viabilidad</p>
+        <h2>Matriz Resumen de Factibilidad</h2>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 20%;">Dimensión</th>
+                <th style="width: 15%;">Evaluación</th>
+                <th>Justificación Técnica y Financiera</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Económica</strong></td>
+                <td><span class="badge-green">VIABLE</span></td>
+                <td>El sistema aprovecha tecnologías Open Source (Node.js, PostgreSQL) y se aloja en infraestructura en la nube con costos mínimos, maximizando el retorno de inversión al reducir horas de call center.</td>
+            </tr>
+            <tr>
+                <td><strong>Técnica</strong></td>
+                <td><span class="badge-green">VIABLE</span></td>
+                <td>El equipo cuenta con total dominio de las APIs de Baileys para WhatsApp, JWT para sesiones seguras y encriptación de datos sensibles.</td>
+            </tr>
+            <tr>
+                <td><strong>Operativa</strong></td>
+                <td><span class="badge-green">VIABLE</span></td>
+                <td>El flujo de control se integra perfectamente con el WhatsApp de la empresa (+593968245633). El personal administrativo puede monitorear y generar el código QR de vinculación autónomamente.</td>
+            </tr>
+            <tr>
+                <td><strong>Legal</strong></td>
+                <td><span class="badge-green">VIABLE</span></td>
+                <td>Cumple con la Ley Orgánica de Protección de Datos Personales de Ecuador, garantizando el cifrado de contraseñas de administradores y datos residenciales de los clientes.</td>
+            </tr>
+            <tr>
+                <td><strong>Temporal</strong></td>
+                <td><span class="badge-green">VIABLE</span></td>
+                <td>Implementado exitosamente bajo un esquema incremental de 4 semanas de análisis y 7 semanas de desarrollo ágil.</td>
+            </tr>
+        </tbody>
+    </table>
+
+
+    <!-- ==================== 2. HISTORIAS DE USUARIO ==================== -->
+    <div class="section-header">
+        <p>Metodología Ágil</p>
+        <h2>2. Historias de Usuario</h2>
+    </div>
+    <p class="intro-text">
+        A continuación se detallan las principales Historias de Usuario bajo las plantillas y criterios de aceptación estandarizados del proyecto:
+    </p>
+
+    <!-- HU-01 -->
+    <div class="us-card">
+        <div class="us-header">
+            <span class="us-title">Agendamiento Web y por Voz</span>
+            <span class="us-id">HU-01</span>
+        </div>
+        <div class="us-body">
+            <div class="us-row">
+                <div class="us-label">Descripción:</div>
+                <div class="us-value">Como <strong>Cliente de Hidrosys</strong>, quiero un formulario web intuitivo donde pueda registrar mis datos y dictar mi solicitud por voz, para que no tenga que escribir largas descripciones de mis requerimientos hidráulicos.</div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Estimación:</div>
+                <div class="us-value">8 puntos de historia</div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Prioridad:</div>
+                <div class="us-value"><span class="badge-green">Alta (100)</span></div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Criterios de Aceptación:</div>
+                <div class="us-value">
+                    1. El sistema debe permitir el dictado por voz y convertir el audio a texto en el formulario.<br>
+                    2. Debe restringir el agendamiento a cantones de la provincia del Cañar.<br>
+                    3. Debe validar que el número de teléfono corporativo ingresado tenga formato de Ecuador.<br>
+                    4. Al registrar, la cita queda en estado "Pre-agendado" a la espera de confirmación de pago.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HU-02 -->
+    <div class="us-card">
+        <div class="us-header">
+            <span class="us-title">Notificación y Asistente de WhatsApp</span>
+            <span class="us-id">HU-02</span>
+        </div>
+        <div class="us-body">
+            <div class="us-row">
+                <div class="us-label">Descripción:</div>
+                <div class="us-value">Como <strong>Cliente de Hidrosys</strong>, quiero recibir mensajes del bot de WhatsApp para saber el estado de mi solicitud, y poder chatear con él de forma natural o con menús numéricos simples.</div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Estimación:</div>
+                <div class="us-value">9 puntos de historia</div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Prioridad:</div>
+                <div class="us-value"><span class="badge-green">Alta (95)</span></div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Criterios de Aceptación:</div>
+                <div class="us-value">
+                    1. El bot de WhatsApp debe responder instantáneamente a palabras clave como "Hola" o "menu".<br>
+                    2. Debe permitir agendar, reportar pago y ver catálogos a través de flujos claros numerados.<br>
+                    3. Si el administrador aprueba el pago, el bot debe notificar al cliente en su número de WhatsApp.<br>
+                    4. El bot debe procesar y responder al cliente directamente en su JID.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HU-03 -->
+    <div class="us-card">
+        <div class="us-header">
+            <span class="us-title">Panel Administrativo de Control</span>
+            <span class="us-id">HU-03</span>
+        </div>
+        <div class="us-body">
+            <div class="us-row">
+                <div class="us-label">Descripción:</div>
+                <div class="us-value">Como <strong>Administrador de Hidrosys</strong>, quiero un panel con métricas de ventas y una agenda interactiva de citas, para poder coordinar las visitas de los técnicos y dar seguimiento oportuno.</div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Estimación:</div>
+                <div class="us-value">7 puntos de historia</div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Prioridad:</div>
+                <div class="us-value"><span class="badge-green">Alta (90)</span></div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Criterios de Aceptación:</div>
+                <div class="us-value">
+                    1. Debe mostrar métricas de Citas Totales, Citas Pendientes y Ventas Totales en dólares.<br>
+                    2. Las nuevas citas de clientes deben aparecer primero en la parte superior como recientes.<br>
+                    3. Debe posibilitar la asignación del personal técnico asignado a cada cita.<br>
+                    4. El sistema requiere login seguro mediante JWT y almacenamiento local de token.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HU-04 -->
+    <div class="us-card">
+        <div class="us-header">
+            <span class="us-title">Monitoreo de Código QR de WhatsApp</span>
+            <span class="us-id">HU-04</span>
+        </div>
+        <div class="us-body">
+            <div class="us-row">
+                <div class="us-label">Descripción:</div>
+                <div class="us-value">Como <strong>Administrador del Sistema</strong>, quiero ver y gestionar la vinculación del bot de WhatsApp mediante código QR en vivo desde el panel de control web, para no depender de programadores si se desvincula el celular.</div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Estimación:</div>
+                <div class="us-value">6 puntos de historia</div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Prioridad:</div>
+                <div class="us-value"><span class="badge-green">Alta (85)</span></div>
+            </div>
+            <div class="us-row">
+                <div class="us-label">Criterios de Aceptación:</div>
+                <div class="us-value">
+                    1. El panel administrativo debe mostrar el estado en vivo (Conectado / Esperando Escaneo).<br>
+                    2. Si la sesión no está vinculada, debe pintar el código QR actualizado automáticamente.<br>
+                    3. Debe incluir un botón de "Reiniciar Conexión / Generar QR" protegido por sesión.<br>
+                    4. Debe sincronizar automáticamente la interfaz sin necesidad de recargar la página web.
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================== 3. CASOS DE USO CERO ==================== -->
+    <div class="section-header">
+        <p>Modelado del Sistema</p>
+        <h2>3. Casos de Uso Cero</h2>
+    </div>
+    <p class="intro-text">
+        El Caso de Uso Cero representa los límites globales del sistema y cómo los actores principales interactúan con las fronteras del software de HIDROSYS EC.:
+    </p>
+
+    <!-- use case diagram in mermaid -->
+    <div style="display:flex; justify-content:center; margin: 30px 0;">
+        <div class="mermaid">
+        graph TD
+            Cliente(Cliente)
+            Admin(Administrador)
+            Tecnico(Técnico de Campo)
+            Bot(WhatsApp Bot)
+            
+            subgraph SISTEMA HIDROSYS
+                UC1(Agendar Visita Técnica Web/Voz)
+                UC2(Reportar Comprobante Pago)
+                UC3(Aprobar Pagos y Citas)
+                UC4(Generar QR y Monitorear WhatsApp)
+                UC5(Registrar Informe de Visita)
+                UC6(Enviar Calificación Satisfacción)
+            end
+
+            Cliente --> UC1
+            Cliente --> UC2
+            Cliente --> UC6
+            
+            Bot --> UC1
+            Bot --> UC2
+            
+            Admin --> UC3
+            Admin --> UC4
+            
+            Tecnico --> UC5
+        </div>
+    </div>
+
+
+    <!-- ==================== 4. CASOS DE USO DE CONTEXTO ==================== -->
+    <div class="section-header">
+        <p>Interacciones y Flujo</p>
+        <h2>4. Casos de Uso de Contexto</h2>
+    </div>
+    <p class="intro-text">
+        El contexto de HIDROSYS EC. se basa en el flujo del servicio técnico:
+        El <strong>Cliente</strong> genera el agendamiento y reporta el pago (por web o por WhatsApp).
+        El <strong>Administrador</strong> valida la transacción bancaria y aprueba la cita.
+        El <strong>Asistente Virtual (Bot)</strong> notifica inmediatamente la aprobación al Cliente y solicita la confirmación de su disponibilidad.
+        El <strong>Técnico</strong> completa el trabajo y sube el reporte final.
+    </p>
+
+
+    <!-- ==================== 5. CASOS DE USO DETALLADO ==================== -->
+    <div class="section-header">
+        <p>Especificación de Casos de Uso</p>
+        <h2>5. Casos de Uso Detallado</h2>
+    </div>
+    <p class="intro-text">
+        A continuación se detalla la especificación del Caso de Uso clave: <strong>Aprobación de Citas y Notificación Automática</strong>.
+    </p>
+    <table>
+        <tr>
+            <td style="width: 30%; font-weight: 700;">Caso de Uso:</td>
+            <td><strong>CUD-03: Aprobación de Citas y Asignación Técnica con Notificación WhatsApp</strong></td>
+        </tr>
+        <tr>
+            <td style="font-weight: 700;">Actores:</td>
+            <td>Administrador (Iniciador), Cliente (Receptor), Técnico.</td>
+        </tr>
+        <tr>
+            <td style="font-weight: 700;">Precondiciones:</td>
+            <td>El cliente debe tener una cita registrada como "Reportado" con comprobante de pago subido. El bot de WhatsApp debe estar "Conectado".</td>
+        </tr>
+        <tr>
+            <td style="font-weight: 700;">Flujo Principal (Happy Path):</td>
+            <td>
+                1. El Administrador inicia sesión en el panel web.<br>
+                2. Navega a "Agenda y Citas" y selecciona una cita reciente en estado "Reportado".<br>
+                3. Revisa la imagen del comprobante de transferencia bancaria.<br>
+                4. Asigna un Técnico disponible y presiona "Aprobar Pago".<br>
+                5. El servidor procesa la solicitud, actualiza la cita a "Confirmado".<br>
+                6. El bot de WhatsApp envía automáticamente un mensaje al JID del cliente notificándole que su pago ha sido aprobado e incluye la fecha y nombre del técnico asignado, solicitando su confirmación final.
+            </td>
+        </tr>
+        <tr>
+            <td style="font-weight: 700;">Flujos Alternativos:</td>
+            <td>
+                - <strong>Pago Inválido:</strong> El administrador presiona "Rechazar Pago". La cita cambia a "Pre-agendado" y el bot notifica al cliente que debe subir un comprobante válido.<br>
+                - <strong>Bot Desconectado:</strong> Si el bot pierde conexión, el sistema almacena la aprobación en PostgreSQL y muestra una alerta en el panel administrador solicitando reiniciar conexión desde la pestaña QR.
+            </td>
+        </tr>
+    </table>
+
+
+    <!-- ==================== 6. CASOS DE USO DE ESCENARIO ==================== -->
+    <div class="section-header">
+        <p>Escenarios de Interacción</p>
+        <h2>6. Casos de Uso de Escenario</h2>
+    </div>
+    <p class="intro-text">
+        <strong>Escenario de Confirmación del Cliente:</strong> El cliente recibe la aprobación de pago en su WhatsApp. El cliente presiona o escribe "SÍ". El bot procesa el mensaje, busca la cita activa en la base de datos de Hidrosys, la cambia al estado "Confirmado por Cliente" y responde con un mensaje de agradecimiento. Si el cliente escribe "NO", el bot cancela el flujo y le indica que se comunique con soporte telefónico.
+    </p>
+
+
+    <!-- ==================== 7. REQUISITOS FUNCIONALES Y NO FUNCIONALES ==================== -->
+    <div class="section-header">
+        <p>Especificación de Requisitos</p>
+        <h2>7. Requisitos Funcionales y No Funcionales</h2>
+    </div>
+    
+    <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 12px; font-size: 1.2rem; color: var(--primary);">Requisitos Funcionales (RF)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 10%;">ID</th>
+                <th style="width: 30%;">Descripción del Requisito</th>
+                <th style="width: 35%;">Criterio de Aceptación</th>
+                <th style="width: 15%;">Stakeholder</th>
+                <th style="width: 10%;">Prioridad</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>RF-01</strong></td>
+                <td><strong>Agendamiento por Web e IA de Voz</strong></td>
+                <td>Permitir registrar citas llenando datos o dictando requerimientos por voz convirtiendo audio a texto.</td>
+                <td>Clientes / Web</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RF-02</strong></td>
+                <td><strong>Procesamiento en WhatsApp Bot</strong></td>
+                <td>El bot de WhatsApp debe responder instantáneamente a saludos y procesar agendamientos y reportes mediante números 1, 2, 3, 4.</td>
+                <td>Clientes / Bot</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RF-03</strong></td>
+                <td><strong>Reporte de Comprobantes</strong></td>
+                <td>Permitir al cliente subir una imagen del comprobante de transferencia bancaria (por web o por WhatsApp).</td>
+                <td>Clientes</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RF-04</strong></td>
+                <td><strong>Métricas del Administrador</strong></td>
+                <td>Visualizar en tiempo real el monto total recaudado, citas pendientes y citas confirmadas.</td>
+                <td>Administrador</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RF-05</strong></td>
+                <td><strong>Ordenación por Recientes</strong></td>
+                <td>Las nuevas citas y los mensajes recientes de clientes deben listarse automáticamente arriba en la agenda del administrador.</td>
+                <td>Administrador</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RF-06</strong></td>
+                <td><strong>Aprobación de Pago</strong></td>
+                <td>El administrador puede validar el comprobante y aprobar el pago con un click, cambiando el estado a "Confirmado".</td>
+                <td>Administrador</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RF-07</strong></td>
+                <td><strong>Notificación Automática</strong></td>
+                <td>El sistema debe enviar un mensaje de confirmación de cita al WhatsApp del cliente tras la aprobación del administrador.</td>
+                <td>Servidor / Bot</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RF-08</strong></td>
+                <td><strong>Pestaña QR de WhatsApp</strong></td>
+                <td>Permitir ver el código QR y reiniciar conexión de WhatsApp directamente desde el panel de administración web de Hidrosys.</td>
+                <td>Administrador</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RF-09</strong></td>
+                <td><strong>Calificación de Servicio</strong></td>
+                <td>Registrar la calificación del cliente (1 a 5 estrellas) para medir el desempeño técnico post-inspección.</td>
+                <td>Clientes</td>
+                <td><span class="badge-yellow">Media</span></td>
+            </tr>
+            <tr>
+                <td><strong>RF-10</strong></td>
+                <td><strong>Registro de Informes</strong></td>
+                <td>El técnico puede ingresar los detalles de la visita y materiales utilizados directamente en el sistema al finalizar.</td>
+                <td>Técnicos</td>
+                <td><span class="badge-yellow">Media</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="font-family: 'Outfit', sans-serif; margin-top: 40px; margin-bottom: 12px; font-size: 1.2rem; color: var(--primary);">Requisitos No Funcionales (RNF)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 10%;">ID</th>
+                <th style="width: 30%;">Descripción del Requisito</th>
+                <th style="width: 35%;">Criterio de Aceptación</th>
+                <th style="width: 15%;">Stakeholder</th>
+                <th style="width: 10%;">Prioridad</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>RNF-01</strong></td>
+                <td><strong>Interfaz de Usuario Glassmorphism</strong></td>
+                <td>Diseño responsivo, tipografía Inter/Outfit, fondos semi-transparentes y esquinas redondeadas.</td>
+                <td>Todos</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RNF-02</strong></td>
+                <td><strong>Seguridad de Sesión JWT</strong></td>
+                <td>El acceso a la API administrativa requiere un token seguro cifrado en las cabeceras HTTP.</td>
+                <td>Administrador / TI</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RNF-03</strong></td>
+                <td><strong>Rendimiento de Base de Datos</strong></td>
+                <td>Consultas optimizadas en PostgreSQL con conexiones concurrentes y pooling activo.</td>
+                <td>TI / Sistemas</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RNF-04</strong></td>
+                <td><strong>Blindaje de Conexión de Bot</strong></td>
+                <td>El bot de WhatsApp debe reconectarse automáticamente en caso de microcortes y no interrumpir el servidor principal.</td>
+                <td>TI / Administrador</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RNF-05</strong></td>
+                <td><strong>Cifrado en Tránsito</strong></td>
+                <td>Toda la comunicación web se realiza bajo protocolo cifrado seguro HTTPS / SSL.</td>
+                <td>Todos</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RNF-06</strong></td>
+                <td><strong>Portabilidad de Navegador</strong></td>
+                <td>Compatible con Google Chrome, Mozilla Firefox, Safari y Microsoft Edge en computadoras y móviles.</td>
+                <td>Todos</td>
+                <td><span class="badge-yellow">Media</span></td>
+            </tr>
+            <tr>
+                <td><strong>RNF-07</strong></td>
+                <td><strong>Mantenibilidad de Código</strong></td>
+                <td>Arquitectura de carpetas modularizada: controladores de API, flujos del bot y archivos estáticos separados.</td>
+                <td>Desarrolladores</td>
+                <td><span class="badge-yellow">Media</span></td>
+            </tr>
+            <tr>
+                <td><strong>RNF-08</strong></td>
+                <td><strong>Copia de Seguridad de Sesiones</strong></td>
+                <td>Las credenciales de Baileys se almacenan de forma local en la carpeta `.wabaileys` para evitar tener que re-escanear el QR tras apagar el servidor.</td>
+                <td>TI</td>
+                <td><span class="badge-green">Alta</span></td>
+            </tr>
+            <tr>
+                <td><strong>RNF-09</strong></td>
+                <td><strong>Tiempo de Respuesta Rápido</strong></td>
+                <td>El servidor debe responder a peticiones de listado de citas en menos de 1.5 segundos.</td>
+                <td>Administrador</td>
+                <td><span class="badge-yellow">Media</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+
+    <!-- ==================== 8. DIAGRAMA DE ACTIVIDADES ==================== -->
+    <div class="section-header">
+        <p>Procesos del Negocio</p>
+        <h2>8. Diagrama de Actividades</h2>
+    </div>
+    <p class="intro-text">
+        El siguiente diagrama ilustra el flujo secuencial de actividades entre el Cliente, el Sistema Web / Bot y el Administrador:
+    </p>
+
+    <!-- activity diagram in mermaid -->
+    <div style="display:flex; justify-content:center; margin: 30px 0;">
+        <div class="mermaid">
+        sequenceDiagram
+            autonumber
+            actor Cliente
+            participant Sistema as Portal Web / Bot WA
+            actor Admin as Administrador
+            
+            Cliente->>Sistema: Registra Cita (Dictado de Voz o Formulario Web)
+            Sistema-->>Cliente: Guarda Pre-agendado. Solicita Comprobante de Pago
+            Cliente->>Sistema: Sube imagen del comprobante de transferencia
+            Sistema->>Admin: Alerta visual de Cita Pendiente de Aprobación
+            Admin->>Sistema: Asigna Técnico y presiona "Aprobar Pago"
+            Sistema->>Sistema: Actualiza cita a "Confirmado"
+            Sistema-->>Cliente: Bot envía notificación WhatsApp ("¡Pago Aprobado!")
+            Cliente-->>Sistema: Confirma disponibilidad por WhatsApp ("SÍ")
+            Sistema->>Sistema: Cita cambia a "Confirmado por Cliente"
+        </div>
+    </div>
+
+
+    <!-- ==================== 9. EL MOCKUP ==================== -->
+    <div class="section-header">
+        <p>Diseño y Experiencia de Usuario</p>
+        <h2>9. El Mockup</h2>
+    </div>
+    <p class="intro-text">
+        El diseño del sistema web de HIDROSYS EC. rompe con las plantillas genéricas. Se ha estructurado bajo un concepto visual moderno que incluye:
+    </p>
+    <ul style="margin-left: 24px; margin-bottom: 24px; font-size: 0.95rem; line-height: 1.8;">
+        <li><strong>Estilo Glassmorphism:</strong> Tarjetas con fondos blancos semi-transparentes (`rgba(255,255,255,0.85)`), desenfoque de fondo (`backdrop-filter: blur(10px)`) y bordes muy finos.</li>
+        <li><strong>Paleta de Colores Curada:</strong> Azul pizarra profundo para fondos laterales (`#0f172a`), verde esmeralda para éxitos y confirmaciones (`#10b981`), y azul eléctrico para botones principales (`#2563eb`).</li>
+        <li><strong>Tipografía Moderna:</strong> Google Fonts <em>Outfit</em> para encabezados prominentes y limpios, combinada con <em>Inter</em> para textos de lectura fluida.</li>
+        <li><strong>Barra Lateral Responsiva:</strong> Transición suave para expandir y colapsar el menú en dispositivos móviles y computadoras.</li>
+    </ul>
+
+
+    <!-- ==================== 10. PROTOTIPO DEL SISTEMA ==================== -->
+    <div class="section-header">
+        <p>Arquitectura Tecnológica</p>
+        <h2>10. Prototipo del Sistema</h2>
+    </div>
+    <p class="intro-text">
+        El prototipo de HIDROSYS EC. está desarrollado como una aplicación web real SPA (Single Page Application) e integra las siguientes tecnologías:
+    </p>
+    
+    <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 12px; font-size: 1.2rem; color: var(--primary);">Arquitectura del Software</h3>
+    <ul style="margin-left: 24px; margin-bottom: 24px; font-size: 0.95rem; line-height: 1.8;">
+        <li><strong>Servidor Backend:</strong> Node.js con Express, que expone APIs REST seguras protegidas por tokens de sesión.</li>
+        <li><strong>Base de Datos:</strong> PostgreSQL, almacenando tablas relacionales para `appointments`, `clients`, `technicians`, y `surveys` con migraciones automáticas.</li>
+        <li><strong>Frontend:</strong> JavaScript vainilla estructurado modularmente con selectores CSS y peticiones HTTP (`fetch`).</li>
+        <li><strong>Integración WhatsApp (Baileys):</strong> Biblioteca Node.js que emula un cliente de WhatsApp Web, conectándose a través del escaneo del código QR generado en vivo y manejando eventos de mensajes y audios.</li>
+    </ul>
+
+</div>
+</body>
+</html>
