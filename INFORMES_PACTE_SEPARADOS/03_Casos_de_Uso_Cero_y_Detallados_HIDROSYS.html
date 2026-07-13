@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>03_Casos_de_Uso_Cero_y_Detallados_HIDROSYS - 3. CASOS DE USO CERO Y DETALLADOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+
+    @page {
+        size: A4;
+        margin: 18mm 15mm 18mm 15mm;
+        @bottom-right {
+            content: "Página " counter(page);
+            font-family: 'Inter', sans-serif;
+            font-size: 8pt;
+            color: #64748b;
+        }
+        @bottom-left {
+            content: "HIDROSYS EC. • Proyecto PACTE • Freddy Peñafiel | Tutor: Ing. Fabricio Lucero";
+            font-family: 'Inter', sans-serif;
+            font-size: 8pt;
+            color: #64748b;
+        }
+    }
+
+    :root {
+        --primary: #0f172a;
+        --primary-light: #1e293b;
+        --accent: #2563eb;
+        --ista-blue: #002e6e;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --gray-100: #f8fafc;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-700: #334155;
+        --gray-900: #0f172a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: var(--gray-700);
+        line-height: 1.5;
+        background: white;
+        font-size: 9.5pt;
+    }
+
+    .container { max-width: 100%; margin: 0 auto; }
+
+    /* Portada Estilo Universitario */
+    .cover-page {
+        height: 90vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 10px 10px;
+        page-break-after: always;
+    }
+    .cover-header { border-bottom: 3px solid var(--ista-blue); padding-bottom: 18px; }
+    .cover-logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+    .cover-title-univ {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: var(--ista-blue);
+        letter-spacing: 0.5px;
+    }
+    .cover-subtitle-univ { font-size: 0.85rem; font-weight: 600; color: #475569; letter-spacing: 2px; }
+    .cover-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+    .meta-box { background: var(--gray-100); padding: 8px 12px; border-left: 4px solid var(--accent); border-radius: 4px; }
+    .meta-label { display: block; font-size: 0.7rem; font-weight: 700; color: #64748b; letter-spacing: 1px; }
+    .meta-value { font-size: 0.85rem; font-weight: 700; color: var(--primary); }
+
+    .cover-center { text-align: center; padding: 25px 15px; }
+    .doc-badge {
+        display: inline-block;
+        background: #eff6ff;
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 0.8rem;
+        padding: 5px 14px;
+        border-radius: 20px;
+        letter-spacing: 1.5px;
+        margin-bottom: 15px;
+        border: 1px solid #bfdbfe;
+    }
+    .cover-project-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--primary);
+        line-height: 1.35;
+        margin-bottom: 15px;
+    }
+    .cover-doc-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--ista-blue);
+        margin-bottom: 12px;
+        padding: 10px 0;
+        border-top: 1px solid var(--gray-200);
+        border-bottom: 1px solid var(--gray-200);
+    }
+    .cover-doc-summary {
+        font-size: 0.95rem;
+        color: #475569;
+        max-width: 85%;
+        margin: 0 auto;
+    }
+
+    .cover-footer { border-top: 2px solid var(--gray-200); padding-top: 18px; }
+    .authors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 12px; }
+    .author-card { background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid var(--gray-200); }
+    .author-role { display: block; font-size: 0.7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+    .author-name { display: block; font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 3px 0; }
+    .author-desc { font-size: 0.8rem; color: #64748b; }
+    .cover-date { text-align: center; font-size: 0.85rem; font-weight: 600; color: #64748b; }
+
+    /* Estilos del Contenido */
+    .page-break { page-break-after: always; }
+    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 18px; margin-bottom: 8px; }
+    h1 { font-size: 1.5rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
+    h2 { font-size: 1.25rem; color: var(--ista-blue); }
+    h3 { font-size: 1.05rem; }
+    p { margin-bottom: 10px; text-align: justify; }
+
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 8.8pt; page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    th { background: var(--ista-blue); color: white; padding: 10px 8px; text-align: left; font-weight: 600; }
+    td { padding: 9px 8px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    tr:nth-child(even) { background: #f8fafc; }
+
+    .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 6px; padding: 14px; margin: 14px 0; page-break-inside: avoid; }
+    .card-title { font-weight: 700; color: var(--ista-blue); margin-bottom: 6px; font-size: 10.5pt; }
+
+    .badge-req { display: inline-block; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 7.8pt; }
+    .badge-success { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+
+    ul, ol { margin-left: 20px; margin-bottom: 12px; }
+    li { margin-bottom: 5px; }
+
+    .diagram-box {
+        background: #ffffff;
+        border: 2px solid var(--gray-200);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+        text-align: center;
+        page-break-inside: avoid;
+    }
+
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ==================== PORTADA OFICIAL ==================== -->
+    <div class="cover-page">
+        <div class="cover-header">
+            <div class="cover-logo-area">
+                <svg width="60" height="60" viewBox="0 0 100 100" style="margin-right:15px;">
+                    <path d="M10,20 Q10,10 50,10 Q90,10 90,20 L90,60 Q90,90 50,95 Q10,90 10,60 Z" fill="#002e6e" stroke="#ffffff" stroke-width="2"/>
+                    <path d="M20,40 Q35,35 50,40 Q65,45 80,40" fill="none" stroke="#2563eb" stroke-width="4"/>
+                    <path d="M20,55 Q35,50 50,55 Q65,60 80,55" fill="none" stroke="#60a5fa" stroke-width="4"/>
+                    <polygon points="30,35 50,15 70,35" fill="#f59e0b"/>
+                </svg>
+                <div>
+                    <div class="cover-title-univ">INSTITUTO SUPERIOR TECNOLÓGICO DEL AUSTRO</div>
+                    <div class="cover-subtitle-univ">EXCELENCIA ACADÉMICA Y TECNOLÓGICA</div>
+                </div>
+            </div>
+            
+            <div class="cover-meta-grid">
+                <div class="meta-box">
+                    <span class="meta-label">CARRERA</span>
+                    <span class="meta-value">TECNOLOGÍA SUPERIOR EN DESARROLLO DE SOFTWARE</span>
+                </div>
+                <div class="meta-box">
+                    <span class="meta-label">PROYECTO PACTE</span>
+                    <span class="meta-value">ANÁLISIS, DISEÑO E IMPLEMENTACIÓN DE SISTEMAS</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="cover-center">
+            <div class="doc-badge">03_Casos_de_Uso_Cero_y_Detallados_HIDROSYS • DOCUMENTO OFICIAL PACTE</div>
+            <h1 class="cover-project-title">SISTEMA INTEGRAL DE GESTIÓN DE CITAS, ATENCIÓN AUTOMATIZADA Y AGENDAMIENTO VÍA WHATSAPP BOT (HIDROSYS EC.)</h1>
+            <h2 class="cover-doc-title">3. CASOS DE USO CERO Y DETALLADOS</h2>
+            <p class="cover-doc-summary">Arquitectura comportamental y especificación por roles</p>
+        </div>
+
+        <div class="cover-footer">
+            <div class="authors-grid">
+                <div class="author-card">
+                    <span class="author-role">ESTUDIANTE / AUTOR DEL PROYECTO</span>
+                    <span class="author-name">Freddy Peñafiel</span>
+                    <span class="author-desc">Desarrollador Principal • Proyecto Hidrosys EC.</span>
+                </div>
+                <div class="author-card">
+                    <span class="author-role">DOCENTE / TUTOR ACADÉMICO</span>
+                    <span class="author-name">Ing. Fabricio Lucero</span>
+                    <span class="author-desc">Tutor de Proyecto PACTE • IST del Austro</span>
+                </div>
+            </div>
+            <div class="cover-date">Cuenca, Ecuador • Periodo Académico 2026</div>
+        </div>
+    </div>
+
+<div class="content-body">
+
+<h1>3. CASOS DE USO CERO Y CASOS DE USO DETALLADOS</h1>
+<p>
+Este documento formaliza la estructura comportamental del sistema <strong>Hidrosys EC.</strong> mediante Casos de Uso Cero (visión de frontera y contexto global) y los Casos de Uso Detallados por cada uno de los roles institucionales: <strong>Administrador Principal, Administrador Secundario y Trabajador</strong>.
+</p>
+
+<h2>3.1 Caso de Uso Cero (Diagrama Global del Sistema)</h2>
+<p>
+El Caso de Uso Cero representa la interacción general del ecosistema tecnológico, integrando los canales de mensajería (WhatsApp Cloud/Baileys), el backend transaccional en Node.js y las interfaces de administración web.
+</p>
+
+<div class="diagram-box">
+    <h3 style="color:var(--ista-blue); margin-bottom:10px;">ARQUITECTURA FUNCIONAL DE CASOS DE USO CERO</h3>
+    <svg width="600" height="240" viewBox="0 0 600 240">
+        <!-- Actores -->
+        <circle cx="60" cy="50" r="18" fill="#002e6e" />
+        <text x="60" y="85" font-size="11" text-anchor="middle" font-weight="bold">Cliente WhatsApp</text>
+        
+        <circle cx="60" cy="170" r="18" fill="#2563eb" />
+        <text x="60" y="205" font-size="11" text-anchor="middle" font-weight="bold">Administrador</text>
+
+        <!-- Sistema -->
+        <rect x="180" y="20" width="380" height="200" rx="12" fill="#f8fafc" stroke="#002e6e" stroke-width="2"/>
+        <text x="370" y="45" font-size="13" font-weight="bold" fill="#002e6e" text-anchor="middle">SISTEMA HIDROSYS EC. (BACKEND & WEB)</text>
+
+        <!-- Elipses UC -->
+        <ellipse cx="370" cy="85" rx="140" ry="22" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+        <text x="370" y="89" font-size="11" font-weight="bold" fill="#1e40af" text-anchor="middle">UC-01: Interactuar con Bot y Agendar Cita</text>
+
+        <ellipse cx="370" cy="140" rx="140" ry="22" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="370" y="144" font-size="11" font-weight="bold" fill="#065f46" text-anchor="middle">UC-02: Escanear QR y Administrar Citas</text>
+
+        <!-- Líneas -->
+        <line x1="85" y1="55" x2="230" y2="80" stroke="#64748b" stroke-width="2"/>
+        <line x1="85" y1="170" x2="230" y2="145" stroke="#64748b" stroke-width="2"/>
+    </svg>
+</div>
+
+<h2>3.2 Detalle de Casos de Uso por Rol</h2>
+
+<h3>3.2.1 Rol: Administrador Principal (Super Admin)</h3>
+<table>
+    <thead>
+        <tr>
+            <th style="width:25%;">Atributo</th>
+            <th>Especificación Detallada</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Código y Nombre</strong></td>
+            <td><strong>CUD-01: Gestión Global y Vinculación de WhatsApp (QR)</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Actor Principal</strong></td>
+            <td>Administrador Principal (Dueño / Supervisor de Sistema)</td>
+        </tr>
+        <tr>
+            <td><strong>Precondición</strong></td>
+            <td>El usuario debe haber iniciado sesión con credenciales de Administrador en <code>localhost:3000</code>.</td>
+        </tr>
+        <tr>
+            <td><strong>Flujo Principal</strong></td>
+            <td>
+                1. El Administrador hace clic en la opción <strong>📱 Escanear QR / WhatsApp</strong> en el menú de Administración.<br>
+                2. El sistema consulta a <code>/api/wa/status</code> la condición actual del servicio Baileys.<br>
+                3. Si el bot requiere vinculación, el servidor devuelve un código QR en base64.<br>
+                4. El Administrador abre WhatsApp en el celular corporativo, selecciona "Dispositivos vinculados" y escanea el QR.<br>
+                5. El servidor detecta la sincronización exitosa y notifica al panel, mostrando el indicador verde <strong>¡Dispositivo Conectado! ✅</strong>.
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Postcondición</strong></td>
+            <td>El bot de WhatsApp queda operativo y listo para atender a clientes automáticamente.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>3.2.2 Rol: Administrador Secundario (Operador de Oficina)</h3>
+<table>
+    <thead>
+        <tr>
+            <th style="width:25%;">Atributo</th>
+            <th>Especificación Detallada</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Código y Nombre</strong></td>
+            <td><strong>CUD-02: Administración de Citas y Coordinación de Órdenes</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Actor Principal</strong></td>
+            <td>Administrador Secundario (Personal de Atención y Logística)</td>
+        </tr>
+        <tr>
+            <td><strong>Flujo Principal</strong></td>
+            <td>
+                1. El Operador ingresa a la sección <strong>📅 Gestión de Citas</strong>.<br>
+                2. Visualiza la tabla filtrada por citas "Pendientes" generadas vía WhatsApp.<br>
+                3. Selecciona una cita, asigna una cuadrilla técnica responsable y cambia el estado a "Confirmado".<br>
+                4. El sistema envía una notificación automática en tiempo real.
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>3.2.3 Rol: Trabajador Técnico (Personal de Campo)</h3>
+<table>
+    <thead>
+        <tr>
+            <th style="width:25%;">Atributo</th>
+            <th>Especificación Detallada</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Código y Nombre</strong></td>
+            <td><strong>CUD-03: Ejecución y Cierre de Orden de Trabajo en Campo</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Actor Principal</strong></td>
+            <td>Trabajador Técnico de Hidrosys EC.</td>
+        </tr>
+        <tr>
+            <td><strong>Flujo Principal</strong></td>
+            <td>
+                1. El técnico acude a la dirección registrada en la cita del cliente.<br>
+                2. Realiza la inspección o reparación del sistema hidráulico o de gas.<br>
+                3. Registra en el sistema el resultado de la visita y marca el servicio como "Completado".
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+</div>
+</div>
+</body>
+</html>
