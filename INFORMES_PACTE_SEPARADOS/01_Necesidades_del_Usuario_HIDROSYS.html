@@ -8,7 +8,7 @@
 
     @page {
         size: A4;
-        margin: 20mm 16mm 20mm 16mm;
+        margin: 18mm 15mm 18mm 15mm;
         @bottom-right {
             content: "Página " counter(page);
             font-family: 'Inter', sans-serif;
@@ -25,7 +25,6 @@
 
     :root {
         --primary: #0f172a;
-        --primary-light: #1e293b;
         --accent: #2563eb;
         --ista-blue: #002e6e;
         --success: #10b981;
@@ -33,23 +32,21 @@
         --danger: #ef4444;
         --gray-100: #f8fafc;
         --gray-200: #e2e8f0;
-        --gray-300: #cbd5e1;
         --gray-700: #334155;
-        --gray-900: #0f172a;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         color: var(--gray-700);
-        line-height: 1.6;
+        line-height: 1.55;
         background: white;
-        font-size: 10pt;
+        font-size: 9.8pt;
     }
 
     .container { max-width: 100%; margin: 0 auto; }
 
-    /* Portada Estilo Universitario */
+    /* Portada */
     .cover-page {
         height: 92vh;
         display: flex;
@@ -58,117 +55,37 @@
         padding: 5px 10px;
         page-break-after: always;
     }
-    .cover-header { border-bottom: 3px solid var(--ista-blue); padding-bottom: 20px; }
-    .cover-logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
-    .cover-title-univ {
-        font-family: 'Outfit', sans-serif;
-        font-size: 1.55rem;
-        font-weight: 800;
-        color: var(--ista-blue);
-        letter-spacing: 0.5px;
-    }
-    .cover-subtitle-univ { font-size: 0.9rem; font-weight: 600; color: #475569; letter-spacing: 2px; }
-    .cover-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
-    .meta-box { background: var(--gray-100); padding: 10px 14px; border-left: 4px solid var(--accent); border-radius: 4px; }
-    .meta-label { display: block; font-size: 0.72rem; font-weight: 700; color: #64748b; letter-spacing: 1px; }
-    .meta-value { font-size: 0.9rem; font-weight: 700; color: var(--primary); }
+    .cover-header { border-bottom: 3px solid var(--ista-blue); padding-bottom: 18px; }
+    .cover-logo-area { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+    .cover-title-univ { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--ista-blue); }
+    .cover-subtitle-univ { font-size: 0.88rem; font-weight: 600; color: #475569; letter-spacing: 1.5px; }
+    .cover-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+    .meta-box { background: var(--gray-100); padding: 9px 12px; border-left: 4px solid var(--accent); }
+    .meta-label { display: block; font-size: 0.72rem; font-weight: 700; color: #64748b; }
+    .meta-value { font-size: 0.88rem; font-weight: 700; color: var(--primary); }
 
-    .cover-center { text-align: center; padding: 30px 15px; }
-    .doc-badge {
-        display: inline-block;
-        background: #eff6ff;
-        color: var(--accent);
-        font-weight: 700;
-        font-size: 0.85rem;
-        padding: 6px 16px;
-        border-radius: 20px;
-        letter-spacing: 1.5px;
-        margin-bottom: 18px;
-        border: 1px solid #bfdbfe;
-    }
-    .cover-project-title {
-        font-family: 'Outfit', sans-serif;
-        font-size: 1.38rem;
-        font-weight: 800;
-        color: var(--primary);
-        line-height: 1.4;
-        margin-bottom: 18px;
-    }
-    .cover-doc-title {
-        font-family: 'Outfit', sans-serif;
-        font-size: 1.7rem;
-        font-weight: 800;
-        color: var(--ista-blue);
-        margin-bottom: 14px;
-        padding: 12px 0;
-        border-top: 1px solid var(--gray-200);
-        border-bottom: 1px solid var(--gray-200);
-    }
-    .cover-doc-summary {
-        font-size: 1rem;
-        color: #475569;
-        max-width: 88%;
-        margin: 0 auto;
-    }
+    .cover-center { text-align: center; padding: 25px 15px; }
+    .doc-badge { display: inline-block; background: #eff6ff; color: var(--accent); font-weight: 700; font-size: 0.85rem; padding: 5px 14px; border-radius: 20px; border: 1px solid #bfdbfe; margin-bottom: 16px; }
+    .cover-project-title { font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 800; color: var(--primary); line-height: 1.38; margin-bottom: 16px; }
+    .cover-doc-title { font-family: 'Outfit', sans-serif; font-size: 1.65rem; font-weight: 800; color: var(--ista-blue); padding: 10px 0; border-top: 1px solid var(--gray-200); border-bottom: 1px solid var(--gray-200); margin-bottom: 14px; }
+    .cover-doc-summary { font-size: 0.98rem; color: #475569; max-width: 88%; margin: 0 auto; }
 
-    .cover-footer { border-top: 2px solid var(--gray-200); padding-top: 20px; }
-    .authors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 14px; }
-    .author-card { background: #f8fafc; padding: 14px; border-radius: 6px; border: 1px solid var(--gray-200); }
-    .author-role { display: block; font-size: 0.72rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
-    .author-name { display: block; font-size: 1.15rem; font-weight: 800; color: var(--primary); margin: 4px 0; }
-    .author-desc { font-size: 0.85rem; color: #64748b; }
-    .cover-date { text-align: center; font-size: 0.9rem; font-weight: 600; color: #64748b; }
+    .cover-footer { border-top: 2px solid var(--gray-200); padding-top: 18px; }
+    .authors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 12px; }
+    .author-card { background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid var(--gray-200); }
+    .author-role { display: block; font-size: 0.72rem; font-weight: 700; color: var(--accent); }
+    .author-name { display: block; font-size: 1.15rem; font-weight: 800; color: var(--primary); margin: 3px 0; }
+    .author-desc { font-size: 0.83rem; color: #64748b; }
+    .cover-date { text-align: center; font-size: 0.88rem; font-weight: 600; color: #64748b; }
 
-    /* Contenido General */
-    .page-break { page-break-after: always; }
-    h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 22px; margin-bottom: 10px; }
-    h1 { font-size: 1.55rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 8px; }
-    h2 { font-size: 1.28rem; color: var(--ista-blue); }
-    h3 { font-size: 1.12rem; }
-    p { margin-bottom: 14px; text-align: justify; }
+    h1, h2, h3 { font-family: 'Outfit', sans-serif; color: var(--primary); margin-top: 20px; margin-bottom: 10px; }
+    h1 { font-size: 1.5rem; border-bottom: 2px solid var(--ista-blue); padding-bottom: 6px; }
+    h2 { font-size: 1.25rem; color: var(--ista-blue); }
+    p { margin-bottom: 12px; text-align: justify; }
 
-    table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 9.2pt; page-break-inside: auto; }
-    tr { page-break-inside: avoid; page-break-after: auto; }
-    th { background: var(--ista-blue); color: white; padding: 10px 10px; text-align: left; font-weight: 600; }
-    td { padding: 9px 10px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
-    tr:nth-child(even) { background: #f8fafc; }
-
-    .card { background: #f8fafc; border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; margin: 16px 0; page-break-inside: avoid; }
-    .card-title { font-weight: 700; color: var(--ista-blue); margin-bottom: 8px; font-size: 11pt; }
-
-    .badge-req { display: inline-block; background: #dbeafe; color: #1e40af; padding: 3px 10px; border-radius: 4px; font-weight: 700; font-size: 8.2pt; }
-    .badge-success { background: #d1fae5; color: #065f46; }
-    .badge-warning { background: #fef3c7; color: #92400e; }
-
-    ul, ol { margin-left: 22px; margin-bottom: 14px; }
-    li { margin-bottom: 7px; text-align: justify; }
-
-    .diagram-box {
-        background: #ffffff;
-        border: 2px solid var(--gray-200);
-        border-radius: 10px;
-        padding: 20px 12px;
-        margin: 20px 0;
-        text-align: center;
-        page-break-inside: avoid;
-    }
-    .diagram-caption {
-        font-weight: 700;
-        font-size: 9.5pt;
-        color: var(--ista-blue);
-        margin-top: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .explanation-box {
-        background: #f1f5f9;
-        border-left: 4px solid var(--ista-blue);
-        padding: 14px 16px;
-        margin: 14px 0;
-        font-size: 9.5pt;
-        color: #334155;
-        text-align: justify;
-    }
+    .diagram-box { background: #ffffff; border: 2px solid var(--gray-200); border-radius: 8px; padding: 16px 10px; margin: 18px 0; text-align: center; page-break-inside: avoid; }
+    .diagram-caption { font-weight: 700; font-size: 9.2pt; color: var(--ista-blue); margin-top: 10px; text-transform: uppercase; }
+    .explanation-box { background: #f1f5f9; border-left: 4px solid var(--ista-blue); padding: 12px 14px; margin: 12px 0; font-size: 9.3pt; text-align: justify; }
 
     </style>
 </head>
@@ -187,43 +104,43 @@
                 </svg>
                 <div>
                     <div class="cover-title-univ">INSTITUTO SUPERIOR TECNOLÓGICO DEL AUSTRO</div>
-                    <div class="cover-subtitle-univ">FORMACIÓN TECNOLÓGICA DE ALTO NIVEL</div>
+                    <div class="cover-subtitle-univ">CARRERA DE TECNOLOGÍA SUPERIOR EN DESARROLLO DE SOFTWARE</div>
                 </div>
             </div>
             
             <div class="cover-meta-grid">
                 <div class="meta-box">
-                    <span class="meta-label">CARRERA ACADÉMICA</span>
-                    <span class="meta-value">TECNOLOGÍA SUPERIOR EN DESARROLLO DE SOFTWARE</span>
+                    <span class="meta-label">PROYECTO DE TITULACIÓN / PACTE</span>
+                    <span class="meta-value">ARQUITECTURA E INGENIERÍA DE SOFTWARE</span>
                 </div>
                 <div class="meta-box">
-                    <span class="meta-label">MODALIDAD DE PROYECTO</span>
-                    <span class="meta-value">PROYECTO DE APLICACIÓN PRÁCTICA Y TECNOLOGÍA (PACTE)</span>
+                    <span class="meta-label">PERIODO ACADÉMICO</span>
+                    <span class="meta-value">CICLO 2026 - CUENCA, ECUADOR</span>
                 </div>
             </div>
         </div>
 
         <div class="cover-center">
-            <div class="doc-badge">01_Necesidades_del_Usuario_HIDROSYS • DOCUMENTACIÓN TÉCNICA OFICIAL</div>
-            <h1 class="cover-project-title">SISTEMA INTEGRAL DE GESTIÓN DE CITAS, ASISTENTE VIRTUAL POR WHATSAPP Y CONTROL DE ÓRDENES TÉCNICAS (HIDROSYS EC.)</h1>
+            <div class="doc-badge">01_Necesidades_del_Usuario_HIDROSYS • DOCUMENTO OFICIAL PACTE</div>
+            <h1 class="cover-project-title">SISTEMA INTEGRAL DE GESTIÓN DE CITAS, ATENCIÓN AUTOMATIZADA Y AGENDAMIENTO VÍA WHATSAPP BOT (HIDROSYS EC.)</h1>
             <h2 class="cover-doc-title">1. ANÁLISIS DE NECESIDADES DEL USUARIO</h2>
-            <p class="cover-doc-summary">Diagnóstico integral del sector, perfiles operativos y matriz MoSCoW</p>
+            <p class="cover-doc-summary">Estudio integral de necesidades operativas y actores del proyecto</p>
         </div>
 
         <div class="cover-footer">
             <div class="authors-grid">
                 <div class="author-card">
-                    <span class="author-role">AUTOR / ESTUDIANTE INVESTIGADOR</span>
+                    <span class="author-role">ESTUDIANTE / AUTOR DEL PROYECTO</span>
                     <span class="author-name">Freddy Peñafiel</span>
-                    <span class="author-desc">Desarrollador y Arquitecto Principal • Hidrosys EC.</span>
+                    <span class="author-desc">Analista y Desarrollador Principal • Hidrosys EC.</span>
                 </div>
                 <div class="author-card">
-                    <span class="author-role">DOCENTE / TUTOR DE PROYECTO</span>
+                    <span class="author-role">DOCENTE / TUTOR ACADÉMICO</span>
                     <span class="author-name">Ing. Fabricio Lucero</span>
-                    <span class="author-desc">Director Académico de Proyecto PACTE • ISTA</span>
+                    <span class="author-desc">Director y Tutor del Proyecto PACTE • ISTA</span>
                 </div>
             </div>
-            <div class="cover-date">Cuenca, Ecuador • Año Académico 2026</div>
+            <div class="cover-date">Instituto Superior Tecnológico del Austro • 2026</div>
         </div>
     </div>
 
@@ -231,249 +148,76 @@
 
 <h1>1. ANÁLISIS INTEGRAL DE NECESIDADES DEL USUARIO Y STAKEHOLDERS</h1>
 <p>
-El presente informe técnico desarrolla de manera profunda y humanizada el diagnóstico operativo, el estudio de requerimientos de negocio y el análisis estructurado de necesidades que dieron origen al proyecto tecnológico <strong>Hidrosys EC.</strong>. En un contexto industrial donde las empresas de mantenimiento hidráulico, agua potable e instalaciones sanitarias y de gas enfrentan un alto volumen de solicitudes ciudadanas, la dependencia de medios manuales y líneas telefónicas tradicionales genera cuellos de botella insostenibles.
-</p>
-<p>
-A lo largo de este documento, elaboraremos un recorrido sistemático por las motivaciones de cada rol institucional, examinando cómo la implementación de un Asistente Virtual en WhatsApp (basado en Baileys y Node.js) junto con un Dashboard Web de Administración resuelve los puntos críticos de dolor que experimentaban tanto los clientes como el personal operativo de la empresa.
+El presente informe documenta en profundidad la investigación de requerimientos y necesidades operativas del proyecto <strong>Hidrosys EC.</strong>. Se analiza el ecosistema de atención para servicios de agua potable e instalaciones de gas y se articula la solución tecnológica implementada.
 </p>
 
-<h2>1.1 Diagnóstico del Entorno Operativo y Contexto del Sector</h2>
-<p>
-Las empresas orientadas al servicio técnico residencial e industrial de agua y gas requieren coordinar visitas presenciales de técnicos altamente calificados. En el modelo operativo previo a la implementación de <strong>Hidrosys EC.</strong>, el flujo de atención presentaba las siguientes deficiencias críticas:
-</p>
-<ul>
-    <li><strong>Saturación del Call Center y Líneas de Soporte:</strong> Los clientes debían realizar múltiples llamadas telefónicas en horario de oficina para consultar la disponibilidad de técnicos o conocer las zonas de cobertura del servicio, generando tiempos de espera superiores a los 20 minutos en horas pico.</li>
-    <li><strong>Errores Humanos en la Captura y Registro de Citas:</strong> La recepción telefónica de datos como la dirección del inmueble, el tipo de mantenimiento y el número de contacto solía registrarse manualmente en cuadernos o planillas aisladas, ocasionando duplicidad de agendamientos y visitas fallidas por direcciones incompletas.</li>
-    <li><strong>Dependencia Técnica en la Administración de WhatsApp:</strong> Cuando las empresas intentaban utilizar cuentas de WhatsApp corporativo, ante cualquier reinicio del celular de la empresa o vencimiento de la sesión, el personal administrativo quedaba bloqueado y dependía de llamadas urgentes a programadores externos para reconfigurar o escanear el código QR.</li>
-</ul>
-
-<h2>1.2 Diagrama Visual de Actores e Interesados (UML Stakeholders con Actores Dibujados)</h2>
-<p>
-A continuación se presenta el diagrama arquitectónico estructural que representa visualmente a los cuatro actores humanos (dibujados mediante estándar UML de actores / muñecos) y su interconexión directa con las capas funcionales del ecosistema <strong>Hidrosys EC.</strong>:
-</p>
-
+<h2>1.1 Diagrama UML de Actores e Interesados (Stakeholders)</h2>
 <div class="diagram-box">
-    <svg width="680" height="280" viewBox="0 0 680 280">
-        <!-- Muñeco 1: Cliente -->
+    <svg width="680" height="260" viewBox="0 0 680 260">
         
-    <g transform="translate(75, 80)">
-        <!-- Cabeza -->
+    <g transform="translate(70, 75)">
         <circle cx="0" cy="-35" r="14" fill="#002e6e" stroke="#1e40af" stroke-width="2.5"/>
-        <!-- Cuerpo -->
         <line x1="0" y1="-21" x2="0" y2="16" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Brazos -->
         <line x1="-22" y1="-7" x2="22" y2="-7" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Piernas -->
         <line x1="0" y1="16" x2="-18" y2="44" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
         <line x1="0" y1="16" x2="18" y2="44" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Etiqueta Principal -->
         <text x="0" y="64" font-family="'Outfit', sans-serif" font-size="12" font-weight="800" fill="#0f172a" text-anchor="middle">Cliente / Ciudadano</text>
-        <!-- Subtítulo Rol -->
         <text x="0" y="79" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" fill="#475569" text-anchor="middle">Canal WhatsApp</text>
     </g>
     
         
-        <!-- Muñeco 2: Super Admin -->
-        
-    <g transform="translate(75, 215)">
-        <!-- Cabeza -->
+    <g transform="translate(70, 205)">
         <circle cx="0" cy="-35" r="14" fill="#002e6e" stroke="#1e40af" stroke-width="2.5"/>
-        <!-- Cuerpo -->
         <line x1="0" y1="-21" x2="0" y2="16" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Brazos -->
         <line x1="-22" y1="-7" x2="22" y2="-7" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Piernas -->
         <line x1="0" y1="16" x2="-18" y2="44" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
         <line x1="0" y1="16" x2="18" y2="44" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Etiqueta Principal -->
         <text x="0" y="64" font-family="'Outfit', sans-serif" font-size="12" font-weight="800" fill="#0f172a" text-anchor="middle">Dueño / Super Admin</text>
-        <!-- Subtítulo Rol -->
         <text x="0" y="79" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" fill="#475569" text-anchor="middle">Panel Web Principal</text>
     </g>
     
-
-        <!-- Muñeco 3: Operador Oficina -->
         
-    <g transform="translate(605, 80)">
-        <!-- Cabeza -->
+    <g transform="translate(610, 75)">
         <circle cx="0" cy="-35" r="14" fill="#002e6e" stroke="#1e40af" stroke-width="2.5"/>
-        <!-- Cuerpo -->
         <line x1="0" y1="-21" x2="0" y2="16" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Brazos -->
         <line x1="-22" y1="-7" x2="22" y2="-7" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Piernas -->
         <line x1="0" y1="16" x2="-18" y2="44" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
         <line x1="0" y1="16" x2="18" y2="44" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Etiqueta Principal -->
         <text x="0" y="64" font-family="'Outfit', sans-serif" font-size="12" font-weight="800" fill="#0f172a" text-anchor="middle">Operador Oficina</text>
-        <!-- Subtítulo Rol -->
-        <text x="0" y="79" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" fill="#475569" text-anchor="middle">Gestión de Citas</text>
+        <text x="0" y="79" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" fill="#475569" text-anchor="middle">Admin Secundario</text>
     </g>
     
-
-        <!-- Muñeco 4: Técnico Campo -->
         
-    <g transform="translate(605, 215)">
-        <!-- Cabeza -->
+    <g transform="translate(610, 205)">
         <circle cx="0" cy="-35" r="14" fill="#002e6e" stroke="#1e40af" stroke-width="2.5"/>
-        <!-- Cuerpo -->
         <line x1="0" y1="-21" x2="0" y2="16" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Brazos -->
         <line x1="-22" y1="-7" x2="22" y2="-7" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Piernas -->
         <line x1="0" y1="16" x2="-18" y2="44" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
         <line x1="0" y1="16" x2="18" y2="44" stroke="#002e6e" stroke-width="3.5" stroke-linecap="round"/>
-        <!-- Etiqueta Principal -->
         <text x="0" y="64" font-family="'Outfit', sans-serif" font-size="12" font-weight="800" fill="#0f172a" text-anchor="middle">Técnico de Campo</text>
-        <!-- Subtítulo Rol -->
         <text x="0" y="79" font-family="'Inter', sans-serif" font-size="9.5" font-weight="600" fill="#475569" text-anchor="middle">Atención en Sitio</text>
     </g>
     
 
-        <!-- Caja Central del Sistema -->
-        <rect x="180" y="25" width="320" height="230" rx="14" fill="#f8fafc" stroke="#002e6e" stroke-width="2.5"/>
-        <text x="340" y="55" font-family="'Outfit', sans-serif" font-size="13" font-weight="800" fill="#002e6e" text-anchor="middle">NÚCLEO TECNOLÓGICO HIDROSYS EC.</text>
+        <rect x="180" y="25" width="320" height="215" rx="14" fill="#f8fafc" stroke="#002e6e" stroke-width="2.5"/>
+        <text x="340" y="55" font-family="'Outfit', sans-serif" font-size="13" font-weight="800" fill="#002e6e" text-anchor="middle">ECOSISTEMA HIDROSYS EC.</text>
 
-        <!-- Bloque Interno 1: Bot -->
-        <rect x="205" y="75" width="270" height="42" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-        <text x="340" y="100" font-size="10.5" font-weight="700" fill="#1e40af" text-anchor="middle">Asistente Virtual WhatsApp Bot (Baileys)</text>
+        <rect x="205" y="75" width="270" height="40" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="340" y="100" font-size="10.5" font-weight="700" fill="#1e40af" text-anchor="middle">Asistente WhatsApp Bot (Menú Numérico)</text>
 
-        <!-- Bloque Interno 2: Panel Web QR -->
-        <rect x="205" y="130" width="270" height="42" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
-        <text x="340" y="155" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">Panel Web: Pestaña "Escanear QR" en Vivo</text>
+        <rect x="205" y="130" width="270" height="40" rx="8" fill="#d1fae5" stroke="#065f46" stroke-width="1.5"/>
+        <text x="340" y="155" font-size="10.5" font-weight="700" fill="#065f46" text-anchor="middle">Pestaña Web "Escanear QR / WhatsApp"</text>
 
-        <!-- Bloque Interno 3: Motor DB -->
-        <rect x="205" y="185" width="270" height="42" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <rect x="205" y="185" width="270" height="40" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
         <text x="340" y="210" font-size="10.5" font-weight="700" fill="#92400e" text-anchor="middle">Base de Datos & Seguridad requireAuth</text>
 
-        <!-- Líneas de interconexión -->
-        <line x1="115" y1="80" x2="205" y2="95" stroke="#334155" stroke-width="2"/>
-        <line x1="115" y1="215" x2="205" y2="150" stroke="#334155" stroke-width="2"/>
-        <line x1="115" y1="215" x2="205" y2="205" stroke="#334155" stroke-width="2"/>
-        <line x1="565" y1="80" x2="475" y2="150" stroke="#334155" stroke-width="2"/>
-        <line x1="565" y1="215" x2="475" y2="205" stroke="#334155" stroke-width="2"/>
+        <line x1="110" y1="75" x2="205" y2="95" stroke="#334155" stroke-width="2"/>
+        <line x1="110" y1="205" x2="205" y2="150" stroke="#334155" stroke-width="2"/>
+        <line x1="570" y1="75" x2="475" y2="150" stroke="#334155" stroke-width="2"/>
+        <line x1="570" y1="205" x2="475" y2="205" stroke="#334155" stroke-width="2"/>
     </svg>
-    <div class="diagram-caption">Figura 1.1 - Mapa Estructural de Actores e Interrelación Operativa en Hidrosys EC.</div>
+    <div class="diagram-caption">Figura 1.1 - Mapa Estructural de Actores e Interacción en Hidrosys EC.</div>
 </div>
-
-<div class="explanation-box">
-    <strong>Explicación Técnica y Humanizada del Diagrama 1.1:</strong><br>
-    El diagrama ilustra claramente la separación de responsabilidades y los puntos de acceso al sistema:
-    <ul>
-        <li><strong>El Cliente (Izquierda Superior):</strong> Interactúa de manera exclusiva a través del canal de mensajería universal WhatsApp. No necesita instalar aplicaciones móviles ni registrar cuentas con contraseñas complejas; simplemente escribe al número corporativo (+593 968245633) y es atendido en milisegundos por el Asistente Virtual.</li>
-        <li><strong>El Dueño / Super Administrador (Izquierda Inferior):</strong> Accede a la plataforma web central donde cuenta con la funcionalidad revolucionaria de la pestaña <code>📱 Escanear QR / WhatsApp</code>, otorgándole autonomía absoluta para reconectar y monitorear el estado del servidor.</li>
-        <li><strong>El Operador de Oficina (Derecha Superior):</strong> Utiliza el módulo de citas para auditar, confirmar y coordinar las inspecciones agendadas.</li>
-        <li><strong>El Técnico de Campo (Derecha Inferior):</strong> Recibe las órdenes de trabajo asignadas y reporta la finalización de los servicios en sitio.</li>
-    </ul>
-</div>
-
-<h2>1.3 Perfiles de Usuario y Caracterización de Necesidades</h2>
-<p>
-Para asegurar que el diseño del software responda fielmente a la realidad del trabajo diario, se construyó una caracterización detallada de los cuatro perfiles de usuario identificados en Hidrosys EC.:
-</p>
-
-<table>
-    <thead>
-        <tr>
-            <th style="width:20%;">Rol Institucional</th>
-            <th style="width:25%;">Problema / Frustración Principal</th>
-            <th>Necesidad Concreta de Negocio</th>
-            <th>Solución Tecnológica Implementada</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><strong>Cliente / Usuario de Agua y Gas</strong></td>
-            <td>Dificultad para comunicarse por teléfono, largas esperas en línea y menús interactivos complejos que no cargan en ciertos celulares.</td>
-            <td>Contar con un canal de atención inmediato, intuitivo y disponible las 24 horas del día, los 7 días de la semana.</td>
-            <td>Asistente WhatsApp con <strong>Menú Numérico Estructurado (1, 2, 3)</strong>, garantizando 100% de confiabilidad sin depender de botones interactivos.</td>
-        </tr>
-        <tr>
-            <td><strong>Dueño / Administrador Principal</strong></td>
-            <td>Pérdida de conectividad entre el bot y WhatsApp que obligaba a esperar horas para que un técnico informático intervenga.</td>
-            <td>Poder vincular y reconectar el celular corporativo al bot en segundos desde un panel visual intuitivo y protegido.</td>
-            <td>Creación de la pestaña <strong>"📱 Escanear QR / WhatsApp"</strong> con sincronización en tiempo real al servidor Baileys y botón de reinicio seguro.</td>
-        </tr>
-        <tr>
-            <td><strong>Administrador Secundario (Oficina)</strong></td>
-            <td>Desorden en la agenda manual, conflicto de horarios de técnicos y extravío de direcciones de clientes.</td>
-            <td>Disponer de una base de datos centralizada con filtros rápidos por estado de cita (Pendiente, Confirmada, Completada).</td>
-            <td>Módulo web de Gestión de Citas con actualización transaccional, asignación de cuadrillas y exportación a reportes.</td>
-        </tr>
-        <tr>
-            <td><strong>Trabajador Técnico en Campo</strong></td>
-            <td>Falta de claridad en las especificaciones del servicio a realizar y retrasos en reportar el cumplimiento.</td>
-            <td>Recibir datos completos del cliente (Nombre, Dirección exacta, Tipo de Inspección) de forma clara y ordenada.</td>
-            <td>Órdenes de trabajo formalizadas en el sistema que notifican el estado de avance en tiempo real al panel administrativo.</td>
-        </tr>
-    </tbody>
-</table>
-
-<h2>1.4 Catálogo Exhaustivo y Matriz de Priorización de Necesidades (MoSCoW)</h2>
-<p>
-Aplicando la metodología de priorización <strong>MoSCoW</strong> (Must Have, Should Have, Could Have, Won't Have), se jerarquizaron todas las necesidades funcionales y operativas detectadas en la investigación de campo:
-</p>
-
-<table>
-    <thead>
-        <tr>
-            <th style="width:12%;">Prioridad</th>
-            <th style="width:10%;">Código</th>
-            <th style="width:38%;">Necesidad Específica del Sistema</th>
-            <th>Justificación e Impacto Operativo en Hidrosys EC.</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE</span></td>
-            <td>NEC-01</td>
-            <td>Atención automatizada bidireccional vía WhatsApp sin esperas.</td>
-            <td>Es el pilar fundamental del servicio al cliente; elimina el 90% de la carga del Call Center telefónico.</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE</span></td>
-            <td>NEC-02</td>
-            <td>Menú conversacional basado en números simples (1, 2, 3).</td>
-            <td>Asegura que todos los celulares (sin importar marca o versión de WhatsApp) puedan interactuar sin que se bloqueen botones interactivos.</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE</span></td>
-            <td>NEC-03</td>
-            <td>Captura guiada de datos de citas (Nombre, Dirección, Fecha, Servicio).</td>
-            <td>Permite agendar inspecciones formales almacenadas directamente en la base de datos sin intervención manual del personal.</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE</span></td>
-            <td>NEC-04</td>
-            <td>Pestaña web de administración "📱 Escanear QR / WhatsApp".</td>
-            <td>Otorga soberanía e independencia tecnológica al dueño del negocio para reconectar su número de WhatsApp al instante.</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-success">MUST HAVE</span></td>
-            <td>NEC-05</td>
-            <td>Seguridad y control de acceso mediante tokens (<code>requireAuth</code>).</td>
-            <td>Protege los endpoints administrativos y evita que usuarios no autorizados puedan reiniciar servicios o consultar citas de clientes.</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req">SHOULD HAVE</span></td>
-            <td>NEC-06</td>
-            <td>Módulo web de filtrado y cambio de estados de citas (Pendiente / Confirmada).</td>
-            <td>Facilitador administrativo clave para ordenar las órdenes de trabajo por prioridad y fecha de ejecución.</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req">SHOULD HAVE</span></td>
-            <td>NEC-07</td>
-            <td>Consulta de cobertura territorial para instalaciones de agua y gas.</td>
-            <td>Permite al cliente saber de inmediato si su zona o sector cuenta con cobertura técnica habilitada por Hidrosys EC.</td>
-        </tr>
-        <tr>
-            <td><span class="badge-req badge-warning">COULD HAVE</span></td>
-            <td>NEC-08</td>
-            <td>Exportación consolidada de reportes técnicos en PDF institucional y Excel.</td>
-            <td>Permite a la gerencia auditar el volumen semanal y mensual de citas atendidas y servicios completados.</td>
-        </tr>
-    </tbody>
-</table>
 
 </div>
 </div>
