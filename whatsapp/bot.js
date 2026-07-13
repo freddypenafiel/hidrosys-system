@@ -161,10 +161,11 @@ async function startWhatsAppBot() {
                         await waSocket.sendPresenceUpdate('composing', jid);
                     } catch (e) {}
 
-                    const response = await processAudioMessage(phone, msg, jid, waSocket);
+                    const targetReplyJid = jid.includes('@lid') ? `${phone}@s.whatsapp.net` : jid;
+                    const response = await processAudioMessage(phone, msg, targetReplyJid, waSocket);
                     if (response) {
                         await new Promise(r => setTimeout(r, 600));
-                        await sendMessage(jid, response);
+                        await sendMessage(targetReplyJid, response);
                         console.log(`[WA] ✅ Respuesta a nota de voz enviada a +${phone}`);
                     }
                     continue;
@@ -172,18 +173,19 @@ async function startWhatsAppBot() {
 
                 console.log(`[WA] 📨 Mensaje de +${phone}: "${text}"`);
 
+                const targetReplyJid = jid.includes('@lid') ? `${phone}@s.whatsapp.net` : jid;
                 // Indicador de "escribiendo"
-                await waSocket.sendPresenceUpdate('composing', jid);
+                await waSocket.sendPresenceUpdate('composing', targetReplyJid);
 
                 // Procesar mensaje con el motor de flujos
                 // Pasamos el JID completo original para que se pueda guardar en wa_sender
-                const response = await processMessage(phone, text, jid);
+                const response = await processMessage(phone, text, targetReplyJid);
 
                 if (response) {
                     // Pequeña pausa para que se vea natural
                     await new Promise(r => setTimeout(r, 800));
-                    await sendMessage(jid, response);
-                    console.log(`[WA] ✅ Respuesta enviada a +${phone}`);
+                    await sendMessage(targetReplyJid, response);
+                    console.log(`[WA] ✅ Respuesta enviada a +${phone} (${targetReplyJid})`);
                 }
             } catch (err) {
                 console.error(`[WA] ❌ Error procesando mensaje de +${phone}:`, err.message);
@@ -217,6 +219,45 @@ async function sendMessage(jidOrPhone, text) {
     }
 
     try {
+        if (typeof text === 'object' && text !== null && (text.isButtons || text.buttons)) {
+            const buttons = (text.buttons || []).slice(0, 4).map(b => ({
+                name: 'quick_reply',
+                buttonParamsJson: JSON.stringify({
+                    display_text: String(b.label || b.title || '').slice(0, 20),
+                    id: String(b.id || '')
+                })
+            }));
+
+            const interactiveMessage = proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({ text: text.text }),
+                footer: proto.Message.InteractiveMessage.Footer.create({ text: text.footer || 'HIDROSYS EC. • Atención al Cliente' }),
+                header: text.title ? proto.Message.InteractiveMessage.Header.create({ title: text.title.slice(0, 60), subtitle: '' }) : undefined,
+                nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttons
+                })
+            });
+
+            const msg = generateWAMessageFromContent(
+                jid,
+                {
+                    viewOnceMessage: {
+                        message: {
+                            messageContextInfo: {
+                                deviceListMetadata: {},
+                                deviceListMetadataVersion: 2
+                            },
+                            interactiveMessage: interactiveMessage
+                        }
+                    }
+                },
+                { userJid: waSocket.user.id }
+            );
+
+            await waSocket.relayMessage(jid, msg.message, { messageId: msg.key.id });
+            console.log(`[WA Bot] ✅ Botones interactivos (quick_reply) enviados a: ${jid}`);
+            return true;
+        }
+
         if (typeof text === 'object' && text !== null && text.isList) {
             const sections = (text.sections || []).map(sec => ({
                 title: String(sec.title || 'Opciones').slice(0, 24),
