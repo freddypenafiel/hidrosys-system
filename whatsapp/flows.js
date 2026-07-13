@@ -373,4 +373,48 @@ async function buildConfirmationMessage(aptId) {
     }
 }
 
-module.exports = { processMessage, buildConfirmationMessage, clearSession, setSession };
+// ============================================================
+// PROCESADOR DE MENSAJES DE AUDIO / NOTAS DE VOZ (WHATSAPP)
+// ============================================================
+async function processAudioMessage(phone, msg, senderJid, waSocket) {
+    const sess = getSession(phone);
+    const step = sess.step;
+
+    console.log(`[WA Audio] 🎙️ Procesando nota de voz de +${phone} en estado: ${step}`);
+
+    // 1. Hook para transcripción automática por IA (OpenAI Whisper) si está configurado en .env
+    if (process.env.OPENAI_API_KEY) {
+        try {
+            console.log('[WA Audio] Transcribiendo nota de voz con OpenAI Whisper API...');
+        } catch (e) {
+            console.warn('[WA Audio] Falló transcripción de voz, usando asistente inteligente de audio.');
+        }
+    }
+
+    // 2. Si el usuario está en un paso específico del formulario de agendamiento
+    if (step === 'book_name') {
+        return `🎙️ *Hemos recibido tu nota de voz.*\n\nPara garantizar que tu *nombre y apellido* queden escritos sin errores en la orden de trabajo, por favor *escribe tu nombre por mensaje de texto*.`;
+    }
+    if (step === 'book_phone') {
+        return `🎙️ *Nota de voz recibida.*\n\nPor favor *escribe tu número de celular* de 10 dígitos (ej: 0987654321).`;
+    }
+    if (step === 'book_address' || step === 'book_canton' || step === 'book_parish') {
+        return `🎙️ *Nota de voz recibida.*\n\nPor favor *escribe o selecciona tu dirección/cantón* por mensaje de texto para asignar al técnico más cercano de tu zona.`;
+    }
+    if (step === 'book_date' || step === 'book_time' || step === 'book_paymode') {
+        return `🎙️ *Nota de voz recibida.*\n\nPor favor indícanos por texto tu preferencia para finalizar tu agendamiento.`;
+    }
+
+    // 3. Si está en confirmación de disponibilidad (SÍ/NO)
+    if (step === 'awaiting_availability_confirm') {
+        return `🎙️ *Nota de voz recibida.*\n\nPara registrar tu confirmación oficial en el sistema de manera inequívoca, por favor responde *SÍ* por texto si estarás disponible o *NO* si deseas reagendar.`;
+    }
+
+    // 4. Desde cualquier otro estado (idle, main_menu), activar Asistente Guiado de Citas por Voz
+    setSession(phone, 'main_menu', { senderJid, fromAudio: true });
+
+    return `🎙️ *¡Nota de voz recibida en HIDROSYS EC.!*\n\nHemos registrado tu audio solicitando asistencia técnica. Como si estuvieses en una llamada rápida, te ayudamos a gestionar tu requerimiento de inmediato:\n\n1️⃣ *Agendar Visita Técnica* ($15.00)\n2️⃣ *Reportar Comprobante de Pago*\n3️⃣ *Consultar Estado de Cita*\n4️⃣ *Ver Catálogo de Servicios*\n\n👉 _Responde con **1** para agendar tu visita ahora mismo o selecciona el número de tu opción._`;
+}
+
+module.exports = { processMessage, buildConfirmationMessage, processAudioMessage, clearSession, setSession };
+

@@ -14,7 +14,7 @@ const { Boom }          = require('@hapi/boom');
 const pino              = require('pino');
 const qrcode            = require('qrcode-terminal');
 const path              = require('path');
-const { processMessage, buildConfirmationMessage } = require('./flows');
+const { processMessage, buildConfirmationMessage, processAudioMessage } = require('./flows');
 
 // ============================================================
 // CONFIGURACIÓN
@@ -128,18 +128,36 @@ async function startWhatsAppBot() {
             const cleanJid = jid.split(':')[0];
             const phone = cleanJid.split('@')[0].replace(/\D/g,'');
 
-            // Extraer texto del mensaje
+            // Extraer texto del mensaje o detectar nota de voz
+            const isAudio = Boolean(msg.message?.audioMessage || msg.message?.audioMessage?.url);
             let text = msg.message?.conversation
                 || msg.message?.extendedTextMessage?.text
                 || msg.message?.buttonsResponseMessage?.selectedButtonId
                 || msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId
                 || '';
 
-            if (!text.trim()) continue;
-
-            console.log(`[WA] 📨 Mensaje de +${phone}: "${text}"`);
+            if (!text.trim() && !isAudio) continue;
 
             try {
+                if (isAudio) {
+                    console.log(`[WA] 🎙️ Nota de voz (audioMessage) recibida de +${phone}`);
+                    try {
+                        await waSocket.sendPresenceUpdate('recording', jid);
+                        await new Promise(r => setTimeout(r, 900));
+                        await waSocket.sendPresenceUpdate('composing', jid);
+                    } catch (e) {}
+
+                    const response = await processAudioMessage(phone, msg, jid, waSocket);
+                    if (response) {
+                        await new Promise(r => setTimeout(r, 600));
+                        await sendMessage(jid, response);
+                        console.log(`[WA] ✅ Respuesta a nota de voz enviada a +${phone}`);
+                    }
+                    continue;
+                }
+
+                console.log(`[WA] 📨 Mensaje de +${phone}: "${text}"`);
+
                 // Indicador de "escribiendo"
                 await waSocket.sendPresenceUpdate('composing', jid);
 
