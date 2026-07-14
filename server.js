@@ -1,10 +1,10 @@
 // server.js - API REST de HIDROSYS EC. v3.0
 // Backend: Node.js + Express + PostgreSQL
 
-require('dotenv').config();
+const path    = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors    = require('cors');
-const path    = require('path');
 const crypto  = require('crypto');
 const pool    = require('./db/connection');
 
