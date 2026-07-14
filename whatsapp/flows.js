@@ -336,9 +336,10 @@ async function processMessage(phone, text, senderJid) {
         const receiptNo = msg;
         try {
             const aptId = sess.data.selectedAptId;
+            const fullJid = sess.data.senderJid || null;
             await pool.query(
-                `UPDATE appointments SET bank=$1, receipt_no=$2, status='Reportado', payment_status='Pendiente de Validación' WHERE id=$3`,
-                [sess.data.bank, receiptNo, aptId]
+                `UPDATE appointments SET bank=$1, receipt_no=$2, status='Reportado', payment_status='Pendiente de Validación', wa_sender=COALESCE(wa_sender, $4) WHERE id=$3`,
+                [sess.data.bank, receiptNo, aptId, fullJid]
             );
             clearSession(phone); setSession(phone,'idle');
             return `✅ *¡Pago reportado correctamente!*\n\n📋 Cita: *#${aptId}*\n🏦 Banco: *${sess.data.bank}*\n🧾 Comprobante: *${receiptNo}*\n\nUn administrador verificará tu pago en breve. Cuando sea aprobado, recibirás un mensaje de confirmación en este chat.\n\n_Escribe *menu* para volver al inicio._`;
@@ -395,25 +396,24 @@ async function buildConfirmationMessage(aptId) {
         const a = result.rows[0];
         const fecha = a.apt_date?.toISOString().split('T')[0] || 'N/A';
 
-        // Determinar el destino del mensaje:
-        // Si wa_sender ya tiene '@' es un JID completo (ej: 593990328940@s.whatsapp.net) → usarlo directo
-        // Si no, reconstruir el JID desde el numero del cliente (sea de web o whatsapp)
-        let targetJid = a.wa_sender || a.client_phone || '';
-        if (!targetJid.includes('@')) {
-            // Reconstruir: quitar ceros y no-digitos, agregar 593 si es local
-            const digits = targetJid.replace(/\D/g,'');
-            const phone = digits.length <= 10 ? `593${digits.replace(/^0/,'')}` : digits;
-            targetJid = `${phone}@s.whatsapp.net`;
+        let targetJid = a.wa_sender || '';
+        let clientPhoneJid = '';
+        if (a.client_phone) {
+            const digits = String(a.client_phone).replace(/\D/g,'');
+            const phoneNum = digits.length <= 10 ? `593${digits.replace(/^0/,'')}` : digits;
+            clientPhoneJid = `${phoneNum}@s.whatsapp.net`;
         }
+        if (!targetJid) targetJid = clientPhoneJid;
 
-        console.log(`[WA Bot] 📤 Enviando confirmación de cita #${aptId} a JID: ${targetJid}`);
+        console.log(`[WA Bot] 📤 Enviando confirmación de cita #${aptId} a JID: ${targetJid} (y teléfono ${clientPhoneJid})`);
 
-        const phoneKey = targetJid.split('@')[0].replace(/\D/g,'');
+        const phoneKey = targetJid.split('@')[0].replace(/\D/g,'') || clientPhoneJid.split('@')[0].replace(/\D/g,'');
         setSession(phoneKey, 'awaiting_availability_confirm', { aptId: a.id });
 
         return {
             phone: targetJid,
-            message: `✅ *HIDROSYS EC. – ¡Cita Confirmada!*\n\n🎉 Tu pago fue verificado. Tu cita está *CONFIRMADA*:\n\n🔧 Servicio: *${a.service_type}*\n📅 Fecha: *${fecha}*\n⏰ Hora: *${String(a.apt_time).slice(0,5)}*\n📍 Zona: *${a.zone}*\n👷 Técnico: *${a.tech_name || 'Por asignar'}*\n\n¿Confirmas que estarás disponible?\nResponde *SÍ* o *NO*.`,
+            clientPhoneJid: clientPhoneJid !== targetJid ? clientPhoneJid : null,
+            message: `✅ *HIDROSYS EC. – ¡Cita Confirmada!*\n\n🎉 Tu pago ha sido verificado y aprobado exitosamente.\n\n📋 *Cita ID:* #${a.id}\n🔧 *Servicio:* ${a.service_type}\n📅 *Fecha:* ${fecha}\n⏰ *Hora:* ${String(a.apt_time).slice(0,5)}\n📍 *Dirección/Zona:* ${a.address} (${a.zone})\n👷 *Técnico Asignado:* ${a.tech_name || 'Técnico Especializado HIDROSYS'}\n\n¿Confirmas que estarás disponible en este horario?\nResponde *SÍ* o *NO*.`,
         };
     } catch (err) {
         console.error('[WA Bot] Error buildConfirmationMessage:', err.message);

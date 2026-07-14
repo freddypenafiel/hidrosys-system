@@ -254,7 +254,12 @@ async function sendMessage(jidOrPhone, text) {
 async function notifyPaymentApproved(aptId) {
     const payload = await buildConfirmationMessage(aptId);
     if (!payload) return false;
-    return sendMessage(payload.phone, payload.message);
+    let sent1 = await sendMessage(payload.phone, payload.message);
+    let sent2 = false;
+    if (payload.clientPhoneJid && payload.clientPhoneJid !== payload.phone) {
+        sent2 = await sendMessage(payload.clientPhoneJid, payload.message);
+    }
+    return sent1 || sent2;
 }
 
 // ============================================================

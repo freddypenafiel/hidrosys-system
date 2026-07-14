@@ -756,10 +756,10 @@ async function loadAppointments() {
                             <p>📅 ${formatDate(a.apt_date)} ⏰ ${String(a.apt_time||'').slice(0,5)}</p>
                             ${a.channel === 'WhatsApp' ? '<p>💬 <strong>Canal:</strong> WhatsApp Bot</p>' : ''}
                             ${a.notes ? `<p style="font-style:italic;color:var(--gray-500);">"${a.notes}"</p>` : ''}
-                            ${a.receipt_no ? `
-                                <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;padding:8px 10px;margin-top:6px;font-size:0.78rem;">
-                                    🏦 ${a.bank} · Nº ${a.receipt_no}
-                                    <span class="badge ${payBadgeClass(a.payment_status)}" style="margin-left:5px;">${a.payment_status}</span>
+                            ${a.receipt_no || a.status === 'Reportado' || a.bank ? `
+                                <div style="background:var(--blue-50,#eff6ff);border:1px solid var(--blue-200,#bfdbfe);border-radius:6px;padding:8px 10px;margin-top:6px;font-size:0.78rem;">
+                                    🏦 <strong>Banco:</strong> ${a.bank || 'Reportado'} · <strong>Nº Comprobante:</strong> ${a.receipt_no || 'Pendiente de Validar'}
+                                    <span class="badge ${payBadgeClass(a.payment_status)}" style="margin-left:5px;">${a.payment_status || 'Pendiente de Validación'}</span>
                                 </div>` : `<p style="font-size:0.78rem;color:var(--gray-400);">Sin reporte de pago.</p>`}
                         </div>
                         <div style="margin-top:12px;">
@@ -771,7 +771,7 @@ async function loadAppointments() {
                         </div>
                     </div>
                     <div class="apt-card-footer">
-                        ${a.receipt_no && a.payment_status && a.payment_status.toLowerCase().includes('pendiente') ? `<button class="btn btn-success btn-xs" onclick="approvePayment(${a.id},'${a.tech_id||''}')">✅ Aprobar Pago</button>` : ''}
+                        ${(a.status === 'Reportado' || a.receipt_no || (a.payment_status && a.payment_status.toLowerCase().includes('pendiente'))) && a.status !== 'Confirmado' && a.status !== 'Terminado' ? `<button class="btn btn-success btn-xs" style="background:#10b981;color:white;font-weight:700;box-shadow:0 2px 4px rgba(16,185,129,0.25);" onclick="approvePayment(${a.id},'${a.tech_id||''}')">✅ Aprobar Pago</button>` : ''}
                         ${a.status !== 'Terminado' ? `<button class="btn btn-ghost btn-xs" onclick="finishApt(${a.id})">🏁 Finalizar</button>` : ''}
                         <button class="btn btn-ghost btn-xs" onclick="showTechReport(${a.id})">📄 Informe</button>
                         <button class="btn btn-xs" style="background:var(--red-bg);color:var(--red);border:none;" onclick="deleteApt(${a.id})">🗑️</button>
@@ -805,11 +805,11 @@ async function approvePayment(aptId, currentTechId) {
     const card = document.getElementById(`apt-card-${aptId}`);
     const techSel = card?.querySelector('select');
     const techId = techSel?.value || currentTechId;
-    if (!techId) { toast('Asigna un técnico antes de aprobar el pago.', 'warning'); return; }
+    const finalTechId = techId ? parseInt(techId) : null;
 
     try {
         await api('PUT', `/appointments/${aptId}`, {
-            paymentStatus: 'Pagado', status: 'Confirmado', techId: parseInt(techId),
+            paymentStatus: 'Pagado', status: 'Confirmado', techId: finalTechId,
         });
         // Obtener nombre del técnico
         const techs = await api('GET', '/technicians');
@@ -1387,6 +1387,7 @@ function formatDate(dateStr) {
 function statusBadge(status) {
     const map = {
         'Pre-agendado':          'badge-yellow',
+        'Reportado':             'badge-purple',
         'Confirmado':            'badge-blue',
         'Confirmado por Cliente':'badge-green',
         'Terminado':             'badge-gray',
