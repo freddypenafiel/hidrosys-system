@@ -115,6 +115,10 @@ async function startWhatsAppBot() {
         }
     });
 
+    // Cache para evitar mensajes duplicados o rebotes de red en Baileys
+    const processedMessageIds = new Set();
+    const userLastMsgTime = new Map();
+
     // ── Procesar mensajes entrantes ──────────────────────────
     waSocket.ev.on('messages.upsert', async ({ messages, type }) => {
         if (type !== 'notify') return;
@@ -125,6 +129,16 @@ async function startWhatsAppBot() {
             if (msg.key.remoteJid === 'status@broadcast') continue;
             if (msg.key.remoteJid?.endsWith('@g.us')) continue;
 
+            // Deduplicación por ID exacto del mensaje
+            if (msg.key.id) {
+                if (processedMessageIds.has(msg.key.id)) continue;
+                processedMessageIds.add(msg.key.id);
+                if (processedMessageIds.size > 2000) {
+                    const first = processedMessageIds.values().next().value;
+                    processedMessageIds.delete(first);
+                }
+            }
+
             const jid  = msg.key.remoteJid;
             // Eliminar el sufijo de dispositivo multi-dispositivo (:1, :57, etc.) para obtener el número de teléfono limpio
             const cleanJid = jid.split(':')[0];
@@ -132,6 +146,7 @@ async function startWhatsAppBot() {
 
             // Extraer texto del mensaje (lista interactiva, botones o texto libre)
             const isAudio = Boolean(msg.message?.audioMessage || msg.message?.audioMessage?.url);
+
 
             let text = '';
             if (msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId) {
@@ -151,6 +166,15 @@ async function startWhatsAppBot() {
             }
 
             if (!text.trim() && !isAudio) continue;
+
+            // Debounce adicional por teléfono y contenido en intervalo de 1.5s para evitar envíos dobles en ráfaga
+            const now = Date.now();
+            const debounceKey = `${phone}_${text.trim()}`;
+            if (userLastMsgTime.has(debounceKey) && (now - userLastMsgTime.get(debounceKey)) < 1500) {
+                console.log(`[WA] ⏳ Ignorando mensaje duplicado en ráfaga de +${phone}: "${text}"`);
+                continue;
+            }
+            userLastMsgTime.set(debounceKey, now);
 
             try {
                 if (isAudio) {

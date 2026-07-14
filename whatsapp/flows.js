@@ -237,29 +237,84 @@ async function processMessage(phone, text, senderJid) {
 
     if (step === 'book_service') {
         if (!SERVICIOS[msg]) return `❌ Opción inválida. Escribe un número del 1 al ${Object.keys(SERVICIOS).length}.`;
-        setSession(phone, 'book_date', { service: SERVICIOS[msg] });
+        const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        const optionsDate = [];
         const today = new Date();
-        const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-        const minDate = tomorrow.toISOString().split('T')[0];
-        return `📅 Escribe la *fecha preferida* para la visita técnica\n(formato: AAAA-MM-DD, mínimo mañana)\nEjemplo: ${minDate}`;
+        for (let i = 1; i <= 7; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() + i);
+            const iso = d.toISOString().split('T')[0];
+            const str = `${diasSemana[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]}`;
+            optionsDate.push({ num: String(i), iso, str });
+        }
+        setSession(phone, 'book_date', { service: SERVICIOS[msg], optionsDate });
+        const lista = optionsDate.map(o => `${o.num}️⃣ *${o.str}* (${o.iso})`).join('\n');
+        return {
+            isList: true,
+            title: 'Fecha de Visita',
+            buttonText: '📅 Elegir Fecha',
+            footer: 'HIDROSYS EC. • Agendamiento',
+            text: `📅 *Elige la Fecha para tu Visita Técnica:*\n\n${lista}\n\nPulsa el botón *📅 Elegir Fecha*, escribe el número del día (del 1 al 7), o escribe tu fecha en formato AAAA-MM-DD:`,
+            sections: [
+                {
+                    title: 'Próximos 7 Días',
+                    rows: optionsDate.map(o => ({
+                        rowId: o.num,
+                        title: `${o.num}. ${o.str}`,
+                        description: `Fecha: ${o.iso}`
+                    }))
+                }
+            ]
+        };
     }
 
     if (step === 'book_date') {
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(msg)) return `❌ Formato incorrecto. Usa el formato AAAA-MM-DD\nEjemplo: 2026-07-15`;
-        const fecha = new Date(msg);
-        const hoy = new Date(); hoy.setHours(0,0,0,0);
-        if (fecha <= hoy) return `❌ La fecha debe ser a partir de mañana.`;
-        setSession(phone, 'book_time', { date: msg });
-        return `⏰ Escribe la *hora preferida* para la visita:\n\n1. Mañana (08:00 – 12:00)\n2. Tarde (13:00 – 17:00)\n3. Tarde-noche (17:00 – 19:00)\n\nEscribe 1, 2 o 3:`;
+        let fechaSeleccionada = null;
+        const optionsDate = sess.data.optionsDate || [];
+        const matchOpt = optionsDate.find(o => o.num === msg || o.iso === msg);
+        if (matchOpt) {
+            fechaSeleccionada = matchOpt.iso;
+        } else {
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!dateRegex.test(msg)) {
+                return `❌ Formato incorrecto. Pulsa el botón, elige un número del 1 al 7, o usa AAAA-MM-DD (Ej: 2026-07-16).`;
+            }
+            const fecha = new Date(msg);
+            const hoy = new Date(); hoy.setHours(0,0,0,0);
+            if (fecha <= hoy) return `❌ La fecha debe ser a partir de mañana.`;
+            fechaSeleccionada = msg;
+        }
+        setSession(phone, 'book_time', { date: fechaSeleccionada });
+        return {
+            isList: true,
+            title: 'Horario de Visita',
+            buttonText: '⏰ Elegir Horario',
+            footer: 'HIDROSYS EC. • Agendamiento',
+            text: `⏰ *Elige tu Horario para el ${fechaSeleccionada}:*\n\n1️⃣ Mañana (08:00 – 12:00)\n2️⃣ Tarde (13:00 – 17:00)\n3️⃣ Tarde-noche (17:00 – 19:00)\n\nPulsa el botón *⏰ Elegir Horario* o escribe 1, 2 o 3:`,
+            sections: [
+                {
+                    title: 'Horarios Disponibles',
+                    rows: [
+                        { rowId: '1', title: '1. Mañana (08:00–12:00)', description: 'Visita entre 8 AM y 12 PM' },
+                        { rowId: '2', title: '2. Tarde (13:00–17:00)', description: 'Visita entre 1 PM y 5 PM' },
+                        { rowId: '3', title: '3. Tarde-noche (17:00–19:00)', description: 'Visita entre 5 PM y 7 PM' }
+                    ]
+                }
+            ]
+        };
     }
 
     if (step === 'book_time') {
         const horarios = { '1': '09:00', '2': '14:00', '3': '17:00' };
-        if (!horarios[msg]) return `❌ Escribe 1, 2 o 3.`;
-        setSession(phone, 'book_confirm', { time: horarios[msg] });
+        let horaFinal = horarios[msg];
+        if (!horaFinal && /^(\d{2}):(\d{2})$/.test(msg)) {
+            horaFinal = msg;
+        }
+        if (!horaFinal) return `❌ Escribe 1, 2 o 3, o selecciona una opción de la lista.`;
+        setSession(phone, 'book_confirm', { time: horaFinal });
         const d = sess.data;
-        return `✅ *Resumen de tu cita:*\n\n👤 Nombre: *${d.name}*\n📱 Celular: *${d.clientPhone}*\n🏠 Dirección: *${d.address}*\n📍 Zona: *${d.zone || d.canton}*\n🔧 Servicio: *${d.service}*\n📅 Fecha: *${d.date}*\n⏰ Hora: *${horarios[msg]}*\n\n¿Confirmas esta información?\n1️⃣ Sí, confirmar\n2️⃣ No, empezar de nuevo`;
+        return `✅ *Resumen de tu cita:*\n\n👤 Nombre: *${d.name}*\n📱 Celular: *${d.clientPhone}*\n🏠 Dirección: *${d.address}*\n📍 Zona: *${d.zone || d.canton}*\n🔧 Servicio: *${d.service}*\n📅 Fecha: *${d.date}*\n⏰ Hora: *${horaFinal}*\n\n¿Confirmas esta información?\n1️⃣ Sí, confirmar\n2️⃣ No, empezar de nuevo`;
     }
 
     if (step === 'book_confirm') {
