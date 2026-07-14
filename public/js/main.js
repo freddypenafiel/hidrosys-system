@@ -771,7 +771,7 @@ async function loadAppointments() {
                         </div>
                     </div>
                     <div class="apt-card-footer">
-                        ${(a.status === 'Reportado' || a.receipt_no || (a.payment_status && a.payment_status.toLowerCase().includes('pendiente'))) && a.status !== 'Confirmado' && a.status !== 'Terminado' ? `<button class="btn btn-success btn-xs" style="background:#10b981;color:white;font-weight:700;box-shadow:0 2px 4px rgba(16,185,129,0.25);" onclick="approvePayment(${a.id},'${a.tech_id||''}')">✅ Aprobar Pago</button>` : ''}
+                        ${(a.status === 'Reportado' || (a.receipt_no && a.receipt_no !== 'null' && a.receipt_no !== '')) && a.status !== 'Confirmado' && a.status !== 'Terminado' ? `<button class="btn btn-success btn-xs" style="background:#10b981;color:white;font-weight:700;box-shadow:0 2px 4px rgba(16,185,129,0.25);" onclick="approvePayment(${a.id},'${a.tech_id||''}')">✅ Aprobar Pago</button>` : ''}
                         ${a.status !== 'Terminado' ? `<button class="btn btn-ghost btn-xs" onclick="finishApt(${a.id})">🏁 Finalizar</button>` : ''}
                         <button class="btn btn-ghost btn-xs" onclick="showTechReport(${a.id})">📄 Informe</button>
                         <button class="btn btn-xs" style="background:var(--red-bg);color:var(--red);border:none;" onclick="deleteApt(${a.id})">🗑️</button>

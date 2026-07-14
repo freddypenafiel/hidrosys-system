@@ -296,17 +296,17 @@ async function processMessage(phone, text, senderJid) {
     //  FLUJO 2: REPORTAR PAGO
     // ══════════════════════════════════════════════════════════
     if (step === 'pay_phone') {
-        const numLimpio = msg.replace(/\s|-/g,'');
+        const numLimpio = msg.replace(/\D/g, '').slice(-9); // Normalizar últimos 9 dígitos
         try {
             const apts = await pool.query(
                 `SELECT id, service_type, apt_date, status FROM appointments
-                 WHERE client_phone = $1 AND status = 'Pre-agendado' AND receipt_no IS NULL
+                 WHERE REGEXP_REPLACE(client_phone, '\\D', '', 'g') LIKE '%' || $1
+                   AND status = 'Pre-agendado' AND (receipt_no IS NULL OR receipt_no = 'null' OR receipt_no = '')
                  ORDER BY created_at DESC LIMIT 5`,
                 [numLimpio]
             );
             if (!apts.rows.length) {
-                clearSession(phone); setSession(phone,'idle');
-                return `❌ No encontré citas pendientes de pago para ese número.\n\n_Escribe *menu* para volver al inicio._`;
+                return `❌ No encontré citas pendientes de pago para ese número.\n\nPor favor verifica y escribe nuevamente tu número de teléfono (ej. 0987654321), o escribe *menu* para volver al inicio.`;
             }
             const lista = apts.rows.map((a, i) => `${i+1}. #${a.id} – ${a.service_type} (${a.apt_date?.toISOString().split('T')[0]})`).join('\n');
             setSession(phone, 'pay_select_apt', { lookupPhone: numLimpio, aptRows: apts.rows });
