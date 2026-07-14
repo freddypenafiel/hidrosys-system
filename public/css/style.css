@@ -688,12 +688,21 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     /* Emojis envueltos para que no desborden */
     .emoji-rating { flex-wrap: wrap; gap: 6px; }
     .emoji-btn { padding: 8px 6px; font-size: 1.3rem; }
+
+    /* Evitar superposición de texto en móviles y tablets */
+    * { overflow-wrap: break-word; word-wrap: break-word; }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+    table { width: 100%; min-width: 550px; }
 }
 
 @media (max-width: 480px) {
     .stats-grid { grid-template-columns: 1fr; gap: 12px; }
     .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .topbar-actions { width: 100%; justify-content: space-between; }
+    .topbar-actions { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+    .phone-device { width: 100%; max-width: 320px; }
+    .card, .stat-card { padding: 14px; }
+    h1 { font-size: 1.3rem; }
+    h2 { font-size: 1.15rem; }
 }
 
 /* ===== LOGIN MODAL (Glassmorphism) ===== */
