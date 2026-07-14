@@ -118,9 +118,9 @@
                 <span>PostgreSQL</span>
             </div>
             <!-- Botón WhatsApp -->
-            <button class="btn btn-sm" style="background:#25d366;color:white;" id="wa-open-btn">
+            <a href="https://wa.me/593968245633?text=Hola" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background:#25d366;color:white;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
                 💬 WhatsApp Bot
-            </button>
+            </a>
             <!-- Botón Iniciar Sesión (visible cuando NO hay sesión) -->
             <button class="btn btn-primary btn-sm" id="login-btn" onclick="openLoginModal()" style="display:flex; align-items:center; gap:6px;">
                 🔐 Iniciar Sesión
@@ -709,10 +709,9 @@
 </div>
 
 <!-- ===== WHATSAPP DRAWER ===== -->
-<button class="wa-panel-toggle" id="wa-panel-toggle" onclick="toggleWADrawer()">
+<a href="https://wa.me/593968245633?text=Hola" target="_blank" rel="noopener noreferrer" class="wa-panel-toggle" id="wa-panel-toggle" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
     💬 WhatsApp Bot
-    <span id="wa-unread-badge" style="background:red;color:white;border-radius:50%;width:18px;height:18px;font-size:0.65rem;display:none;align-items:center;justify-content:center;">1</span>
-</button>
+</a>
 
 <div class="wa-drawer" id="wa-drawer">
     <button class="wa-close-btn" onclick="toggleWADrawer()">✕</button>

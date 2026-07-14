@@ -1133,8 +1133,7 @@ function setupRecorder() {
 // WHATSAPP DRAWER
 // ============================================================
 function toggleWADrawer() {
-    document.getElementById('wa-drawer').classList.toggle('open');
-    document.getElementById('wa-unread-badge').style.display = 'none';
+    window.open('https://wa.me/593968245633?text=Hola', '_blank');
 }
 
 let waMode = 'text';
@@ -1293,7 +1292,7 @@ function setupWABot() {
     const input   = document.getElementById('wa-input');
     const openBtn = document.getElementById('wa-open-btn');
 
-    openBtn?.addEventListener('click', () => document.getElementById('wa-drawer').classList.add('open'));
+    openBtn?.addEventListener('click', () => window.open('https://wa.me/593968245633?text=Hola', '_blank'));
 
     const handleSend = () => {
         const text = input.value.trim();
