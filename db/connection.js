@@ -1,18 +1,37 @@
 // db/connection.js - Conexión a PostgreSQL
+// Soporta DATABASE_URL (Render/producción) y variables individuales (local)
 const { Pool } = require('pg');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const pool = new Pool({
-  host:     process.env.DB_HOST     || 'localhost',
-  port:     parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME     || 'hidrosys_db',
-  user:     process.env.DB_USER     || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-});
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+  // ── Render / Producción: usa la URL completa con SSL ──────────────
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 8000,
+  };
+  console.log('🔗 Usando DATABASE_URL (producción/Render)');
+} else {
+  // ── Local: variables individuales ─────────────────────────────────
+  poolConfig = {
+    host:     process.env.DB_HOST     || 'localhost',
+    port:     parseInt(process.env.DB_PORT || '5432'),
+    database: process.env.DB_NAME     || 'hidrosys_db',
+    user:     process.env.DB_USER     || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  };
+  console.log('🔗 Usando variables locales de PostgreSQL');
+}
+
+const pool = new Pool(poolConfig);
 
 pool.on('error', (err) => {
   console.error('❌ Error inesperado en el pool de PostgreSQL:', err.message);
