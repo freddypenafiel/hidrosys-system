@@ -121,6 +121,12 @@
             <a href="https://wa.me/593968245633?text=Hola" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background:#25d366;color:white;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
                 💬 WhatsApp Bot
             </a>
+            <!-- ☀️🌙 Toggle Modo Oscuro -->
+            <button class="dark-mode-btn" id="dark-mode-toggle" onclick="toggleDarkMode()" title="Cambiar modo claro / oscuro" aria-label="Toggle modo oscuro">
+                <span id="dm-icon">☀️</span>
+                <div class="dm-track"><div class="dm-thumb"></div></div>
+                <span id="dm-label">Claro</span>
+            </button>
             <!-- Botón Iniciar Sesión (visible cuando NO hay sesión) -->
             <button class="btn btn-primary btn-sm" id="login-btn" onclick="openLoginModal()" style="display:flex; align-items:center; gap:6px;">
                 🔐 Iniciar Sesión
@@ -276,6 +282,17 @@
                         <form id="booking-form">
                             <!-- Panel 1 -->
                             <div class="wz-panel active" id="wz-1">
+                                <!-- INGRESO EXPRESS POR CÓDIGO -->
+                                <div style="background: var(--blue-50); padding: 15px; border-radius: var(--radius-sm); border: 1px dashed var(--blue-400); margin-bottom: 20px;">
+                                    <h4 style="color: var(--blue-800); margin-bottom: 10px; font-size: 0.95rem;">¿Ya eres cliente? Usa tu código</h4>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input id="bk-client-code" class="form-control" placeholder="Ej. CL-0682" style="flex:1;">
+                                        <button type="button" class="btn btn-primary" onclick="lookupClientCode()">Buscar y Autocompletar</button>
+                                    </div>
+                                    <p id="client-code-msg" style="margin-top: 8px; font-size: 0.8rem; font-weight: 500;"></p>
+                                </div>
+                                <hr style="border:none; border-top: 1px solid var(--gray-200); margin-bottom: 20px;">
+
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label class="form-label">Nombre Completo <span class="required">*</span></label>
@@ -338,6 +355,16 @@
                                 <div class="form-group">
                                     <label class="form-label">Notas / Descripción del problema</label>
                                     <textarea id="bk-notes" class="form-control" rows="2" placeholder="Cuéntenos brevemente el problema..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">🎙️ O Graba una Nota de Voz (Opcional)</label>
+                                    <div style="display: flex; align-items: center; gap: 10px; background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                        <button type="button" id="btn-record" class="btn" style="background: var(--blue-600); color: white; padding: 8px 12px; border-radius: 20px;" onclick="toggleRecording()">🎤 Grabar</button>
+                                        <span id="recording-status" style="font-size: 0.85rem; color: var(--gray-500); font-weight: 600;">00:00</span>
+                                        <audio id="audio-playback" controls style="display: none; height: 35px; max-width: 200px;"></audio>
+                                        <button type="button" id="btn-discard-audio" class="btn btn-ghost" style="display: none; color: var(--red); padding: 5px;" onclick="discardAudio()">🗑️</button>
+                                    </div>
+                                    <p style="font-size: 0.75rem; color: var(--gray-400); margin-top: 5px;">Explique su problema en un audio corto.</p>
                                 </div>
                                 <div class="wz-buttons">
                                     <button type="button" class="btn btn-ghost" onclick="wzBack(2)">← Anterior</button>

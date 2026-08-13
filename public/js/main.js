@@ -56,11 +56,57 @@ document.addEventListener('DOMContentLoaded', () => {
     setupWABot();
     setupVoiceInput();
     setupRecorder();
+    initDarkMode();                // ← Inicializa modo oscuro desde localStorage
 
     // Date min
     const dateInput = document.getElementById('bk-date');
     if (dateInput) dateInput.min = new Date().toISOString().split('T')[0];
 });
+
+// ============================================================
+// DARK MODE TOGGLE
+// ============================================================
+function initDarkMode() {
+    const saved = localStorage.getItem('hs_dark_mode');
+    // Si el usuario ya lo tenía activado o prefiere oscuro (sistema), lo activamos
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = saved === 'dark' || (saved === null && prefersDark);
+    if (isDark) {
+        applyDark(true);
+    } else {
+        applyDark(false);
+    }
+}
+
+function applyDark(enabled) {
+    const html   = document.documentElement;
+    const icon   = document.getElementById('dm-icon');
+    const label  = document.getElementById('dm-label');
+
+    if (enabled) {
+        html.setAttribute('data-theme', 'dark');
+        if (icon)  icon.textContent  = '🌙';
+        if (label) label.textContent = 'Oscuro';
+    } else {
+        html.removeAttribute('data-theme');
+        if (icon)  icon.textContent  = '☀️';
+        if (label) label.textContent = 'Claro';
+    }
+}
+
+window.toggleDarkMode = function () {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const newDark = !isDark;
+    applyDark(newDark);
+    localStorage.setItem('hs_dark_mode', newDark ? 'dark' : 'light');
+
+    // Micro-feedback al usuario
+    toast(
+        newDark ? '🌙 Modo Oscuro activado' : '☀️ Modo Claro activado',
+        'info',
+        2500
+    );
+};
 
 // ============================================================
 // NAVEGACIÓN Y PERFILES (Provincia del Cañar)
@@ -477,6 +523,21 @@ function setupBookingForm() {
         const btn = form.querySelector('[type="submit"]');
         btn.disabled = true; btn.textContent = '⏳ Guardando...';
         try {
+            let uploadedAudioUrl = null;
+            if (globalAudioBlob) {
+                const formData = new FormData();
+                formData.append('audio', globalAudioBlob, 'voice_note.webm');
+                const uploadRes = await fetch(`${API}/api/upload-audio`, {
+                    method: 'POST',
+                    headers: { 'x-session-token': localStorage.getItem('hs_token') || '' },
+                    body: formData
+                });
+                const uploadData = await uploadRes.json();
+                if (uploadRes.ok && uploadData.url) {
+                    uploadedAudioUrl = uploadData.url;
+                }
+            }
+
             const data = {
                 clientName:  document.getElementById('bk-name').value.trim(),
                 clientPhone: document.getElementById('bk-phone').value.trim(),
@@ -489,6 +550,7 @@ function setupBookingForm() {
                 paymentMode: document.getElementById('bk-payment').value,
                 notes:       document.getElementById('bk-notes').value.trim(),
                 channel:     'Formulario',
+                audioUrl:    uploadedAudioUrl
             };
             const bankList = `*Cuentas Oficiales para Transferencia (HIDROSYS EC):*
 1. *B. Pichincha* (Cte): 2201948332
@@ -504,6 +566,7 @@ function setupBookingForm() {
             toast(`✅ ¡Cita pre-agendada en la base de datos! ID: ${created.id}`, 'success', 6000);
             sendWAMsg('system', `*HIDROSYS – Cita Registrada (Pre-agendada)* 💧\n\nHola *${data.clientName}*, tu cita quedó pre-agendada para el *${formatDate(data.aptDate)}* a las *${data.aptTime}* (${data.zone}).\n\n⚠️ *IMPORTANTE:* Tu turno está *Pre-agendado* y solo se confirmará una vez que realices la transferencia por el valor de tu servicio y reportes tu comprobante.\n\n${bankList}\n\n*Titular:* HIDROSYS EC. (RUC: 1793000000001)\n\nUna vez reportado, procederemos a asignarte un técnico y confirmar tu turno.`);
             form.reset();
+            discardAudio();
             document.getElementById('bk-canton').value = '';
             document.getElementById('bk-parish').innerHTML = '<option value="">— Seleccione Parroquia —</option>';
             wzGo(1);
@@ -515,6 +578,113 @@ function setupBookingForm() {
             btn.disabled = false; btn.textContent = '✅ Confirmar y Registrar Cita';
         }
     });
+}
+
+// ============================================================
+// INGRESO EXPRESS POR CÓDIGO DE CLIENTE
+// ============================================================
+async function lookupClientCode() {
+    const code = document.getElementById('bk-client-code').value.trim();
+    const msgEl = document.getElementById('client-code-msg');
+    if (!code) {
+        msgEl.textContent = 'Ingrese un código válido.';
+        msgEl.style.color = 'var(--red)';
+        return;
+    }
+    try {
+        const client = await api('GET', `/clients/code/${code}`);
+        document.getElementById('bk-name').value = client.name || '';
+        document.getElementById('bk-phone').value = client.phone || '';
+        document.getElementById('bk-email').value = client.email || '';
+        document.getElementById('bk-address').value = client.address || '';
+        
+        msgEl.textContent = `¡Hola ${client.name}! Tus datos se han cargado automáticamente.`;
+        msgEl.style.color = 'var(--green)';
+        
+        // Simular clic a Siguiente
+        setTimeout(() => wzNext(1), 1000);
+    } catch (err) {
+        msgEl.textContent = 'Código no encontrado.';
+        msgEl.style.color = 'var(--red)';
+    }
+}
+
+// ============================================================
+// GRABADORA DE AUDIO WEB
+// ============================================================
+let mediaRecorder;
+let audioChunks = [];
+let globalAudioBlob = null;
+let recordingInterval;
+let recordingSeconds = 0;
+
+async function toggleRecording() {
+    const btn = document.getElementById('btn-record');
+    const status = document.getElementById('recording-status');
+    const playback = document.getElementById('audio-playback');
+    const discardBtn = document.getElementById('btn-discard-audio');
+
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        // Detener grabación
+        mediaRecorder.stop();
+        clearInterval(recordingInterval);
+        btn.textContent = '🎤 Grabar';
+        btn.style.background = 'var(--blue-600)';
+        status.textContent = 'Procesando...';
+    } else {
+        // Iniciar grabación
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            
+            mediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) audioChunks.push(e.data);
+            };
+            
+            mediaRecorder.onstop = () => {
+                globalAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const audioUrl = URL.createObjectURL(globalAudioBlob);
+                playback.src = audioUrl;
+                playback.style.display = 'block';
+                discardBtn.style.display = 'inline-block';
+                status.textContent = 'Audio guardado';
+                btn.style.display = 'none'; // Ocultar botón de grabar
+                
+                // Detener todas las pistas para apagar el micrófono
+                stream.getTracks().forEach(track => track.stop());
+            };
+            
+            mediaRecorder.start();
+            btn.textContent = '⏹️ Detener';
+            btn.style.background = 'var(--red)';
+            
+            recordingSeconds = 0;
+            status.textContent = '00:00';
+            recordingInterval = setInterval(() => {
+                recordingSeconds++;
+                const m = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+                const s = String(recordingSeconds % 60).padStart(2, '0');
+                status.textContent = `${m}:${s} 🔴`;
+            }, 1000);
+            
+        } catch (err) {
+            alert('No se pudo acceder al micrófono. Por favor, revisa los permisos.');
+        }
+    }
+}
+
+function discardAudio() {
+    globalAudioBlob = null;
+    audioChunks = [];
+    document.getElementById('audio-playback').style.display = 'none';
+    document.getElementById('audio-playback').src = '';
+    document.getElementById('btn-discard-audio').style.display = 'none';
+    const btn = document.getElementById('btn-record');
+    btn.style.display = 'inline-block';
+    btn.textContent = '🎤 Grabar';
+    btn.style.background = 'var(--blue-600)';
+    document.getElementById('recording-status').textContent = '00:00';
 }
 
 // ============================================================
