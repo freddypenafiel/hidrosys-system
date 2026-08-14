@@ -1219,3 +1219,9 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     .login-modal { padding: 28px 22px 24px; }
     .login-title { font-size: 1.3rem; }
 }
+
+
+/* Offline Banner */
+.offline-banner { position: fixed; top: 0; left: 0; width: 100%; background: #ef4444; color: white; text-align: center; padding: 10px 20px; font-weight: 600; font-size: 0.9rem; z-index: 10000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); animation: slideDown 0.3s ease; }
+.offline-banner.online { background: #10b981; }
+@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }

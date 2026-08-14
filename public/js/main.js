@@ -895,60 +895,75 @@ async function loadAppointments() {
         apts.sort((a,b) => b.id - a.id);
         const techs = await api('GET', '/technicians');
 
-        container.innerHTML = apts.length ? apts.map(a => {
-            const steps = ['Pre-agendado','Pagado','Confirmado','Conf. Cliente','Terminado'];
-            const idx   = steps.findIndex(s => s.toLowerCase().includes(a.status?.toLowerCase().slice(0,6) || ''));
-            const tlHtml = steps.map((s,i) => `<div class="tl-step ${i < idx ? 'past' : i === idx ? 'now' : ''}">${s}</div>`).join('');
-
-            const stripeClass = a.status === 'Terminado' ? 'stripe-done' :
-                               (a.status?.includes('Confirmado') ? 'stripe-confirmed' :
-                               (a.receipt_no ? 'stripe-confirmed' : 'stripe-pre'));
-
-            const techOptions = `<option value="">— Asignar técnico —</option>` +
-                techs.map(t => `<option value="${t.id}" ${a.tech_id == t.id ? 'selected' : ''}>${t.avatar} ${t.name} (${t.zone})</option>`).join('');
-
-            return `
-                <div class="apt-card" id="apt-card-${a.id}">
-                    <div class="apt-card-stripe ${stripeClass}"></div>
-                    <div class="apt-card-body">
-                        <div class="status-timeline">${tlHtml}</div>
-                        <div class="apt-card-top">
-                            <div>
-                                ${statusBadge(a.status)}
-                                ${a.survey_completed ? '<span class="badge badge-green" style="margin-left:4px;">Encuesta ✓</span>' : ''}
-                                <div class="apt-service" style="margin-top:5px;">${a.service_type}</div>
-                            </div>
-                            <div class="apt-price">$${parseFloat(a.payment_amount||0).toFixed(2)}</div>
+        if (!apts || apts.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column:1/-1;">
+                    <div style="background:linear-gradient(135deg,#f8fafc,#f1f5f9);border:1px solid #e2e8f0;border-radius:16px;padding:48px 32px;text-align:center;">
+                        <div style="font-size:3.5rem;margin-bottom:16px;">📅</div>
+                        <h3 style="font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;color:var(--gray-800);margin-bottom:8px;">No hay citas registradas</h3>
+                        <p style="color:var(--gray-600);max-width:480px;margin:0 auto 24px;line-height:1.6;font-size:0.9rem;">No se encontraron citas que coincidan con los filtros seleccionados, o aún no hay agendamientos en el sistema.</p>
+                        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                            <button class="btn btn-primary" onclick="navigateTo('booking')">Ir al Agendamiento</button>
                         </div>
-                        <div class="apt-info">
-                            <p>👤 <strong>${a.client_name}</strong> · ${a.client_phone}</p>
-                            <p>📍 ${a.address} · <strong style="color:var(--blue-700);">${a.zone}</strong></p>
-                            <p>📅 ${formatDate(a.apt_date)} ⏰ ${String(a.apt_time||'').slice(0,5)}</p>
-                            ${a.channel === 'WhatsApp' ? '<p>💬 <strong>Canal:</strong> WhatsApp Bot</p>' : ''}
-                            ${a.notes ? `<p style="font-style:italic;color:var(--gray-500);">"${a.notes}"</p>` : ''}
-                            ${a.receipt_no || a.status === 'Reportado' || a.bank ? `
-                                <div style="background:var(--blue-50,#eff6ff);border:1px solid var(--blue-200,#bfdbfe);border-radius:6px;padding:8px 10px;margin-top:6px;font-size:0.78rem;">
-                                    🏦 <strong>Banco:</strong> ${a.bank || 'Reportado'} · <strong>Nº Comprobante:</strong> ${a.receipt_no || 'Pendiente de Validar'}
-                                    <span class="badge ${payBadgeClass(a.payment_status)}" style="margin-left:5px;">${a.payment_status || 'Pendiente de Validación'}</span>
-                                </div>` : `<p style="font-size:0.78rem;color:var(--gray-400);">Sin reporte de pago.</p>`}
-                        </div>
-                        <div style="margin-top:12px;">
-                            <label style="font-size:0.75rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:4px;">Técnico Asignado:</label>
-                            <select class="form-control" style="font-size:0.82rem;padding:7px 10px;"
-                                    onchange="assignTech(${a.id}, this.value)" ${a.status === 'Terminado' ? 'disabled' : ''}>
-                                ${techOptions}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="apt-card-footer">
-                        ${(a.status === 'Reportado' || (a.receipt_no && a.receipt_no !== 'null' && a.receipt_no !== '')) && a.status !== 'Confirmado' && a.status !== 'Conf. Cliente' && a.status !== 'Terminado' && a.payment_status !== 'Pagado' && a.payment_status !== 'Aprobado' ? `<button class="btn btn-success btn-xs" style="background:#10b981;color:white;font-weight:700;box-shadow:0 2px 4px rgba(16,185,129,0.25);" onclick="approvePayment(${a.id},'${a.tech_id||''}')">✅ Aprobar Pago</button>` : ''}
-                        ${a.status !== 'Terminado' ? `<button class="btn btn-ghost btn-xs" onclick="finishApt(${a.id})">🏁 Finalizar</button>` : ''}
-                        <button class="btn btn-ghost btn-xs" onclick="showTechReport(${a.id})">📄 Informe</button>
-                        <button class="btn btn-xs" style="background:var(--red-bg);color:var(--red);border:none;" onclick="deleteApt(${a.id})">🗑️</button>
                     </div>
                 </div>
             `;
-        }).join('') : '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400);">No se encontraron citas.</div>';
+        } else {
+            container.innerHTML = apts.map(a => {
+                const steps = ['Pre-agendado','Pagado','Confirmado','Conf. Cliente','Terminado'];
+                const idx   = steps.findIndex(s => s.toLowerCase().includes(a.status?.toLowerCase().slice(0,6) || ''));
+                const tlHtml = steps.map((s,i) => `<div class="tl-step ${i < idx ? 'past' : i === idx ? 'now' : ''}">${s}</div>`).join('');
+
+                const stripeClass = a.status === 'Terminado' ? 'stripe-done' :
+                                   (a.status?.includes('Confirmado') ? 'stripe-confirmed' :
+                                   (a.receipt_no ? 'stripe-confirmed' : 'stripe-pre'));
+
+                const techOptions = `<option value="">— Asignar técnico —</option>` +
+                    techs.map(t => `<option value="${t.id}" ${a.tech_id == t.id ? 'selected' : ''}>${t.avatar} ${t.name} (${t.zone})</option>`).join('');
+
+                return `
+                    <div class="apt-card" id="apt-card-${a.id}">
+                        <div class="apt-card-stripe ${stripeClass}"></div>
+                        <div class="apt-card-body">
+                            <div class="status-timeline">${tlHtml}</div>
+                            <div class="apt-card-top">
+                                <div>
+                                    ${statusBadge(a.status)}
+                                    ${a.survey_completed ? '<span class="badge badge-green" style="margin-left:4px;">Encuesta ✓</span>' : ''}
+                                    <div class="apt-service" style="margin-top:5px;">${a.service_type}</div>
+                                </div>
+                                <div class="apt-price">$${parseFloat(a.payment_amount||0).toFixed(2)}</div>
+                            </div>
+                            <div class="apt-info">
+                                <p>👤 <strong>${a.client_name}</strong> · ${a.client_phone}</p>
+                                <p>📍 ${a.address} · <strong style="color:var(--blue-700);">${a.zone}</strong></p>
+                                <p>📅 ${formatDate(a.apt_date)} ⏰ ${String(a.apt_time||'').slice(0,5)}</p>
+                                ${a.channel === 'WhatsApp' ? '<p>💬 <strong>Canal:</strong> WhatsApp Bot</p>' : ''}
+                                ${a.notes ? `<p style="font-style:italic;color:var(--gray-500);">"${a.notes}"</p>` : ''}
+                                ${a.receipt_no || a.status === 'Reportado' || a.bank ? `
+                                    <div style="background:var(--blue-50,#eff6ff);border:1px solid var(--blue-200,#bfdbfe);border-radius:6px;padding:8px 10px;margin-top:6px;font-size:0.78rem;">
+                                        🏦 <strong>Banco:</strong> ${a.bank || 'Reportado'} · <strong>Nº Comprobante:</strong> ${a.receipt_no || 'Pendiente de Validar'}
+                                        <span class="badge ${payBadgeClass(a.payment_status)}" style="margin-left:5px;">${a.payment_status || 'Pendiente de Validación'}</span>
+                                    </div>` : `<p style="font-size:0.78rem;color:var(--gray-400);">Sin reporte de pago.</p>`}
+                            </div>
+                            <div style="margin-top:12px;">
+                                <label style="font-size:0.75rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:4px;">Técnico Asignado:</label>
+                                <select class="form-control" style="font-size:0.82rem;padding:7px 10px;"
+                                        onchange="assignTech(${a.id}, this.value)" ${a.status === 'Terminado' ? 'disabled' : ''}>
+                                    ${techOptions}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="apt-card-footer">
+                            ${(a.status === 'Reportado' || (a.receipt_no && a.receipt_no !== 'null' && a.receipt_no !== '')) && a.status !== 'Confirmado' && a.status !== 'Conf. Cliente' && a.status !== 'Terminado' && a.payment_status !== 'Pagado' && a.payment_status !== 'Aprobado' ? `<button class="btn btn-success btn-xs" style="background:#10b981;color:white;font-weight:700;box-shadow:0 2px 4px rgba(16,185,129,0.25);" onclick="approvePayment(${a.id},'${a.tech_id||''}')">✅ Aprobar Pago</button>` : ''}
+                            ${a.status !== 'Terminado' ? `<button class="btn btn-ghost btn-xs" onclick="finishApt(${a.id})">🏁 Finalizar</button>` : ''}
+                            <button class="btn btn-ghost btn-xs" onclick="showTechReport(${a.id})">📄 Informe</button>
+                            <button class="btn btn-xs" style="background:var(--red-bg);color:var(--red);border:none;" onclick="deleteApt(${a.id})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
 
         // Botón de filtro
         document.getElementById('apt-filter-btn')?.addEventListener('click', loadAppointments);
@@ -1049,12 +1064,29 @@ async function loadClients() {
 // ============================================================
 // ADMIN: LEADS
 // ============================================================
-async function loadLeads() {
+window.loadLeads = async function() {
     const container = document.getElementById('leads-cards-container');
     if (!container) return;
     try {
         const leads = await api('GET', '/leads');
-        container.innerHTML = leads.length ? leads.map(l => `
+        if (!leads || leads.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column:1/-1;">
+                    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:16px;padding:48px 32px;text-align:center;">
+                        <div style="font-size:3.5rem;margin-bottom:16px;">🏗️</div>
+                        <h3 style="font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;color:var(--blue-800);margin-bottom:8px;">Aún no tienes prospectos</h3>
+                        <p style="color:var(--blue-600);max-width:480px;margin:0 auto 24px;line-height:1.6;font-size:0.9rem;">Los prospectos son clientes potenciales, constructoras o proyectos que contactan a Hidrosys mediante el formulario de "Proyectos Grandes". Aquí podrás verlos y convertirlos a clientes con un clic.</p>
+                        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                            <button class="btn btn-primary" onclick="navigateTo('leads')" style="background:var(--blue-700);">Ir al Formulario</button>
+                            <button class="btn btn-outline" onclick="seedSampleLead()" style="border-color:var(--blue-300);color:var(--blue-700);">➕ Agregar Datos de Prueba</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = leads.map(l => `
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">${l.name}</span>
@@ -1070,9 +1102,23 @@ async function loadLeads() {
                     </div>
                 </div>
             </div>
-        `).join('') : '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400);">Sin prospectos registrados.</div>';
+        `).join('');
     } catch (err) { toast(`Error: ${err.message}`, 'error'); }
 }
+
+window.seedSampleLead = async function() {
+    try {
+        await api('POST', '/leads', {
+            name: 'Constructora Andina S.A. (Demo)',
+            phone: '0987654321',
+            email: 'proyectos@constructoraandina.ec',
+            address: 'Av. España y Guayas, Azogues',
+            details: 'Proyecto residencial de 120 viviendas. Necesitamos instalación de acometidas.',
+        });
+        toast('Prospecto de prueba agregado.', 'success');
+        loadLeads();
+    } catch (err) { toast(`Error: ${err.message}`, 'error'); }
+};
 
 async function convertLead(id) {
     try {
@@ -1093,8 +1139,19 @@ async function loadSurveys() {
         const emojis = { 1:'😡',2:'🙁',3:'😐',4:'😊',5:'😍' };
         const labels = { 1:'Pésimo',2:'Malo',3:'Regular',4:'Bueno',5:'Excelente' };
         
-        if (!surveys.length) {
-            container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400);">Sin encuestas recibidas.</div>';
+        if (!surveys || surveys.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column:1/-1;">
+                    <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:16px;padding:48px 32px;text-align:center;">
+                        <div style="font-size:3.5rem;margin-bottom:16px;">⭐</div>
+                        <h3 style="font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;color:#166534;margin-bottom:8px;">Aún no hay calificaciones</h3>
+                        <p style="color:#15803d;max-width:480px;margin:0 auto 24px;line-height:1.6;font-size:0.9rem;">Las encuestas de satisfacción se generan automáticamente cuando marcas una cita como <strong>Terminada</strong> en el módulo de Agenda. El cliente recibirá un mensaje de WhatsApp para calificar del 1 al 5.</p>
+                        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                            <button class="btn btn-primary" onclick="navigateTo('admin-appointments')" style="background:#166534;">Ir a Citas y Agenda</button>
+                        </div>
+                    </div>
+                </div>
+            `;
             return;
         }
 
@@ -1649,6 +1706,46 @@ async function restartWAConnection() {
         if (btn) { btn.disabled = false; btn.innerHTML = '<span>🔄</span> Reiniciar Conexión / Generar Nuevo QR'; }
     }
 }
+
+// ============================================================
+// OFFLINE STATE DETECTION
+// ============================================================
+window.addEventListener('offline', () => {
+    const banner = document.getElementById('offline-banner');
+    if (banner) {
+        banner.style.display = 'block';
+        banner.className = 'offline-banner';
+        banner.innerHTML = '<span>⚠️ Estás sin conexión a internet. El sistema está en modo lectura y los cambios no se guardarán hasta que te reconectes.</span>';
+    }
+    // Disable primary action buttons
+    document.querySelectorAll('.btn-primary, .btn-success').forEach(btn => {
+        if (!btn.id.includes('login') && !btn.id.includes('dark-mode')) {
+            btn.disabled = true;
+            btn.dataset.originalText = btn.textContent;
+            btn.textContent = '❌ Sin conexión';
+        }
+    });
+});
+
+window.addEventListener('online', () => {
+    const banner = document.getElementById('offline-banner');
+    if (banner) {
+        banner.className = 'offline-banner online';
+        banner.innerHTML = '<span>✅ Conexión restablecida. Ya puedes continuar.</span>';
+        setTimeout(() => {
+            banner.style.display = 'none';
+        }, 3000);
+    }
+    // Re-enable primary action buttons
+    document.querySelectorAll('.btn-primary, .btn-success').forEach(btn => {
+        if (btn.disabled && btn.textContent === '❌ Sin conexión') {
+            btn.disabled = false;
+            if (btn.dataset.originalText) {
+                btn.textContent = btn.dataset.originalText;
+            }
+        }
+    });
+});
 
 window.loadAdminWAStatus = loadAdminWAStatus;
 window.fetchAdminWAStatus = fetchAdminWAStatus;
