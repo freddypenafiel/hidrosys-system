@@ -248,7 +248,7 @@ app.post('/api/clients', async (req, res) => {
 app.put('/api/clients/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, phone, email, address, zone, notes } = req.body;
+        const { name, phone, email, address, zone, notes, cedula } = req.body;
         const result = await pool.query(
             `UPDATE clients
              SET name = COALESCE($1, name),
@@ -256,13 +256,105 @@ app.put('/api/clients/:id', async (req, res) => {
                  email = COALESCE($3, email),
                  address = COALESCE($4, address),
                  zone = COALESCE($5, zone),
-                 notes = COALESCE($6, notes)
-             WHERE id = $7
+                 notes = COALESCE($6, notes),
+                 cedula = COALESCE($7, cedula)
+             WHERE id = $8
              RETURNING *`,
-            [name, phone, email, address, zone, notes, id]
+            [name, phone, email, address, zone, notes, cedula, id]
         );
         if (!result.rows.length) return res.status(404).json({ error: 'Cliente no encontrado' });
         res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+// VALIDACIÓN DE CLIENTE POR CÉDULA Y CÓDIGO OTP POR WHATSAPP
+// ============================================================
+const clientOtpStore = new Map(); // cedula -> { code, client, expires }
+
+app.post('/api/clients/lookup-cedula', async (req, res) => {
+    try {
+        const { cedula } = req.body;
+        if (!cedula || cedula.trim().length < 4) {
+            return res.status(400).json({ error: 'Número de cédula requerido' });
+        }
+        const cleanCedula = cedula.trim();
+        const result = await pool.query(
+            `SELECT * FROM clients WHERE cedula = $1 OR phone LIKE $2 ORDER BY id DESC LIMIT 1`,
+            [cleanCedula, `%${cleanCedula}%`]
+        );
+
+        if (!result.rows.length) {
+            return res.json({ found: false, message: 'Cédula no encontrada en el registro previo.' });
+        }
+
+        const client = result.rows[0];
+        const code = String(Math.floor(1000 + Math.random() * 9000));
+        clientOtpStore.set(cleanCedula, {
+            code,
+            client,
+            expires: Date.now() + 5 * 60 * 1000 // 5 minutos
+        });
+
+        // Enviar WhatsApp al celular registrado del cliente
+        if (waBot && waBot.sendClientVerificationOtp) {
+            waBot.sendClientVerificationOtp(client.phone, client.name, code).catch(err => {
+                console.error('[WA Bot] Error enviando OTP:', err.message);
+            });
+        }
+
+        const rawPhone = client.phone || '';
+        const masked = rawPhone.length > 5 ? rawPhone.slice(0, 3) + '****' + rawPhone.slice(-3) : rawPhone;
+
+        res.json({
+            found: true,
+            maskedPhone: masked,
+            clientName: client.name,
+            message: `Código de seguridad enviado al WhatsApp ${masked}`
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/clients/verify-otp', async (req, res) => {
+    try {
+        const { cedula, otp } = req.body;
+        if (!cedula || !otp) {
+            return res.status(400).json({ error: 'Cédula y código requeridos' });
+        }
+        const cleanCedula = cedula.trim();
+        const record = clientOtpStore.get(cleanCedula);
+
+        if (!record) {
+            return res.status(400).json({ success: false, error: 'No hay un código pendiente para esta cédula o ya expiró.' });
+        }
+
+        if (Date.now() > record.expires) {
+            clientOtpStore.delete(cleanCedula);
+            return res.status(400).json({ success: false, error: 'El código de seguridad ha expirado. Solicita uno nuevo.' });
+        }
+
+        if (record.code !== String(otp).trim()) {
+            return res.status(400).json({ success: false, error: 'El código ingresado es incorrecto. Por favor verifica el mensaje en tu WhatsApp.' });
+        }
+
+        const client = record.client;
+        clientOtpStore.delete(cleanCedula);
+
+        res.json({
+            success: true,
+            client: {
+                name: client.name,
+                phone: client.phone,
+                email: client.email,
+                address: client.address,
+                zone: client.zone,
+                cedula: client.cedula
+            }
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -377,6 +469,16 @@ app.put('/api/appointments/:id', async (req, res) => {
         )) {
             waBot.notifyPaymentApproved(parseInt(id)).catch(err => {
                 console.error('[WA Bot] Error en notificación automática PUT /appointments/:id:', err.message);
+            });
+        }
+
+        // Si el estado se actualiza a Terminado, enviar automáticamente mensaje de conclusión y encuesta CSAT
+        if (waBot && waBot.notifyServiceCompleted && (
+            updatedApt.status === 'Terminado' ||
+            fields.status === 'Terminado'
+        )) {
+            waBot.notifyServiceCompleted(parseInt(id)).catch(err => {
+                console.error('[WA Bot] Error enviando encuesta de servicio completado:', err.message);
             });
         }
 
@@ -601,9 +703,10 @@ app.listen(PORT, async () => {
         const r = await pool.query('SELECT NOW()');
         console.log(`✅ PostgreSQL conectado: ${r.rows[0].now}`);
         
-        // Migración: agregar columna wa_sender a appointments
+        // Migraciones de columnas necesarias
         await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS wa_sender VARCHAR(50)');
-        console.log('✅ Migración de DB: Columna "wa_sender" verificada/creada exitosamente.\n');
+        await pool.query('ALTER TABLE clients ADD COLUMN IF NOT EXISTS cedula VARCHAR(20)');
+        console.log('✅ Migraciones de DB: Columnas "wa_sender" y "cedula" verificadas/creadas.\n');
     } catch (err) {
         console.error(`❌ PostgreSQL NO conectado o error en migración: ${err.message}`);
         console.error('   Verifica tu archivo .env y que PostgreSQL esté corriendo\n');
@@ -617,4 +720,36 @@ app.listen(PORT, async () => {
             });
         }, 2000); // 2s de espera para que el servidor esté listo
     }
+
+    // ============================================================
+    // SERVICIO AUTOMÁTICO DE RECORDATORIOS DE CITAS (CRON)
+    // ============================================================
+    const remindersSent = new Set();
+    async function checkAutomatedReminders() {
+        try {
+            if (!waBot || !waBot.notifyAppointmentReminder) return;
+            const todayStr = new Date().toISOString().split('T')[0];
+            const res = await pool.query(
+                `SELECT id, apt_date, status, client_name, client_phone
+                 FROM appointments
+                 WHERE apt_date >= CURRENT_DATE AND apt_date <= CURRENT_DATE + INTERVAL '1 day'
+                   AND status IN ('Confirmado', 'Conf. Cliente', 'Agendado')`
+            );
+
+            for (const apt of res.rows) {
+                const reminderKey = `${apt.id}_${todayStr}`;
+                if (!remindersSent.has(reminderKey)) {
+                    console.log(`[Auto-Reminder] ⏰ Enviando recordatorio automático para cita #${apt.id} (${apt.client_name})...`);
+                    await waBot.notifyAppointmentReminder(apt.id);
+                    remindersSent.add(reminderKey);
+                }
+            }
+        } catch (err) {
+            console.error('[Auto-Reminder] Error en recordatorios automáticos:', err.message);
+        }
+    }
+
+    // Chequeo periódico cada 30 minutos y primera ejecución a los 25 segundos
+    setInterval(checkAutomatedReminders, 30 * 60 * 1000);
+    setTimeout(checkAutomatedReminders, 25000);
 });

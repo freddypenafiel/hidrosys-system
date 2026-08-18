@@ -431,10 +431,141 @@ async function processMessage(phone, text, senderJid) {
         }
     }
 
+    // ── 5. DETECCIÓN DE AGENDAMIENTO EXPRESS EN UN SOLO MENSAJE (NLP / FORMULARIO RÁPIDO) ──
+    const expressData = parseExpressBookingText(msg);
+    if (expressData && (step === 'idle' || step === 'main_menu' || step.startsWith('book_'))) {
+        setSession(phone, 'express_confirm', {
+            name: expressData.name || sess.data.name || 'Cliente',
+            phone: expressData.phone || phone,
+            service: expressData.service || 'Mantenimiento de Sistema Hidráulico',
+            address: expressData.address || 'Domicilio del Cliente',
+            canton: expressData.canton || 'Azogues',
+            parish: expressData.parish || expressData.canton || 'Azogues',
+            date: expressData.date || getTomorrowDateStr(),
+            time: expressData.time || '10:00',
+            price: 15.00,
+            senderJid: senderJid || sess.data.senderJid
+        });
+
+        const s = getSession(phone).data;
+        return `📋 *¡Datos detectados automáticamente!* ⚡\n\nHemos preparado tu orden de agendamiento:\n\n👤 *Cliente:* ${s.name}\n📞 *Teléfono:* ${s.phone}\n🔧 *Servicio:* ${s.service}\n📍 *Ubicación:* ${s.address}, ${s.canton}\n📅 *Fecha:* ${s.date}\n⏰ *Hora:* ${s.time}\n💰 *Valor:* $15.00 (Visita Técnica)\n\n👉 *¿Confirmas estos datos para registrar la cita?*\nResponde *1* o *SÍ* para confirmar, o *0* para corregir.`;
+    }
+
+    if (step === 'express_confirm') {
+        if (['1', 'si', 's', 'confirmar', 'confirmo', 'ok'].includes(msgClean)) {
+            const s = sess.data;
+            try {
+                // Registrar cliente
+                await pool.query(
+                    `INSERT INTO clients (name, phone, address, zone)
+                     VALUES ($1, $2, $3, $4)
+                     ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name, address=EXCLUDED.address, zone=EXCLUDED.zone`,
+                    [s.name, s.phone, s.address, `${s.canton} - ${s.parish}`]
+                );
+
+                // Insertar cita
+                const result = await pool.query(
+                    `INSERT INTO appointments (client_name, client_phone, address, zone, service_type, apt_date, apt_time, status, payment_amount, payment_status, channel, notes, wa_sender)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, 'Agendado', $8, 'Pendiente', 'WhatsApp', 'Agendamiento Express WhatsApp', $9)
+                     RETURNING id`,
+                    [s.name, s.phone, s.address, `${s.canton} - ${s.parish}`, s.service, s.date, s.time, s.price, s.senderJid || null]
+                );
+
+                const aptId = result.rows[0].id;
+                clearSession(phone);
+                setSession(phone, 'idle');
+
+                return `🎉 *¡Tu cita #${aptId} ha sido registrada con éxito!*\n\n📋 *Resumen de la Orden:*\n🛠️ Servicio: *${s.service}*\n📅 Fecha: *${s.date}* a las *${s.time}*\n📍 Dirección: *${s.address}* (${s.canton})\n💵 Total: *$15.00*\n\n${CUENTAS_BANCARIAS}\n\n👉 _Una vez realizada la transferencia, envía la foto del comprobante o el número de transacción por aquí respondiendo con la opción **2**._`;
+            } catch (err) {
+                console.error('[WA Bot] Error registrando express booking:', err.message);
+                return `❌ Ocurrió un inconveniente al guardar tu cita. Por favor intenta de nuevo escribiendo *menu*.`;
+            }
+        } else if (['0', 'no', 'cancelar'].includes(msgClean)) {
+            clearSession(phone);
+            setSession(phone, 'main_menu');
+            return menuPrincipal('Agendamiento cancelado. ¿En qué más podemos ayudarte?');
+        }
+    }
+
     // ── Fallback ───────────────────────────────────────────────
     clearSession(phone);
     setSession(phone, 'main_menu');
-    return menuPrincipal('❓ No entendí tu mensaje. Selecciona una opción:');
+    return menuPrincipal('❓ No entendí tu mensaje. Selecciona una opción del menú:');
+}
+
+// Helper para parsear texto libre
+function parseExpressBookingText(text) {
+    if (!text || text.length < 15) return null;
+    const lower = text.toLowerCase();
+
+    // Comprobar si parece un intento de agendamiento
+    const hasBookingIntent = lower.includes('agendar') || lower.includes('visita') || lower.includes('mantenimiento') || lower.includes('reparar') || lower.includes('fuga') || lower.includes('bomba') || lower.includes('instal') || lower.includes('tuberia') || lower.includes('nombre:');
+    if (!hasBookingIntent) return null;
+
+    let name = '';
+    let address = '';
+    let canton = 'Azogues';
+    let service = 'Inspección Técnica General';
+    let date = getTomorrowDateStr();
+    let time = '10:00';
+    let phoneMatch = text.match(/09\d{8}/);
+
+    // Extraer campos etiquetados si vienen en formato clave: valor
+    const lines = text.split('\n');
+    lines.forEach(l => {
+        const parts = l.split(':');
+        if (parts.length >= 2) {
+            const k = parts[0].trim().toLowerCase();
+            const v = parts.slice(1).join(':').trim();
+            if (k.includes('nombre') || k.includes('cliente')) name = v;
+            if (k.includes('direc') || k.includes('calle') || k.includes('lugar')) address = v;
+            if (k.includes('canton') || k.includes('ciudad')) canton = v;
+            if (k.includes('servicio') || k.includes('trabajo')) service = v;
+            if (k.includes('fecha') || k.includes('dia')) date = v;
+            if (k.includes('hora')) time = v;
+        }
+    });
+
+    // Si no vino etiquetado pero menciona cantones de Cañar
+    Object.values(CANTONES).forEach(c => {
+        if (lower.includes(c.nombre.toLowerCase())) canton = c.nombre;
+    });
+
+    // Detectar servicio por palabras clave
+    if (lower.includes('gas')) service = 'Instalación de Red de Gas Domiciliario';
+    else if (lower.includes('bomba') || lower.includes('hidro')) service = 'Mantenimiento de Sistema Hidráulico';
+    else if (lower.includes('medidor')) service = 'Instalación de Medidor de Agua';
+    else if (lower.includes('tuberia') || lower.includes('fuga') || lower.includes('goteo')) service = 'Revisión / Reparación de Tubería';
+
+    if (!name && lower.includes('soy ')) {
+        const afterSoy = text.substring(lower.indexOf('soy ') + 4).split(/[,.\n]/)[0].trim();
+        if (afterSoy.length > 2) name = afterSoy;
+    }
+
+    if (!address && (lower.includes('en ') || lower.includes('calle '))) {
+        const afterEn = text.substring(lower.indexOf('en ') + 3).split(/[,.\n]/)[0].trim();
+        if (afterEn.length > 3) address = afterEn;
+    }
+
+    if (name || address || phoneMatch) {
+        return {
+            name: name || 'Cliente Particular',
+            phone: phoneMatch ? phoneMatch[0] : null,
+            address: address || 'Dirección por confirmar',
+            canton: canton || 'Azogues',
+            parish: canton || 'Azogues',
+            service,
+            date,
+            time
+        };
+    }
+    return null;
+}
+
+function getTomorrowDateStr() {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
 }
 
 // ============================================================
@@ -460,7 +591,7 @@ async function buildConfirmationMessage(aptId) {
         }
         if (!targetJid) targetJid = clientPhoneJid;
 
-        console.log(`[WA Bot] 📤 Enviando confirmación de cita #${aptId} a JID: ${targetJid} (y teléfono ${clientPhoneJid})`);
+        console.log(`[WA Bot] 📤 Enviando confirmación de cita #${aptId} a JID: ${targetJid}`);
 
         const phoneKey = targetJid.split('@')[0].replace(/\D/g,'') || clientPhoneJid.split('@')[0].replace(/\D/g,'');
         setSession(phoneKey, 'awaiting_availability_confirm', { aptId: a.id });
@@ -477,6 +608,63 @@ async function buildConfirmationMessage(aptId) {
 }
 
 // ============================================================
+// MENSAJE DE RECORDATORIO AUTOMÁTICO
+// ============================================================
+async function buildReminderMessage(aptId) {
+    try {
+        const result = await pool.query(
+            `SELECT a.*, t.name as tech_name FROM appointments a LEFT JOIN technicians t ON a.tech_id = t.id WHERE a.id = $1`,
+            [aptId]
+        );
+        if (!result.rows.length) return null;
+        const a = result.rows[0];
+        const fecha = a.apt_date?.toISOString().split('T')[0] || 'Hoy';
+
+        let targetJid = a.wa_sender || '';
+        if (!targetJid && a.client_phone) {
+            const digits = String(a.client_phone).replace(/\D/g,'');
+            const phoneNum = digits.length <= 10 ? `593${digits.replace(/^0/,'')}` : digits;
+            targetJid = `${phoneNum}@s.whatsapp.net`;
+        }
+
+        return {
+            phone: targetJid,
+            message: `⏰ *HIDROSYS EC. - Recordatorio Automático de Visita*\n\nEstimado/a *${a.client_name}*, le recordamos su visita técnica de hoy:\n\n🛠️ *Servicio:* ${a.service_type}\n📅 *Fecha:* ${fecha}\n⏰ *Hora:* ${String(a.apt_time||'').slice(0,5)}\n📍 *Dirección:* ${a.address} (${a.zone})\n👷 *Técnico:* ${a.tech_name || 'Personal Técnico Asignado'}\n\n_Por favor asegúrese de encontrarse en el inmueble. ¡Muchas gracias!_`
+        };
+    } catch (err) {
+        console.error('[WA Bot] Error buildReminderMessage:', err.message);
+        return null;
+    }
+}
+
+// ============================================================
+// MENSAJE DE SERVICIO COMPLETADO / ENCUESTA
+// ============================================================
+async function buildServiceCompletedMessage(aptId) {
+    try {
+        const result = await pool.query(
+            `SELECT a.*, t.name as tech_name FROM appointments a LEFT JOIN technicians t ON a.tech_id = t.id WHERE a.id = $1`,
+            [aptId]
+        );
+        if (!result.rows.length) return null;
+        const a = result.rows[0];
+
+        let targetJid = a.wa_sender || '';
+        if (!targetJid && a.client_phone) {
+            const digits = String(a.client_phone).replace(/\D/g,'');
+            const phoneNum = digits.length <= 10 ? `593${digits.replace(/^0/,'')}` : digits;
+            targetJid = `${phoneNum}@s.whatsapp.net`;
+        }
+
+        return {
+            phone: targetJid,
+            message: `🏁 *HIDROSYS EC. - Servicio Finalizado*\n\nEstimado/a *${a.client_name}*, el servicio técnico de *${a.service_type}* ha culminado.\n\n⭐ *¿Cómo calificarías la atención recibida?*\nResponde con un número del 1 al 5:\n\n5️⃣ Excelente 😍\n4️⃣ Bueno 😊\n3️⃣ Regular 😐\n2️⃣ Malo 🙁\n1️⃣ Pésimo 😡\n\n_¡Tu opinión nos ayuda a seguir mejorando!_`
+        };
+    } catch (err) {
+        console.error('[WA Bot] Error buildServiceCompletedMessage:', err.message);
+        return null;
+    }
+}
 // PROCESADOR DE MENSAJES DE AUDIO / NOTAS DE VOZ (WHATSAPP)
 // ============================================================
 async function processAudioMessage(phone, msg, senderJid, waSocket) {
@@ -519,5 +707,5 @@ async function processAudioMessage(phone, msg, senderJid, waSocket) {
     return `🎙️ *¡Nota de voz recibida en HIDROSYS EC.!*\n\nHemos registrado tu audio solicitando asistencia técnica. Como si estuvieses en una llamada rápida, te ayudamos a gestionar tu requerimiento de inmediato:\n\n1️⃣ *Agendar Visita Técnica* ($15.00)\n2️⃣ *Reportar Comprobante de Pago*\n3️⃣ *Consultar Estado de Cita*\n4️⃣ *Ver Catálogo de Servicios*\n\n👉 _Responde con **1** para agendar tu visita ahora mismo o selecciona el número de tu opción._`;
 }
 
-module.exports = { processMessage, buildConfirmationMessage, processAudioMessage, clearSession, setSession };
+module.exports = { processMessage, buildConfirmationMessage, buildReminderMessage, buildServiceCompletedMessage, processAudioMessage, clearSession, setSession };
 

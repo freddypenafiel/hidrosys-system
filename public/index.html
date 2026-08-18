@@ -283,14 +283,40 @@
                         <form id="booking-form">
                             <!-- Panel 1 -->
                             <div class="wz-panel active" id="wz-1">
-                                <!-- INGRESO EXPRESS POR CÓDIGO -->
-                                <div style="background: var(--blue-50); padding: 15px; border-radius: var(--radius-sm); border: 1px dashed var(--blue-400); margin-bottom: 20px;">
-                                    <h4 style="color: var(--blue-800); margin-bottom: 10px; font-size: 0.95rem;">¿Ya eres cliente? Usa tu código</h4>
-                                    <div style="display: flex; gap: 10px;">
-                                        <input id="bk-client-code" class="form-control" placeholder="Ej. CL-0682" style="flex:1;">
-                                        <button type="button" class="btn btn-primary" onclick="lookupClientCode()">Buscar y Autocompletar</button>
+                                <!-- VALIDACIÓN DE CLIENTE POR CÉDULA Y CÓDIGO OTP POR WHATSAPP -->
+                                <div class="client-identity-validator" style="background: var(--blue-50); padding: 18px; border-radius: var(--radius-md); border: 1.5px solid var(--blue-300); margin-bottom: 24px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                                        <h4 style="color: var(--blue-900); margin: 0; font-size: 0.95rem; font-weight: 700; display:flex; align-items:center; gap:6px;">
+                                            <span>🛡️</span> ¿Ya eres cliente? Valida con tu Cédula
+                                        </h4>
+                                        <span style="font-size:0.75rem; color:var(--blue-700); background:var(--blue-100); padding:3px 8px; border-radius:12px; font-weight:600;">Autocompletado Seguro con WhatsApp</span>
                                     </div>
-                                    <p id="client-code-msg" style="margin-top: 8px; font-size: 0.8rem; font-weight: 500;"></p>
+                                    <p style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: 12px; line-height: 1.4;">
+                                        Ingresa tu número de cédula. Enviaremos un código de seguridad de 4 dígitos a tu celular registrado en WhatsApp para confirmar tu identidad y autocompletar tus datos.
+                                    </p>
+                                    
+                                    <div id="cedula-step-1" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                        <input id="bk-cedula-input" class="form-control" placeholder="Ingresa tu Nº de Cédula (10 dígitos)" maxlength="10" style="flex: 1; min-width: 200px;">
+                                        <button type="button" class="btn btn-primary" id="btn-request-otp" onclick="requestCedulaOtp()" style="display:flex; align-items:center; gap:6px;">
+                                            <span>📲</span> Enviar Código a mi WhatsApp
+                                        </button>
+                                    </div>
+
+                                    <!-- Paso 2: Ingresar OTP (Oculto inicialmente) -->
+                                    <div id="cedula-step-2" style="display:none; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--blue-300);">
+                                        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:8px;">
+                                            <span id="cedula-masked-phone-text" style="font-size:0.82rem; font-weight:600; color:var(--blue-800);"></span>
+                                            <button type="button" class="btn btn-ghost btn-xs" onclick="resetCedulaLookup()" style="font-size:0.75rem;">Cambiar Cédula</button>
+                                        </div>
+                                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                            <input id="bk-otp-input" class="form-control" placeholder="Código de 4 dígitos" maxlength="4" style="flex: 1; min-width: 160px; font-size:1.1rem; letter-spacing:4px; font-weight:700; text-align:center;">
+                                            <button type="button" class="btn btn-success" id="btn-verify-otp" onclick="verifyCedulaOtp()" style="display:flex; align-items:center; gap:6px; background:#10b981; border-color:#10b981;">
+                                                <span>✅</span> Confirmar Identidad
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <p id="cedula-feedback-msg" style="margin-top: 10px; margin-bottom: 0; font-size: 0.82rem; font-weight: 600;"></p>
                                 </div>
                                 <hr style="border:none; border-top: 1px solid var(--gray-200); margin-bottom: 20px;">
 
@@ -675,8 +701,15 @@
 
         <!-- ==================== ADMIN: ENCUESTAS ==================== -->
         <div class="page" id="page-admin-surveys">
-            <div class="page-header">
+            <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 <div><h2>Resultados de Satisfacción</h2><p>Calificaciones y retroalimentación del personal técnico post-servicio</p></div>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <label style="font-size:0.82rem; font-weight:700; color:var(--gray-600);">👨‍🔧 Técnico:</label>
+                    <select id="survey-tech-filter" class="form-control" style="width:auto; min-width:210px; font-size:0.84rem; padding:7px 12px;" onchange="filterSurveysByTech(this.value)">
+                        <option value="all">⭐ Todos los Técnicos</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="loadSurveys()">🔄 Actualizar</button>
+                </div>
             </div>
             <div id="surveys-container" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
         </div>

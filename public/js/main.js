@@ -581,33 +581,117 @@ function setupBookingForm() {
 }
 
 // ============================================================
-// INGRESO EXPRESS POR CÓDIGO DE CLIENTE
+// VALIDACIÓN DE CLIENTE POR CÉDULA Y CÓDIGO OTP POR WHATSAPP
 // ============================================================
-async function lookupClientCode() {
-    const code = document.getElementById('bk-client-code').value.trim();
-    const msgEl = document.getElementById('client-code-msg');
-    if (!code) {
-        msgEl.textContent = 'Ingrese un código válido.';
-        msgEl.style.color = 'var(--red)';
+let currentCedulaLookup = null;
+
+async function requestCedulaOtp() {
+    const input = document.getElementById('bk-cedula-input');
+    const btn = document.getElementById('btn-request-otp');
+    const feedback = document.getElementById('cedula-feedback-msg');
+    const cedula = input ? input.value.trim() : '';
+
+    if (!cedula || cedula.length < 5) {
+        feedback.textContent = '⚠️ Ingrese un número de cédula válido (mínimo 5 dígitos).';
+        feedback.style.color = 'var(--red)';
         return;
     }
+
     try {
-        const client = await api('GET', `/clients/code/${code}`);
-        document.getElementById('bk-name').value = client.name || '';
-        document.getElementById('bk-phone').value = client.phone || '';
-        document.getElementById('bk-email').value = client.email || '';
-        document.getElementById('bk-address').value = client.address || '';
-        
-        msgEl.textContent = `¡Hola ${client.name}! Tus datos se han cargado automáticamente.`;
-        msgEl.style.color = 'var(--green)';
-        
-        // Simular clic a Siguiente
-        setTimeout(() => wzNext(1), 1000);
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> Enviando código...';
+        feedback.textContent = 'Consultando registro y enviando código a WhatsApp...';
+        feedback.style.color = 'var(--blue-600)';
+
+        const res = await api('POST', '/clients/lookup-cedula', { cedula });
+
+        if (res.found) {
+            currentCedulaLookup = cedula;
+            document.getElementById('cedula-step-2').style.display = 'block';
+            document.getElementById('cedula-masked-phone-text').innerHTML = `📲 Código enviado al WhatsApp terminado en <strong>${res.maskedPhone}</strong>`;
+            feedback.innerHTML = `✅ ¡Cliente reconocido: <strong>${res.clientName}</strong>! Ingrese el código de 4 dígitos enviado a su WhatsApp.`;
+            feedback.style.color = 'var(--green)';
+            document.getElementById('bk-otp-input')?.focus();
+        } else {
+            feedback.textContent = 'ℹ️ Esta cédula no registra servicios previos en Hidrosys. Por favor complete los campos abajo como nuevo cliente.';
+            feedback.style.color = 'var(--blue-700)';
+        }
     } catch (err) {
-        msgEl.textContent = 'Código no encontrado.';
-        msgEl.style.color = 'var(--red)';
+        feedback.textContent = `❌ Error: ${err.message}`;
+        feedback.style.color = 'var(--red)';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>📲</span> Enviar Código a mi WhatsApp';
     }
 }
+
+async function verifyCedulaOtp() {
+    const otpInput = document.getElementById('bk-otp-input');
+    const btn = document.getElementById('btn-verify-otp');
+    const feedback = document.getElementById('cedula-feedback-msg');
+    const otp = otpInput ? otpInput.value.trim() : '';
+
+    if (!otp || otp.length !== 4) {
+        feedback.textContent = '⚠️ Ingrese el código de seguridad de 4 dígitos.';
+        feedback.style.color = 'var(--red)';
+        return;
+    }
+
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> Verificando...';
+
+        const res = await api('POST', '/clients/verify-otp', { cedula: currentCedulaLookup, otp });
+
+        if (res.success && res.client) {
+            const c = res.client;
+            document.getElementById('bk-name').value = c.name || '';
+            document.getElementById('bk-phone').value = c.phone || '';
+            document.getElementById('bk-email').value = c.email || '';
+            document.getElementById('bk-address').value = c.address || '';
+
+            // Cantón y Parroquia si viene en zone
+            if (c.zone && c.zone.includes('-')) {
+                const parts = c.zone.split('-').map(p => p.trim());
+                const cantonSelect = document.getElementById('bk-canton');
+                if (cantonSelect) {
+                    cantonSelect.value = parts[0];
+                    updateParishes(parts[0]);
+                    const parishSelect = document.getElementById('bk-parish');
+                    if (parishSelect) parishSelect.value = parts[1];
+                }
+            }
+
+            feedback.innerHTML = `🎉 <strong>¡Identidad confirmada con éxito!</strong> Bienvenido/a <strong>${c.name}</strong>. Tus datos han sido autocompletados.`;
+            feedback.style.color = 'var(--green)';
+            toast(`✅ Bienvenido/a ${c.name}, datos autocompletados.`, 'success');
+
+            // Avanzar automáticamente
+            setTimeout(() => wzNext(1), 1200);
+        } else {
+            feedback.textContent = res.error || 'Código incorrecto. Intente de nuevo.';
+            feedback.style.color = 'var(--red)';
+        }
+    } catch (err) {
+        feedback.textContent = `❌ ${err.message}`;
+        feedback.style.color = 'var(--red)';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>✅</span> Confirmar Identidad';
+    }
+}
+
+function resetCedulaLookup() {
+    currentCedulaLookup = null;
+    document.getElementById('cedula-step-2').style.display = 'none';
+    const input = document.getElementById('bk-cedula-input');
+    if (input) { input.value = ''; input.focus(); }
+    const otpInput = document.getElementById('bk-otp-input');
+    if (otpInput) otpInput.value = '';
+    const feedback = document.getElementById('cedula-feedback-msg');
+    if (feedback) feedback.textContent = '';
+}
+
 
 // ============================================================
 // GRABADORA DE AUDIO WEB
@@ -1142,113 +1226,145 @@ async function convertLead(id) {
 // ============================================================
 // ADMIN: ENCUESTAS
 // ============================================================
+// ============================================================
+// ADMIN: ENCUESTAS & FILTRO POR TÉCNICO
+// ============================================================
+let allSurveysCache = [];
+
 async function loadSurveys() {
     const container = document.getElementById('surveys-container');
     if (!container) return;
     try {
-        const surveys = await api('GET', '/surveys');
-        const emojis = { 1:'😡',2:'🙁',3:'😐',4:'😊',5:'😍' };
-        const labels = { 1:'Pésimo',2:'Malo',3:'Regular',4:'Bueno',5:'Excelente' };
+        allSurveysCache = await api('GET', '/surveys');
         
-        if (!surveys || surveys.length === 0) {
-            container.innerHTML = `
-                <div style="grid-column:1/-1;">
-                    <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:16px;padding:48px 32px;text-align:center;">
-                        <div style="font-size:3.5rem;margin-bottom:16px;">⭐</div>
-                        <h3 style="font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;color:#166534;margin-bottom:8px;">Aún no hay calificaciones</h3>
-                        <p style="color:#15803d;max-width:480px;margin:0 auto 24px;line-height:1.6;font-size:0.9rem;">Las encuestas de satisfacción se generan automáticamente cuando marcas una cita como <strong>Terminada</strong> en el módulo de Agenda. El cliente recibirá un mensaje de WhatsApp para calificar del 1 al 5.</p>
-                        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-                            <button class="btn btn-primary" onclick="navigateTo('admin-appointments')" style="background:#166534;">Ir a Citas y Agenda</button>
-                        </div>
-                    </div>
-                </div>
+        // Poblar el dropdown de filtro con los técnicos disponibles
+        const filterSelect = document.getElementById('survey-tech-filter');
+        if (filterSelect) {
+            const currentVal = filterSelect.value || 'all';
+            const techNames = [...new Set(allSurveysCache.map(s => s.tech_name).filter(Boolean))].sort();
+            filterSelect.innerHTML = `
+                <option value="all">⭐ Todos los Técnicos (${allSurveysCache.length} encuestas)</option>
+                ${techNames.map(t => `<option value="${t}">${t}</option>`).join('')}
             `;
-            return;
+            filterSelect.value = techNames.includes(currentVal) ? currentVal : 'all';
         }
 
-        // Agrupar calificaciones por técnico
-        const techGroups = {};
-        surveys.forEach(s => {
-            const name = s.tech_name || 'Sin técnico asignado';
-            if (!techGroups[name]) {
-                techGroups[name] = {
-                    sum: 0,
-                    count: 0,
-                    items: []
-                };
-            }
-            techGroups[name].sum += s.rating;
-            techGroups[name].count += 1;
-            techGroups[name].items.push(s);
-        });
+        renderFilteredSurveys();
+    } catch (err) { toast(`Error al cargar encuestas: ${err.message}`, 'error'); }
+}
 
-        let html = `
-            <!-- Panel resumen de técnicos -->
-            <div class="card" style="grid-column:1/-1; margin-bottom:16px; background:var(--blue-50); border-color:var(--blue-100);">
-                <div class="card-header" style="background:var(--blue-100); border-bottom-color:var(--blue-100);">
-                    <span class="card-title" style="color:var(--blue-800); font-weight:700;">📈 Calificación Promedio del Personal Técnico</span>
-                </div>
-                <div class="card-body" style="display:flex; gap:16px; flex-wrap:wrap; padding:16px;">
-        `;
+function filterSurveysByTech(techName) {
+    renderFilteredSurveys(techName);
+}
 
-        Object.entries(techGroups).forEach(([techName, data]) => {
-            const avg = (data.sum / data.count).toFixed(2);
-            let ratingColor = 'var(--gray-500)';
-            if (avg >= 4.2) ratingColor = 'var(--green)';
-            else if (avg >= 3.0) ratingColor = 'var(--yellow)';
-            else if (avg > 0) ratingColor = 'var(--red)';
+function renderFilteredSurveys(selectedTech = null) {
+    const container = document.getElementById('surveys-container');
+    if (!container) return;
 
-            html += `
-                <div style="background:white; border:1.5px solid var(--gray-200); border-radius:var(--radius-sm); padding:10px 16px; flex:1; min-width:220px; display:flex; align-items:center; justify-content:space-between; box-shadow:var(--shadow-xs);">
-                    <div>
-                        <div style="font-weight:700; font-size:0.875rem; color:var(--gray-900);">${techName}</div>
-                        <div style="font-size:0.75rem; color:var(--gray-500); margin-top:2px;">${data.count} encuesta${data.count != 1 ? 's' : ''}</div>
+    const filterVal = selectedTech || document.getElementById('survey-tech-filter')?.value || 'all';
+    const emojis = { 1:'😡', 2:'🙁', 3:'😐', 4:'😊', 5:'😍' };
+    const labels = { 1:'Pésimo', 2:'Malo', 3:'Regular', 4:'Bueno', 5:'Excelente' };
+
+    const surveys = (filterVal === 'all') 
+        ? allSurveysCache 
+        : allSurveysCache.filter(s => (s.tech_name || 'Sin técnico asignado') === filterVal);
+
+    if (!surveys || surveys.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column:1/-1;">
+                <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:16px;padding:48px 32px;text-align:center;">
+                    <div style="font-size:3.5rem;margin-bottom:16px;">⭐</div>
+                    <h3 style="font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;color:#166534;margin-bottom:8px;">No hay calificaciones para este filtro</h3>
+                    <p style="color:#15803d;max-width:480px;margin:0 auto 24px;line-height:1.6;font-size:0.9rem;">No se encontraron encuestas registradas para el técnico seleccionado.</p>
+                    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="filterSurveysByTech('all'); document.getElementById('survey-tech-filter').value='all';" style="background:#166534;">Ver Todos los Técnicos</button>
                     </div>
-                    <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.4rem; color:${ratingColor};">${avg} <span style="font-size:0.8rem; font-weight:500; color:var(--gray-400);">/ 5</span></div>
-                </div>
-            `;
-        });
-
-        html += `
                 </div>
             </div>
-            <!-- Detalle de encuestas agrupadas -->
+        `;
+        return;
+    }
+
+    // Agrupar calificaciones por técnico
+    const techGroups = {};
+    surveys.forEach(s => {
+        const name = s.tech_name || 'Sin técnico asignado';
+        if (!techGroups[name]) {
+            techGroups[name] = { sum: 0, count: 0, items: [] };
+        }
+        techGroups[name].sum += s.rating;
+        techGroups[name].count += 1;
+        techGroups[name].items.push(s);
+    });
+
+    let html = `
+        <!-- Panel resumen de técnicos con CSS dinámico y adaptado a Modo Oscuro -->
+        <div class="survey-summary-box" style="grid-column:1/-1;">
+            <div class="survey-summary-header">
+                <span>📈 Calificación Promedio del Personal Técnico ${filterVal !== 'all' ? `(${filterVal})` : ''}</span>
+            </div>
+            <div style="display:flex; gap:16px; flex-wrap:wrap; padding:16px;">
+    `;
+
+    Object.entries(techGroups).forEach(([techName, data]) => {
+        const avg = (data.sum / data.count).toFixed(2);
+        let ratingColor = 'var(--gray-500)';
+        if (avg >= 4.2) ratingColor = 'var(--green)';
+        else if (avg >= 3.0) ratingColor = 'var(--yellow)';
+        else if (avg > 0) ratingColor = 'var(--red)';
+
+        html += `
+            <div class="survey-tech-item">
+                <div>
+                    <div class="survey-tech-title">${techName}</div>
+                    <div class="survey-tech-subtitle">${data.count} encuesta${data.count != 1 ? 's' : ''}</div>
+                </div>
+                <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.4rem; color:${ratingColor};">
+                    ${avg} <span style="font-size:0.8rem; font-weight:500; color:var(--text-faint);">/ 5</span>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+        </div>
+        <!-- Detalle de encuestas agrupadas -->
+    `;
+
+    Object.entries(techGroups).forEach(([techName, data]) => {
+        html += `
+            <div class="survey-group-title">
+                Calificaciones para: ${techName} (${data.count})
+            </div>
         `;
 
-        Object.entries(techGroups).forEach(([techName, data]) => {
+        data.items.forEach(s => {
             html += `
-                <div style="grid-column:1/-1; margin-top:20px; margin-bottom:10px; font-family:'Outfit',sans-serif; font-weight:700; font-size:1.05rem; color:var(--blue-800); border-left:4px solid var(--blue-700); padding-left:10px;">
-                    Calificaciones para: ${techName} (${data.count})
-                </div>
-            `;
-
-            data.items.forEach(s => {
-                html += `
-                    <div class="card" style="margin-bottom:12px;">
-                        <div class="card-header">
-                            <div>
-                                <span class="card-title">${s.client_name || 'Cliente'}</span>
-                                <div style="font-size:0.78rem;color:var(--gray-500);">${s.service_type || ''} · ${formatDate(s.apt_date || '')}</div>
-                            </div>
-                            <div style="font-size:1.5rem;" title="${labels[s.rating]||''}">${emojis[s.rating]||'?'}
-                                <span style="font-size:0.8rem;font-family:'Outfit',sans-serif;font-weight:700;color:var(--gray-700);">${s.rating}/5</span>
-                            </div>
+                <div class="card" style="margin-bottom:12px;">
+                    <div class="card-header">
+                        <div>
+                            <span class="card-title">${s.client_name || 'Cliente'}</span>
+                            <div style="font-size:0.78rem;color:var(--text-muted);">${s.service_type || 'Servicio Técnico'} · ${formatDate(s.apt_date || '')}</div>
                         </div>
-                        <div class="card-body" style="font-size:0.875rem;">
-                            <p style="font-style:italic;color:var(--gray-600);">"${s.comment || 'Sin comentarios.'}"</p>
-                            ${s.audio_duration ? `
-                                <div style="margin-top:10px;background:var(--blue-50);border:1px solid var(--blue-100);padding:8px 12px;border-radius:6px;font-size:0.8rem;">
-                                    🎙️ Nota de voz registrada · Duración: ${s.audio_duration}
-                                </div>` : ''}
-                            <p style="font-size:0.72rem;color:var(--gray-400);margin-top:8px;">${new Date(s.created_at).toLocaleDateString('es-EC')}</p>
+                        <div style="font-size:1.5rem;" title="${labels[s.rating]||''}">${emojis[s.rating]||'⭐'}
+                            <span style="font-size:0.85rem;font-family:'Outfit',sans-serif;font-weight:700;color:var(--text-primary); margin-left:4px;">${s.rating}/5</span>
                         </div>
                     </div>
-                `;
-            });
+                    <div class="card-body" style="font-size:0.875rem;">
+                        <p class="survey-comment-text">"${s.comment || 'Sin comentarios adicionales.'}"</p>
+                        ${s.audio_duration ? `
+                            <div style="margin-top:10px;background:var(--blue-50);border:1px solid var(--blue-100);padding:8px 12px;border-radius:6px;font-size:0.8rem;color:var(--blue-800);">
+                                🎙️ Nota de voz registrada · Duración: ${s.audio_duration}
+                            </div>` : ''}
+                        <p style="font-size:0.72rem;color:var(--text-faint);margin-top:8px;">${new Date(s.created_at).toLocaleDateString('es-EC')}</p>
+                    </div>
+                </div>
+            `;
         });
+    });
 
-        container.innerHTML = html;
-    } catch (err) { toast(`Error: ${err.message}`, 'error'); }
+    container.innerHTML = html;
 }
 
 // ============================================================
@@ -2080,87 +2196,113 @@ function printOfficialQuote() {
             <meta charset="UTF-8">
             <title>Proforma Oficial HIDROSYS EC - ${quoteNo}</title>
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@700;800&display=swap');
-                body { font-family: 'Inter', sans-serif; color: #1e293b; padding: 40px; margin: 0; font-size: 13px; line-height: 1.5; }
-                .header { display: flex; justify-content: space-between; border-bottom: 2.5px solid #0284c7; padding-bottom: 16px; margin-bottom: 24px; }
-                .brand h1 { font-family: 'Outfit', sans-serif; font-size: 24px; color: #0284c7; margin: 0; font-weight: 800; }
-                .brand p { margin: 2px 0; color: #64748b; font-size: 11px; }
-                .quote-badge { text-align: right; }
-                .quote-badge h2 { font-family: 'Outfit', sans-serif; font-size: 18px; color: #0f172a; margin: 0; }
-                .client-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                th { background: #0f172a; color: white; padding: 9px 12px; text-align: left; font-size: 11px; text-transform: uppercase; }
-                td { padding: 9px 12px; border-bottom: 1px solid #e2e8f0; }
-                .totals-box { width: 280px; margin-left: auto; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 30px; }
-                .totals-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                .totals-row.total { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 800; color: #0284c7; border-top: 1px dashed #93c5fd; padding-top: 6px; margin-top: 6px; }
-                .notes-box { font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 14px; }
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap');
+                body { font-family: 'Inter', sans-serif; color: #0f172a; padding: 40px 48px; margin: 0; font-size: 13px; line-height: 1.5; }
+                .header-wrapper { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0284c7; padding-bottom: 18px; margin-bottom: 24px; }
+                .brand-flex { display: flex; align-items: center; gap: 16px; }
+                .brand-logo { width: 62px; height: 62px; object-fit: contain; border-radius: 12px; }
+                .brand-text h1 { font-family: 'Outfit', sans-serif; font-size: 24px; color: #0f172a; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
+                .brand-text p { margin: 2px 0; color: #64748b; font-size: 11.5px; font-weight: 500; }
+                .quote-badge-box { text-align: right; background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 10px; padding: 12px 18px; }
+                .quote-badge-box h2 { font-family: 'Outfit', sans-serif; font-size: 16px; color: #0284c7; margin: 0 0 4px 0; font-weight: 800; }
+                .quote-badge-box div { font-size: 11.5px; color: #334155; }
+                
+                .client-box { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; }
+                .client-box div { font-size: 12.5px; }
+                .client-box strong { color: #1e293b; }
+                
+                table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+                th { background: #0f172a; color: white; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif; }
+                td { padding: 11px 14px; border-bottom: 1px solid #e2e8f0; font-size: 12.5px; }
+                tr:nth-child(even) td { background: #f8fafc; }
+                
+                .totals-container { display: flex; justify-content: flex-end; margin-bottom: 30px; }
+                .totals-box { width: 300px; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1.5px solid #7dd3fc; border-radius: 10px; padding: 14px 18px; }
+                .totals-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12.5px; color: #334155; }
+                .totals-row.total { font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 800; color: #0369a1; border-top: 2px dashed #38bdf8; padding-top: 8px; margin-top: 8px; }
+                
+                .notes-box { font-size: 11px; color: #64748b; border-top: 1.5px solid #e2e8f0; padding-top: 16px; line-height: 1.6; }
+                .notes-box strong { color: #0f172a; }
+                .signature-area { margin-top: 36px; display: flex; justify-content: space-between; padding: 0 40px; }
+                .sig-box { text-align: center; border-top: 1px solid #94a3b8; width: 200px; padding-top: 6px; font-size: 11px; color: #475569; }
             </style>
         </head>
         <body>
-            <div class="header">
-                <div class="brand">
-                    <h1>HIDROSYS EC.</h1>
-                    <p>Sistemas, Equipos y Soluciones Hidráulicas &bull; RUC: 1793000000001</p>
-                    <p>Azogues, Cañar, Ecuador &bull; Tel: +593 96 824 5633 &bull; info@hidrosys.ec</p>
+            <div class="header-wrapper">
+                <div class="brand-flex">
+                    <img src="/img/hidrosys_logo.png" alt="HIDROSYS EC" class="brand-logo" onerror="this.style.display='none'">
+                    <div class="brand-text">
+                        <h1>HIDROSYS EC.</h1>
+                        <p>Sistemas, Equipos y Soluciones Hidráulicas &bull; RUC: 1793000000001</p>
+                        <p>Azogues, Cañar, Ecuador &bull; Tel: +593 96 824 5633 &bull; info@hidrosys.ec</p>
+                    </div>
                 </div>
-                <div class="quote-badge">
-                    <h2>PROFORMA COMERCIAL</h2>
+                <div class="quote-badge-box">
+                    <h2>PROFORMA OFICIAL</h2>
                     <div><strong>N°:</strong> ${quoteNo}</div>
                     <div><strong>Fecha:</strong> ${today}</div>
-                    <div><strong>Validez:</strong> 15 días</div>
+                    <div><strong>Validez:</strong> 15 días calendario</div>
                 </div>
             </div>
 
             <div class="client-box">
-                <div><strong>Cliente:</strong> ${clientName}</div>
-                <div><strong>Teléfono:</strong> ${clientPhone}</div>
-                <div><strong>Ubicación:</strong> ${clientZone}</div>
-                <div><strong>Moneda:</strong> Dólares Americanos (USD)</div>
+                <div><strong>Cliente / Empresa:</strong> ${clientName}</div>
+                <div><strong>Teléfono WhatsApp:</strong> ${clientPhone}</div>
+                <div><strong>Ubicación del Inmueble:</strong> ${clientZone}</div>
+                <div><strong>Moneda de Facturación:</strong> Dólares Americanos (USD)</div>
             </div>
 
             <table>
                 <thead>
                     <tr>
-                        <th>Descripción del Repuesto / Servicio</th>
-                        <th style="text-align:center; width:60px;">Cant.</th>
-                        <th style="text-align:right; width:90px;">P. Unit</th>
-                        <th style="text-align:right; width:90px;">Subtotal</th>
+                        <th>Descripción del Repuesto / Servicio Técnico</th>
+                        <th style="text-align:center; width:65px;">Cant.</th>
+                        <th style="text-align:right; width:95px;">P. Unit</th>
+                        <th style="text-align:right; width:95px;">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${quoterItems.map(item => `
                         <tr>
-                            <td>${item.description}</td>
+                            <td><strong>${item.description}</strong></td>
                             <td style="text-align:center;">${item.quantity}</td>
                             <td style="text-align:right;">$${item.price.toFixed(2)}</td>
-                            <td style="text-align:right; font-weight:600;">$${(item.quantity * item.price).toFixed(2)}</td>
+                            <td style="text-align:right; font-weight:700;">$${(item.quantity * item.price).toFixed(2)}</td>
                         </tr>
                     `).join('')}
                     <tr>
                         <td><strong>${laborDesc}</strong></td>
                         <td style="text-align:center;">1</td>
                         <td style="text-align:right;">$${totals.laborCost.toFixed(2)}</td>
-                        <td style="text-align:right; font-weight:600;">$${totals.laborCost.toFixed(2)}</td>
+                        <td style="text-align:right; font-weight:700;">$${totals.laborCost.toFixed(2)}</td>
                     </tr>
                 </tbody>
             </table>
 
-            <div class="totals-box">
-                <div class="totals-row"><span>Subtotal Materiales:</span> <strong>$${totals.subtotalItems.toFixed(2)}</strong></div>
-                <div class="totals-row"><span>Mano de Obra:</span> <strong>$${totals.laborCost.toFixed(2)}</strong></div>
-                <div class="totals-row"><span>IVA (15%):</span> <strong>$${totals.iva.toFixed(2)}</strong></div>
-                <div class="totals-row total"><span>TOTAL PROFORMA:</span> <span>$${totals.total.toFixed(2)}</span></div>
+            <div class="totals-container">
+                <div class="totals-box">
+                    <div class="totals-row"><span>Subtotal Materiales:</span> <strong>$${totals.subtotalItems.toFixed(2)}</strong></div>
+                    <div class="totals-row"><span>Mano de Obra Calificada:</span> <strong>$${totals.laborCost.toFixed(2)}</strong></div>
+                    <div class="totals-row"><span>IVA Vigente (15%):</span> <strong>$${totals.iva.toFixed(2)}</strong></div>
+                    <div class="totals-row total"><span>TOTAL GENERAL:</span> <span>$${totals.total.toFixed(2)}</span></div>
+                </div>
             </div>
 
             <div class="notes-box">
-                <strong>Condiciones Comerciales:</strong>
+                <strong>Términos & Condiciones Comerciales:</strong>
                 <ul>
-                    <li>Garantía de 1 año en equipos hidroneumáticos y 6 meses en mano de obra.</li>
-                    <li>Pagos mediante transferencia bancaria Banco Pichincha / Guayaquil / Produbanco.</li>
-                    <li>Para confirmar la proforma, comuníquese al WhatsApp corporativo: +593 96 824 5633.</li>
+                    <li>Garantía de 1 año en equipos hidroneumáticos, bombas y accesorios suministrados.</li>
+                    <li>Garantía de 6 meses en trabajos de instalación y mano de obra calificada.</li>
+                    <li>Depósitos o transferencias a las cuentas oficiales de HIDROSYS EC. (Banco Pichincha / Guayaquil / Produbanco).</li>
+                    <li>Para autorizar esta proforma, responda al WhatsApp corporativo: <strong>+593 96 824 5633</strong>.</li>
                 </ul>
             </div>
+
+            <div class="signature-area">
+                <div class="sig-box">Departamento Técnico HIDROSYS</div>
+                <div class="sig-box">Aceptación del Cliente</div>
+            </div>
+
             <script>window.onload = function() { window.print(); };</script>
         </body>
         </html>
@@ -2187,13 +2329,21 @@ function sendQuoteViaWA() {
 }
 
 // ============================================================
-// 4. EXPORTADOR A EXCEL / CSV EN 1 CLIC (REPORTES MENSUALES)
+// 4. EXPORTADOR A EXCEL / CSV EN 1 CLIC (REPORTES EMPRESARIALES)
 // ============================================================
 async function exportAppointmentsToCSV() {
     try {
-        toast('Generando archivo Excel de Citas...', 'info');
+        toast('Generando reporte Excel de Citas...', 'info');
         const apts = await api('GET', '/appointments?limit=1000');
         if (!apts.length) { toast('No hay citas para exportar.', 'warning'); return; }
+
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const metaHeader = [
+            `"HIDROSYS EC. - REPORTE OFICIAL DE VISITAS TÉCNICAS Y CITAS"`,
+            `"Fecha de Generación: ${todayStr}"`,
+            `"RUC: 1793000000001 - Azogues, Cañar, Ecuador"`,
+            `""`
+        ].join('\r\n');
 
         const headers = ['ID Cita', 'Fecha', 'Hora', 'Cliente', 'Telefono', 'Correo', 'Direccion', 'Canton_Zona', 'Servicio', 'Tecnico Asignado', 'Estado', 'Monto_USD', 'Estado_Pago', 'Banco', 'No_Comprobante', 'Canal_Origen', 'Notas'];
 
@@ -2217,18 +2367,17 @@ async function exportAppointmentsToCSV() {
             `"${(a.notes || '').replace(/"/g, '""')}"`
         ]);
 
-        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+        const csvContent = '\uFEFF' + metaHeader + '\r\n' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const todayStr = new Date().toISOString().slice(0, 10);
         a.href = url;
         a.download = `Reporte_Citas_Hidrosys_EC_${todayStr}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        toast('✅ Archivo Excel descargado exitosamente.', 'success');
+        toast('✅ Reporte Excel descargado exitosamente.', 'success');
     } catch (err) {
         toast(`Error al exportar citas: ${err.message}`, 'error');
     }
@@ -2236,14 +2385,23 @@ async function exportAppointmentsToCSV() {
 
 async function exportClientsToCSV() {
     try {
-        toast('Generando archivo Excel de Clientes...', 'info');
+        toast('Generando directorio Excel de Clientes...', 'info');
         const clients = await api('GET', '/clients');
         if (!clients.length) { toast('No hay clientes para exportar.', 'warning'); return; }
 
-        const headers = ['ID Cliente', 'Nombre', 'Telefono', 'Correo', 'Direccion', 'Canton_Zona', 'Total_Visitas', 'Ultimo_Servicio', 'Notas_Tecnicas'];
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const metaHeader = [
+            `"HIDROSYS EC. - DIRECTORIO OFICIAL DE CLIENTES Y EQUIPOS"`,
+            `"Fecha de Generación: ${todayStr}"`,
+            `"RUC: 1793000000001 - Azogues, Cañar, Ecuador"`,
+            `""`
+        ].join('\r\n');
+
+        const headers = ['ID Cliente', 'Cedula', 'Nombre', 'Telefono', 'Correo', 'Direccion', 'Canton_Zona', 'Total_Visitas', 'Ultimo_Servicio', 'Notas_Tecnicas_Equipos'];
 
         const rows = clients.map(c => [
             c.id,
+            `"${c.cedula || ''}"`,
             `"${(c.name || '').replace(/"/g, '""')}"`,
             `"${c.phone || ''}"`,
             `"${c.email || ''}"`,
@@ -2254,11 +2412,10 @@ async function exportClientsToCSV() {
             `"${(c.notes || '').replace(/"/g, '""')}"`
         ]);
 
-        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+        const csvContent = '\uFEFF' + metaHeader + '\r\n' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const todayStr = new Date().toISOString().slice(0, 10);
         a.href = url;
         a.download = `Directorio_Clientes_Hidrosys_EC_${todayStr}.csv`;
         document.body.appendChild(a);
@@ -2286,4 +2443,9 @@ window.printOfficialQuote = printOfficialQuote;
 window.sendQuoteViaWA = sendQuoteViaWA;
 window.exportAppointmentsToCSV = exportAppointmentsToCSV;
 window.exportClientsToCSV = exportClientsToCSV;
+window.requestCedulaOtp = requestCedulaOtp;
+window.verifyCedulaOtp = verifyCedulaOtp;
+window.resetCedulaLookup = resetCedulaLookup;
+window.filterSurveysByTech = filterSurveysByTech;
+
 

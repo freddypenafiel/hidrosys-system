@@ -16,7 +16,7 @@ const { Boom }          = require('@hapi/boom');
 const pino              = require('pino');
 const qrcode            = require('qrcode-terminal');
 const path              = require('path');
-const { processMessage, buildConfirmationMessage, processAudioMessage } = require('./flows');
+const { processMessage, buildConfirmationMessage, buildReminderMessage, buildServiceCompletedMessage, processAudioMessage } = require('./flows');
 
 // ============================================================
 // CONFIGURACIÓN
@@ -289,6 +289,39 @@ async function notifyPaymentApproved(aptId) {
 }
 
 // ============================================================
+// NOTIFICAR RECORDATORIO AUTOMÁTICO DE CITA
+// ============================================================
+async function notifyAppointmentReminder(aptId) {
+    const payload = await buildReminderMessage(aptId);
+    if (!payload || !payload.phone) return false;
+    return await sendMessage(payload.phone, payload.message);
+}
+
+// ============================================================
+// NOTIFICAR SERVICIO COMPLETADO / ENCUESTA
+// ============================================================
+async function notifyServiceCompleted(aptId) {
+    const payload = await buildServiceCompletedMessage(aptId);
+    if (!payload || !payload.phone) return false;
+    return await sendMessage(payload.phone, payload.message);
+}
+
+// ============================================================
+// ENVIAR CÓDIGO OTP DE VERIFICACIÓN DE IDENTIDAD POR CÉDULA
+// ============================================================
+async function sendClientVerificationOtp(phone, clientName, code) {
+    if (!phone) return false;
+    let cleanPhone = String(phone).replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '593' + cleanPhone.substring(1);
+    if (!cleanPhone.startsWith('593')) cleanPhone = '593' + cleanPhone;
+
+    const jid = `${cleanPhone}@s.whatsapp.net`;
+    const message = `🔐 *HIDROSYS EC. - Verificación de Identidad*\n\nHola *${clientName}*,\n\nTu código de seguridad para confirmar tu identidad y autocompletar tus datos en el sistema es:\n\n👉 *${code}*\n\n_Válido por 5 minutos. Si no solicitaste este código, ignora este mensaje._\n\n_HIDROSYS EC. • Seguridad y Control_`;
+
+    return await sendMessage(jid, message);
+}
+
+// ============================================================
 // STATUS
 // ============================================================
 let lastQr = null;
@@ -322,4 +355,15 @@ async function restartWhatsAppBot() {
     return true;
 }
 
-module.exports = { startWhatsAppBot, sendMessage, notifyPaymentApproved, getBotStatus, getLastQr, restartWhatsAppBot };
+module.exports = {
+    startWhatsAppBot,
+    sendMessage,
+    notifyPaymentApproved,
+    notifyAppointmentReminder,
+    notifyServiceCompleted,
+    sendClientVerificationOtp,
+    getBotStatus,
+    getLastQr,
+    restartWhatsAppBot
+};
+
