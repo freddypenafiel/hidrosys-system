@@ -953,6 +953,14 @@ async function loadAppointments() {
                                     ${techOptions}
                                 </select>
                             </div>
+                            <!-- Barra de Acciones Rápidas WhatsApp (1 Clic) -->
+                            <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--gray-200); display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                                <span style="font-size:0.72rem; font-weight:700; color:var(--gray-500);">📲 WhatsApp Rápido:</span>
+                                <button class="btn btn-xs btn-outline" onclick="sendQuickWAMsg(${a.id}, 'on_the_way')" style="font-size:0.7rem; padding:3px 8px; border-radius:12px;" title="Avisar que el técnico va en camino">🚚 En Camino</button>
+                                <button class="btn btn-xs btn-outline" onclick="sendQuickWAMsg(${a.id}, 'reminder')" style="font-size:0.7rem; padding:3px 8px; border-radius:12px;" title="Enviar recordatorio de cita">⏰ Recordatorio</button>
+                                <button class="btn btn-xs btn-outline" onclick="sendQuickWAMsg(${a.id}, 'done')" style="font-size:0.7rem; padding:3px 8px; border-radius:12px;" title="Avisar que el trabajo finalizó">🏁 Concluido</button>
+                                <button class="btn btn-xs btn-outline" onclick="openQuoterForApt(${a.id})" style="font-size:0.7rem; padding:3px 8px; border-radius:12px; border-color:var(--blue-300); color:var(--blue-700);" title="Crear proforma para esta cita">📄 Proforma</button>
+                            </div>
                         </div>
                         <div class="apt-card-footer">
                             ${(a.status === 'Reportado' || (a.receipt_no && a.receipt_no !== 'null' && a.receipt_no !== '')) && a.status !== 'Confirmado' && a.status !== 'Conf. Cliente' && a.status !== 'Terminado' && a.payment_status !== 'Pagado' && a.payment_status !== 'Aprobado' ? `<button class="btn btn-success btn-xs" style="background:#10b981;color:white;font-weight:700;box-shadow:0 2px 4px rgba(16,185,129,0.25);" onclick="approvePayment(${a.id},'${a.tech_id||''}')">✅ Aprobar Pago</button>` : ''}
@@ -1049,15 +1057,18 @@ async function loadClients() {
         const clients = await api('GET', `/clients?q=${encodeURIComponent(q)}`);
         tbody.innerHTML = clients.length ? clients.map(c => `
             <tr>
-                <td><strong>${c.name}</strong></td>
+                <td><strong style="color:var(--blue-800); cursor:pointer;" onclick="openClient360(${c.id}, '${c.phone}')" title="Ver ficha técnica 360°">${c.name}</strong></td>
                 <td>${c.phone}</td>
                 <td>${c.email || '—'}</td>
                 <td>${c.address || '—'}</td>
                 <td>${c.zone || '—'}</td>
                 <td style="text-align:center;"><span class="badge badge-blue">${c.total_appointments||0}</span></td>
                 <td>${c.last_service_date ? formatDate(c.last_service_date) : '—'}</td>
+                <td style="text-align:center;">
+                    <button class="btn btn-ghost btn-xs" onclick="openClient360(${c.id}, '${c.phone}')" style="font-size:0.75rem; padding:4px 8px; border:1px solid var(--gray-300);" title="Ver ficha técnica completa">🔍 Ficha 360°</button>
+                </td>
             </tr>
-        `).join('') : '<tr class="empty-row"><td colspan="7">Sin clientes registrados.</td></tr>';
+        `).join('') : '<tr class="empty-row"><td colspan="8">Sin clientes registrados.</td></tr>';
     } catch (err) { toast(`Error: ${err.message}`, 'error'); }
 }
 
@@ -1750,4 +1761,529 @@ window.addEventListener('online', () => {
 window.loadAdminWAStatus = loadAdminWAStatus;
 window.fetchAdminWAStatus = fetchAdminWAStatus;
 window.restartWAConnection = restartWAConnection;
+
+// ============================================================
+// 1. PLANTILLAS RÁPIDAS DE WHATSAPP EN 1 CLIC (DESPACHO TÉCNICO)
+// ============================================================
+async function sendQuickWAMsg(aptId, templateKey) {
+    try {
+        const apts = await api('GET', '/appointments?limit=100');
+        const a = apts.find(x => x.id == aptId);
+        if (!a) { toast('No se encontró la cita seleccionada.', 'warning'); return; }
+
+        let cleanPhone = String(a.client_phone || '').replace(/\D/g, '');
+        if (cleanPhone.startsWith('0')) cleanPhone = '593' + cleanPhone.substring(1);
+        if (!cleanPhone.startsWith('593')) cleanPhone = '593' + cleanPhone;
+
+        const techName = a.tech_name || 'Personal Técnico Asignado';
+        const formattedDate = formatDate(a.apt_date);
+        const formattedTime = String(a.apt_time || '').slice(0, 5);
+        const amount = parseFloat(a.payment_amount || 0).toFixed(2);
+
+        let msg = '';
+        if (templateKey === 'on_the_way') {
+            msg = `*HIDROSYS EC. - Técnico en Camino* 🚚\n\nEstimado/a *${a.client_name}*, le informamos que nuestro técnico especializado *${techName}* se encuentra en camino a su dirección:\n📍 *${a.address || 'Su domicilio registrado'}* (${a.zone || 'Cañar'})\n\n⏳ Tiempo estimado de llegada: *15 a 25 minutos*.\nPor favor asegúrese de que haya alguien disponible en la propiedad.\n\n_HIDROSYS EC. • Soluciones Hidráulicas_`;
+        } else if (templateKey === 'reminder') {
+            msg = `*HIDROSYS EC. - Recordatorio de Cita Técnica* ⏰\n\nEstimado/a *${a.client_name}*, le recordamos su servicio programado de *${a.service_type}*:\n📅 *Fecha:* ${formattedDate}\n⏰ *Hora:* ${formattedTime}\n📍 *Lugar:* ${a.address} (${a.zone})\n🛠️ *Técnico:* ${techName}\n\nSi necesita reprogramar o tiene alguna instrucción especial de acceso, por favor responda a este mensaje.\n\n_HIDROSYS EC. • Agua, Gas y Conducción Hidráulica_`;
+        } else if (templateKey === 'done') {
+            msg = `*HIDROSYS EC. - Servicio Técnico Concluido* 🏁\n\nEstimado/a *${a.client_name}*, le confirmamos que el trabajo de *${a.service_type}* ha finalizado satisfactoriamente.\n🛠️ *Técnico Responsable:* ${techName}\n💵 *Monto Total:* $${amount}\n\n¡Agradecemos su confianza en HIDROSYS EC.! En breve recibirá una breve encuesta para calificar la atención recibida. ⭐`;
+        }
+
+        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+        window.open(waUrl, '_blank');
+        toast(`📲 Mensaje de WhatsApp preparado para ${a.client_name}`, 'success');
+    } catch (err) {
+        toast(`Error al generar mensaje de WhatsApp: ${err.message}`, 'error');
+    }
+}
+
+// ============================================================
+// 2. FICHA DEL CLIENTE 360° (HISTORIAL TÉCNICO Y EQUIPOS)
+// ============================================================
+async function openClient360(clientId, clientPhone) {
+    try {
+        const [clients, apts] = await Promise.all([
+            api('GET', '/clients'),
+            api('GET', '/appointments?limit=200')
+        ]);
+
+        const client = clients.find(c => c.id == clientId || (clientPhone && c.phone === clientPhone));
+        if (!client) { toast('No se encontró información del cliente.', 'warning'); return; }
+
+        // Filtrar citas de este cliente
+        const clientApts = apts.filter(a => a.client_phone === client.phone || (client.name && a.client_name.toLowerCase() === client.name.toLowerCase()));
+        clientApts.sort((a, b) => new Date(b.apt_date) - new Date(a.apt_date));
+
+        const totalSpent = clientApts.reduce((acc, curr) => acc + (parseFloat(curr.payment_amount) || 0), 0);
+        const totalVisits = clientApts.length;
+
+        const modal = document.getElementById('client-360-modal');
+        const content = document.getElementById('client-360-content');
+
+        content.innerHTML = `
+            <!-- Resumen Superior del Cliente -->
+            <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:16px; margin-bottom:20px;">
+                <div style="background:var(--gray-50); border:1px solid var(--gray-200); border-radius:10px; padding:16px;">
+                    <div style="font-size:1.1rem; font-weight:800; color:var(--blue-800); margin-bottom:6px;">${client.name}</div>
+                    <div style="font-size:0.84rem; color:var(--gray-600); line-height:1.6;">
+                        <div>📞 <strong>Teléfono:</strong> <a href="https://wa.me/${client.phone.replace(/\D/g,'')}" target="_blank" style="color:var(--blue-600); text-decoration:none;">${client.phone}</a></div>
+                        <div>📧 <strong>Correo:</strong> ${client.email || 'No registrado'}</div>
+                        <div>📍 <strong>Dirección:</strong> ${client.address || '—'} (${client.zone || 'Cañar'})</div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe); border:1px solid #bfdbfe; border-radius:10px; padding:12px; text-align:center;">
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--blue-700); text-transform:uppercase;">Total Visitas</div>
+                        <div style="font-size:1.6rem; font-weight:800; font-family:'Outfit',sans-serif; color:var(--blue-900); margin-top:2px;">${totalVisits}</div>
+                    </div>
+                    <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7); border:1px solid #bbf7d0; border-radius:10px; padding:12px; text-align:center;">
+                        <div style="font-size:0.75rem; font-weight:700; color:#166534; text-transform:uppercase;">Facturación Acum.</div>
+                        <div style="font-size:1.6rem; font-weight:800; font-family:'Outfit',sans-serif; color:#14532d; margin-top:2px;">$${totalSpent.toFixed(2)}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notas Técnicas y Registro de Equipos -->
+            <div style="background:#fffbeb; border:1.5px solid #fef3c7; border-radius:10px; padding:16px; margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div style="font-weight:700; font-size:0.88rem; color:#92400e; display:flex; align-items:center; gap:6px;">
+                        <span>⚙️</span> Ficha Técnica de Equipos & Instalaciones del Cliente
+                    </div>
+                    <button class="btn btn-primary btn-xs" onclick="saveClientTechNotes(${client.id})" style="background:#d97706; border-color:#d97706;">
+                        💾 Guardar Notas Técnicas
+                    </button>
+                </div>
+                <p style="font-size:0.75rem; color:#b45309; margin-bottom:8px;">
+                    Anote detalles clave de los equipos para que cualquier técnico sepa qué bomba o presostato tiene antes de ir (ej: Bomba Pedrollo 1HP, Tanque Varem 100L, Presostato 30-50 PSI, Cisterna subterránea).
+                </p>
+                <textarea id="client-tech-notes-input" class="form-control" rows="3" placeholder="Escriba aquí los equipos instalados, marcas, calibres y observaciones técnicas del inmueble...">${client.notes || ''}</textarea>
+            </div>
+
+            <!-- Historial Cronológico de Citas -->
+            <div>
+                <div style="font-weight:800; font-size:0.92rem; color:var(--gray-800); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">
+                    📅 Historial de Visitas Técnicas (${clientApts.length})
+                </div>
+                ${clientApts.length ? `
+                    <div class="table-wrapper" style="max-height:280px; overflow-y:auto; border:1px solid var(--gray-200); border-radius:8px;">
+                        <table class="data-table" style="font-size:0.82rem;">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Servicio</th>
+                                    <th>Técnico</th>
+                                    <th>Estado</th>
+                                    <th>Monto</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${clientApts.map(a => `
+                                    <tr>
+                                        <td><strong>${formatDate(a.apt_date)}</strong> <span style="font-size:0.72rem; color:var(--gray-500);">${String(a.apt_time||'').slice(0,5)}</span></td>
+                                        <td>${a.service_type}</td>
+                                        <td>${a.tech_name || '—'}</td>
+                                        <td>${statusBadge(a.status)}</td>
+                                        <td><strong>$${parseFloat(a.payment_amount||0).toFixed(2)}</strong></td>
+                                        <td>
+                                            <button class="btn btn-ghost btn-xs" onclick="showTechReport(${a.id})" title="Ver informe técnico">📄 Informe</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                ` : `
+                    <div style="text-align:center; padding:24px; background:var(--gray-50); border-radius:8px; color:var(--gray-500); font-size:0.85rem;">
+                        No hay citas previas registradas para este cliente.
+                    </div>
+                `}
+            </div>
+        `;
+
+        modal.classList.add('open');
+    } catch (err) {
+        toast(`Error al abrir ficha 360°: ${err.message}`, 'error');
+    }
+}
+
+async function saveClientTechNotes(clientId) {
+    const notes = document.getElementById('client-tech-notes-input')?.value;
+    try {
+        await api('PUT', `/clients/${clientId}`, { notes });
+        toast('✅ Notas técnicas del cliente guardadas con éxito.', 'success');
+        loadClients();
+    } catch (err) {
+        toast(`Error al guardar notas: ${err.message}`, 'error');
+    }
+}
+
+// ============================================================
+// 3. GENERADOR DE PROFORMAS / COTIZACIONES EXPRESS EN PDF
+// ============================================================
+let quoterItems = [];
+let quoterCatalogCache = [];
+
+async function openQuoterModal(clientPrefill = null) {
+    try {
+        if (!quoterCatalogCache.length) {
+            quoterCatalogCache = await api('GET', '/products');
+        }
+
+        quoterItems = [];
+        const nameInput = document.getElementById('quote-client-name');
+        const phoneInput = document.getElementById('quote-client-phone');
+        const zoneInput = document.getElementById('quote-client-zone');
+
+        if (clientPrefill) {
+            if (nameInput) nameInput.value = clientPrefill.name || '';
+            if (phoneInput) phoneInput.value = clientPrefill.phone || '';
+            if (zoneInput) zoneInput.value = clientPrefill.zone || '';
+        } else {
+            if (nameInput) nameInput.value = '';
+            if (phoneInput) phoneInput.value = '';
+            if (zoneInput) zoneInput.value = 'Azogues';
+        }
+
+        // Agregar 2 ítems por defecto
+        addQuoterCustomItem('Kit de Mantenimiento & Calibración de Bomba', 1, 35.00);
+        renderQuoterTable();
+        calcQuoterTotals();
+
+        document.getElementById('quoter-modal')?.classList.add('open');
+    } catch (err) {
+        toast(`Error al abrir cotizador: ${err.message}`, 'error');
+    }
+}
+
+async function openQuoterForApt(aptId) {
+    try {
+        const apts = await api('GET', '/appointments?limit=100');
+        const a = apts.find(x => x.id == aptId);
+        if (a) {
+            openQuoterModal({ name: a.client_name, phone: a.client_phone, zone: a.zone });
+        } else {
+            openQuoterModal();
+        }
+    } catch (err) { openQuoterModal(); }
+}
+
+function addQuoterCustomItem(name = '', qty = 1, price = 0) {
+    quoterItems.push({
+        id: Date.now() + Math.random(),
+        description: name || 'Repuesto / Accesorio Hidráulico',
+        quantity: qty,
+        price: parseFloat(price) || 0
+    });
+    renderQuoterTable();
+    calcQuoterTotals();
+}
+
+function addQuoterCatalogItem() {
+    if (!quoterCatalogCache.length) {
+        addQuoterCustomItem();
+        return;
+    }
+    const p = quoterCatalogCache[Math.floor(Math.random() * quoterCatalogCache.length)] || quoterCatalogCache[0];
+    quoterItems.push({
+        id: Date.now() + Math.random(),
+        description: `${p.name} (${p.category})`,
+        quantity: 1,
+        price: parseFloat(p.price) || 0
+    });
+    renderQuoterTable();
+    calcQuoterTotals();
+}
+
+function removeQuoterItem(itemId) {
+    quoterItems = quoterItems.filter(i => i.id != itemId);
+    renderQuoterTable();
+    calcQuoterTotals();
+}
+
+function updateQuoterItem(itemId, field, value) {
+    const item = quoterItems.find(i => i.id == itemId);
+    if (!item) return;
+    if (field === 'description') item.description = value;
+    if (field === 'quantity') item.quantity = Math.max(1, parseInt(value) || 1);
+    if (field === 'price') item.price = Math.max(0, parseFloat(value) || 0);
+    renderQuoterTable();
+    calcQuoterTotals();
+}
+
+function renderQuoterTable() {
+    const tbody = document.getElementById('quote-items-tbody');
+    if (!tbody) return;
+
+    if (!quoterItems.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--gray-400);">No hay repuestos añadidos. Haga clic en "+ Ítem Personalizado" o "Desde Catálogo".</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = quoterItems.map(item => `
+        <tr>
+            <td>
+                <input type="text" class="form-control form-control-sm" value="${item.description.replace(/"/g, '&quot;')}" oninput="updateQuoterItem(${item.id}, 'description', this.value)" style="font-size:0.82rem; padding:4px 8px;">
+            </td>
+            <td style="text-align:center;">
+                <input type="number" class="form-control form-control-sm" value="${item.quantity}" min="1" oninput="updateQuoterItem(${item.id}, 'quantity', this.value)" style="font-size:0.82rem; padding:4px 6px; text-align:center; width:65px; margin:0 auto;">
+            </td>
+            <td style="text-align:right;">
+                <input type="number" class="form-control form-control-sm" value="${item.price.toFixed(2)}" step="0.50" min="0" oninput="updateQuoterItem(${item.id}, 'price', this.value)" style="font-size:0.82rem; padding:4px 6px; text-align:right; width:85px; margin-left:auto;">
+            </td>
+            <td style="text-align:right; font-weight:700; color:var(--gray-800);">
+                $${(item.quantity * item.price).toFixed(2)}
+            </td>
+            <td style="text-align:center;">
+                <button class="btn btn-xs" style="background:var(--red-bg,#fee2e2); color:var(--red,#ef4444); border:none; padding:3px 7px;" onclick="removeQuoterItem(${item.id})" title="Eliminar ítem">🗑️</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function calcQuoterTotals() {
+    const subtotalItems = quoterItems.reduce((acc, curr) => acc + (curr.quantity * curr.price), 0);
+    const laborCost = parseFloat(document.getElementById('quote-labor-cost')?.value) || 0;
+    const subtotalNeto = subtotalItems + laborCost;
+    const iva = subtotalNeto * 0.15;
+    const total = subtotalNeto + iva;
+
+    const elSubItems = document.getElementById('quote-subtotal-items');
+    const elSubLabor = document.getElementById('quote-subtotal-labor');
+    const elIva = document.getElementById('quote-iva');
+    const elTotal = document.getElementById('quote-total');
+
+    if (elSubItems) elSubItems.textContent = `$${subtotalItems.toFixed(2)}`;
+    if (elSubLabor) elSubLabor.textContent = `$${laborCost.toFixed(2)}`;
+    if (elIva) elIva.textContent = `$${iva.toFixed(2)}`;
+    if (elTotal) elTotal.textContent = `$${total.toFixed(2)}`;
+
+    return { subtotalItems, laborCost, subtotalNeto, iva, total };
+}
+
+function printOfficialQuote() {
+    const clientName = document.getElementById('quote-client-name')?.value || 'Cliente General';
+    const clientPhone = document.getElementById('quote-client-phone')?.value || '—';
+    const clientZone = document.getElementById('quote-client-zone')?.value || 'Cañar / Azogues';
+    const laborDesc = document.getElementById('quote-labor-desc')?.value || 'Mano de obra técnica especializada';
+    const totals = calcQuoterTotals();
+
+    const quoteNo = `PRO-${new Date().getFullYear()}-${String(Math.floor(Math.random()*9000)+1000)}`;
+    const today = new Date().toLocaleDateString('es-EC', { year:'numeric', month:'long', day:'numeric' });
+
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Proforma Oficial HIDROSYS EC - ${quoteNo}</title>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@700;800&display=swap');
+                body { font-family: 'Inter', sans-serif; color: #1e293b; padding: 40px; margin: 0; font-size: 13px; line-height: 1.5; }
+                .header { display: flex; justify-content: space-between; border-bottom: 2.5px solid #0284c7; padding-bottom: 16px; margin-bottom: 24px; }
+                .brand h1 { font-family: 'Outfit', sans-serif; font-size: 24px; color: #0284c7; margin: 0; font-weight: 800; }
+                .brand p { margin: 2px 0; color: #64748b; font-size: 11px; }
+                .quote-badge { text-align: right; }
+                .quote-badge h2 { font-family: 'Outfit', sans-serif; font-size: 18px; color: #0f172a; margin: 0; }
+                .client-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th { background: #0f172a; color: white; padding: 9px 12px; text-align: left; font-size: 11px; text-transform: uppercase; }
+                td { padding: 9px 12px; border-bottom: 1px solid #e2e8f0; }
+                .totals-box { width: 280px; margin-left: auto; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 30px; }
+                .totals-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                .totals-row.total { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 800; color: #0284c7; border-top: 1px dashed #93c5fd; padding-top: 6px; margin-top: 6px; }
+                .notes-box { font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 14px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="brand">
+                    <h1>HIDROSYS EC.</h1>
+                    <p>Sistemas, Equipos y Soluciones Hidráulicas &bull; RUC: 1793000000001</p>
+                    <p>Azogues, Cañar, Ecuador &bull; Tel: +593 96 824 5633 &bull; info@hidrosys.ec</p>
+                </div>
+                <div class="quote-badge">
+                    <h2>PROFORMA COMERCIAL</h2>
+                    <div><strong>N°:</strong> ${quoteNo}</div>
+                    <div><strong>Fecha:</strong> ${today}</div>
+                    <div><strong>Validez:</strong> 15 días</div>
+                </div>
+            </div>
+
+            <div class="client-box">
+                <div><strong>Cliente:</strong> ${clientName}</div>
+                <div><strong>Teléfono:</strong> ${clientPhone}</div>
+                <div><strong>Ubicación:</strong> ${clientZone}</div>
+                <div><strong>Moneda:</strong> Dólares Americanos (USD)</div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Descripción del Repuesto / Servicio</th>
+                        <th style="text-align:center; width:60px;">Cant.</th>
+                        <th style="text-align:right; width:90px;">P. Unit</th>
+                        <th style="text-align:right; width:90px;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${quoterItems.map(item => `
+                        <tr>
+                            <td>${item.description}</td>
+                            <td style="text-align:center;">${item.quantity}</td>
+                            <td style="text-align:right;">$${item.price.toFixed(2)}</td>
+                            <td style="text-align:right; font-weight:600;">$${(item.quantity * item.price).toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                    <tr>
+                        <td><strong>${laborDesc}</strong></td>
+                        <td style="text-align:center;">1</td>
+                        <td style="text-align:right;">$${totals.laborCost.toFixed(2)}</td>
+                        <td style="text-align:right; font-weight:600;">$${totals.laborCost.toFixed(2)}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="totals-box">
+                <div class="totals-row"><span>Subtotal Materiales:</span> <strong>$${totals.subtotalItems.toFixed(2)}</strong></div>
+                <div class="totals-row"><span>Mano de Obra:</span> <strong>$${totals.laborCost.toFixed(2)}</strong></div>
+                <div class="totals-row"><span>IVA (15%):</span> <strong>$${totals.iva.toFixed(2)}</strong></div>
+                <div class="totals-row total"><span>TOTAL PROFORMA:</span> <span>$${totals.total.toFixed(2)}</span></div>
+            </div>
+
+            <div class="notes-box">
+                <strong>Condiciones Comerciales:</strong>
+                <ul>
+                    <li>Garantía de 1 año en equipos hidroneumáticos y 6 meses en mano de obra.</li>
+                    <li>Pagos mediante transferencia bancaria Banco Pichincha / Guayaquil / Produbanco.</li>
+                    <li>Para confirmar la proforma, comuníquese al WhatsApp corporativo: +593 96 824 5633.</li>
+                </ul>
+            </div>
+            <script>window.onload = function() { window.print(); };</script>
+        </body>
+        </html>
+    `);
+    printWin.document.close();
+}
+
+function sendQuoteViaWA() {
+    const clientName = document.getElementById('quote-client-name')?.value || 'Cliente';
+    let clientPhone = document.getElementById('quote-client-phone')?.value || '';
+    const totals = calcQuoterTotals();
+
+    cleanPhone = clientPhone.replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '593' + cleanPhone.substring(1);
+    if (!cleanPhone.startsWith('593')) cleanPhone = '593' + cleanPhone;
+
+    let itemsText = quoterItems.map((item, idx) => `  ${idx+1}. ${item.description} (x${item.quantity}) - *$${(item.quantity * item.price).toFixed(2)}*`).join('\n');
+
+    const msg = `*HIDROSYS EC. - Cotización Formal* 📄\n\nEstimado/a *${clientName}*, le enviamos el detalle de su cotización solicitada:\n\n*MATERIALES Y REPUESTOS:*\n${itemsText}\n\n🛠️ *Mano de Obra Especializada:* $${totals.laborCost.toFixed(2)}\n📊 *IVA (15%):* $${totals.iva.toFixed(2)}\n\n💰 *TOTAL A PAGAR:* *$${totals.total.toFixed(2)} USD*\n\n_Validez de proforma: 15 días. Garantía de servicio incluida._\n\n¿Desea que agendemos la instalación para esta semana?`;
+
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+    toast('📲 Cotización enviada a WhatsApp.', 'success');
+}
+
+// ============================================================
+// 4. EXPORTADOR A EXCEL / CSV EN 1 CLIC (REPORTES MENSUALES)
+// ============================================================
+async function exportAppointmentsToCSV() {
+    try {
+        toast('Generando archivo Excel de Citas...', 'info');
+        const apts = await api('GET', '/appointments?limit=1000');
+        if (!apts.length) { toast('No hay citas para exportar.', 'warning'); return; }
+
+        const headers = ['ID Cita', 'Fecha', 'Hora', 'Cliente', 'Telefono', 'Correo', 'Direccion', 'Canton_Zona', 'Servicio', 'Tecnico Asignado', 'Estado', 'Monto_USD', 'Estado_Pago', 'Banco', 'No_Comprobante', 'Canal_Origen', 'Notas'];
+
+        const rows = apts.map(a => [
+            a.id,
+            formatDate(a.apt_date),
+            String(a.apt_time || '').slice(0, 5),
+            `"${(a.client_name || '').replace(/"/g, '""')}"`,
+            `"${a.client_phone || ''}"`,
+            `"${a.client_email || ''}"`,
+            `"${(a.address || '').replace(/"/g, '""')}"`,
+            `"${a.zone || ''}"`,
+            `"${(a.service_type || '').replace(/"/g, '""')}"`,
+            `"${(a.tech_name || 'Sin Asignar').replace(/"/g, '""')}"`,
+            `"${a.status || ''}"`,
+            parseFloat(a.payment_amount || 0).toFixed(2),
+            `"${a.payment_status || ''}"`,
+            `"${a.bank || ''}"`,
+            `"${a.receipt_no || ''}"`,
+            `"${a.channel || ''}"`,
+            `"${(a.notes || '').replace(/"/g, '""')}"`
+        ]);
+
+        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const todayStr = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `Reporte_Citas_Hidrosys_EC_${todayStr}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast('✅ Archivo Excel descargado exitosamente.', 'success');
+    } catch (err) {
+        toast(`Error al exportar citas: ${err.message}`, 'error');
+    }
+}
+
+async function exportClientsToCSV() {
+    try {
+        toast('Generando archivo Excel de Clientes...', 'info');
+        const clients = await api('GET', '/clients');
+        if (!clients.length) { toast('No hay clientes para exportar.', 'warning'); return; }
+
+        const headers = ['ID Cliente', 'Nombre', 'Telefono', 'Correo', 'Direccion', 'Canton_Zona', 'Total_Visitas', 'Ultimo_Servicio', 'Notas_Tecnicas'];
+
+        const rows = clients.map(c => [
+            c.id,
+            `"${(c.name || '').replace(/"/g, '""')}"`,
+            `"${c.phone || ''}"`,
+            `"${c.email || ''}"`,
+            `"${(c.address || '').replace(/"/g, '""')}"`,
+            `"${c.zone || ''}"`,
+            c.total_appointments || 0,
+            c.last_service_date ? formatDate(c.last_service_date) : '—',
+            `"${(c.notes || '').replace(/"/g, '""')}"`
+        ]);
+
+        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const todayStr = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `Directorio_Clientes_Hidrosys_EC_${todayStr}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast('✅ Directorio de clientes descargado en Excel.', 'success');
+    } catch (err) {
+        toast(`Error al exportar clientes: ${err.message}`, 'error');
+    }
+}
+
+// Exponer funciones globales
+window.sendQuickWAMsg = sendQuickWAMsg;
+window.openClient360 = openClient360;
+window.saveClientTechNotes = saveClientTechNotes;
+window.openQuoterModal = openQuoterModal;
+window.openQuoterForApt = openQuoterForApt;
+window.addQuoterCustomItem = addQuoterCustomItem;
+window.addQuoterCatalogItem = addQuoterCatalogItem;
+window.removeQuoterItem = removeQuoterItem;
+window.updateQuoterItem = updateQuoterItem;
+window.calcQuoterTotals = calcQuoterTotals;
+window.printOfficialQuote = printOfficialQuote;
+window.sendQuoteViaWA = sendQuoteViaWA;
+window.exportAppointmentsToCSV = exportAppointmentsToCSV;
+window.exportClientsToCSV = exportClientsToCSV;
 

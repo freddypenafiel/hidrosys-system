@@ -235,11 +235,34 @@ app.post('/api/clients', async (req, res) => {
         const result = await pool.query(
             `INSERT INTO clients (name, phone, email, address, zone, notes)
              VALUES ($1,$2,$3,$4,$5,$6)
-             ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name, email=EXCLUDED.email, address=EXCLUDED.address, zone=EXCLUDED.zone
+             ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name, email=EXCLUDED.email, address=EXCLUDED.address, zone=EXCLUDED.zone, notes=COALESCE(EXCLUDED.notes, clients.notes)
              RETURNING *`,
             [name, phone, email, address, zone, notes]
         );
         res.status(201).json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/clients/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, phone, email, address, zone, notes } = req.body;
+        const result = await pool.query(
+            `UPDATE clients
+             SET name = COALESCE($1, name),
+                 phone = COALESCE($2, phone),
+                 email = COALESCE($3, email),
+                 address = COALESCE($4, address),
+                 zone = COALESCE($5, zone),
+                 notes = COALESCE($6, notes)
+             WHERE id = $7
+             RETURNING *`,
+            [name, phone, email, address, zone, notes, id]
+        );
+        if (!result.rows.length) return res.status(404).json({ error: 'Cliente no encontrado' });
+        res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

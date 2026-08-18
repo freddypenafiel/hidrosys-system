@@ -1225,3 +1225,30 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .offline-banner { position: fixed; top: 0; left: 0; width: 100%; background: #ef4444; color: white; text-align: center; padding: 10px 20px; font-weight: 600; font-size: 0.9rem; z-index: 10000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); animation: slideDown 0.3s ease; }
 .offline-banner.online { background: #10b981; }
 @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+/* Quick Actions & Quoter Express Styles */
+.form-control-sm {
+    padding: 5px 8px !important;
+    font-size: 0.82rem !important;
+    border-radius: 6px !important;
+}
+
+body.dark-theme #client-360-modal .modal-header {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+body.dark-theme #client-360-content div[style*="background:var(--gray-50)"] {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+body.dark-theme #quoter-modal div[style*="background:var(--gray-50)"] {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+body.dark-theme #quoter-modal div[style*="linear-gradient(135deg, #f8fafc, #eff6ff)"] {
+    background: #0f172a !important;
+    border-color: #3b82f6 !important;
+}

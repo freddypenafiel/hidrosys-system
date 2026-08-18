@@ -1,0 +1,238 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Informe: Implementación de Estados Vacíos - HIDROSYS v3.0</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; color: #1e293b; background: white; font-size: 14px; line-height: 1.6; }
+  .cover { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1976D2 100%); min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 60px 40px; page-break-after: always; }
+  .cover-logo { font-size: 64px; margin-bottom: 24px; }
+  .cover-company { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.6); letter-spacing: 6px; text-transform: uppercase; margin-bottom: 16px; }
+  .cover-title { font-family: 'Outfit', sans-serif; font-size: 38px; font-weight: 800; color: white; margin-bottom: 12px; line-height: 1.2; }
+  .cover-sub { font-size: 18px; color: rgba(255,255,255,0.75); margin-bottom: 40px; }
+  .cover-badge { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 40px; padding: 10px 28px; color: white; font-size: 13px; font-weight: 600; margin-bottom: 16px; display: inline-block; }
+  .cover-date { color: rgba(255,255,255,0.5); font-size: 13px; margin-top: 60px; }
+  .page { padding: 56px 64px; max-width: 900px; margin: 0 auto; page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  h1 { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 8px; padding-bottom: 12px; border-bottom: 3px solid #1976D2; }
+  h2 { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: #1e293b; margin: 36px 0 14px; }
+  h3 { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #334155; margin: 24px 0 10px; }
+  p { color: #475569; margin-bottom: 14px; }
+  .section-num { display: inline-block; background: #1976D2; color: white; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 12px; padding: 3px 10px; border-radius: 20px; margin-right: 8px; }
+  .intro-box { background: linear-gradient(135deg, #eff6ff, #dbeafe); border-left: 4px solid #1976D2; border-radius: 8px; padding: 20px 24px; margin: 24px 0; }
+  .intro-box p { color: #1e3a5f; margin: 0; font-size: 14px; }
+  img.screenshot { width: 100%; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.1); margin: 16px 0 24px; }
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .feature-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; }
+  .feature-card .icon { font-size: 28px; margin-bottom: 8px; }
+  .feature-card h4 { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+  .feature-card p { font-size: 12.5px; color: #64748b; margin: 0; }
+  .code-block { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 20px 24px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.8; margin: 16px 0; overflow: hidden; }
+  .code-block .comment { color: #64748b; }
+  .code-block .keyword { color: #93c5fd; }
+  .code-block .string { color: #86efac; }
+  .code-block .func { color: #fbbf24; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th { background: #1e3a5f; color: white; padding: 10px 14px; text-align: left; font-weight: 600; }
+  td { padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #475569; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-gray { background: #f1f5f9; color: #475569; }
+  .conclusion-box { background: linear-gradient(135deg, #0f172a, #1e3a5f); border-radius: 12px; padding: 32px; color: white; text-align: center; }
+  .conclusion-box h2 { color: white; border: none; margin-top: 0; }
+  .conclusion-box p { color: rgba(255,255,255,0.8); margin-bottom: 0; }
+  .footer { text-align: center; padding: 24px; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; margin-top: 40px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 12px; font-size: 12px; color: #475569; margin: 4px; }
+  .highlight { color: #1976D2; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<div class="cover">
+  <div class="cover-logo">💧</div>
+  <div class="cover-company">HIDROSYS EC. &mdash; Sistema de Gestión v3.0</div>
+  <h1 class="cover-title">Implementación de<br>Estados Vacíos y<br>Modo Sin Conexión</h1>
+  <p class="cover-sub">Mejoras de Experiencia de Usuario (UX)</p>
+  <span class="cover-badge">📄 Informe Técnico</span>
+  <br>
+  <span class="cover-badge">🗓️ Agosto 2026</span>
+  <div class="cover-date">Elaborado por: Sistema Antigravity &mdash; HIDROSYS EC.</div>
+</div>
+
+<!-- PÁGINA 1: INTRODUCCIÓN -->
+<div class="page">
+  <h1><span class="section-num">01</span> Introducción y Conceptos Clave</h1>
+
+  <div class="intro-box">
+    <p>Este informe documenta la implementación de dos mejoras críticas de UX (Experiencia de Usuario) en el Sistema de Gestión de HIDROSYS EC.: los <strong>Estados Vacíos (Empty States)</strong> y el <strong>Detector de Modo Sin Conexión (Offline Mode)</strong>. Ambas funcionalidades elevan la calidad profesional del sistema al nivel de plataformas SaaS de grandes empresas.</p>
+  </div>
+
+  <h2>¿Qué es un Estado Vacío (Empty State)?</h2>
+  <p>Un Estado Vacío es el diseño de interfaz que se muestra cuando una sección del sistema <strong>no tiene datos que mostrar</strong>. En lugar de dejar la pantalla en blanco (lo que genera confusión en el usuario), se presenta:</p>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="icon">🎨</div>
+      <h4>Ilustración Visual</h4>
+      <p>Un ícono grande y claro que identifica el módulo y comunica el estado de forma inmediata.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📝</div>
+      <h4>Mensaje Explicativo</h4>
+      <p>Un texto claro que explica POR QUÉ la pantalla está vacía y qué significa eso para el usuario.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">👆</div>
+      <h4>Llamada a la Acción</h4>
+      <p>Un botón que guía al usuario al siguiente paso lógico, eliminando la parálisis de análisis.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🎯</div>
+      <h4>Diseño Contextual</h4>
+      <p>Cada módulo tiene su propio color e icono, reforzando la identidad visual y la comprensión.</p>
+    </div>
+  </div>
+
+  <h2>¿Qué es el Modo Sin Conexión (Offline Mode)?</h2>
+  <p>Es un sistema de detección automática del estado de la red del usuario. Cuando el navegador pierde acceso a internet, el sistema <strong>reacciona inmediatamente</strong> para proteger los datos del usuario y evitar pérdidas de información.</p>
+
+  <table>
+    <thead>
+      <tr><th>Condición</th><th>Comportamiento del Sistema</th><th>Impacto</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>🔴 Sin Internet</td>
+        <td>Banner rojo en la parte superior de la página</td>
+        <td>Usuario es informado al instante</td>
+      </tr>
+      <tr>
+        <td>🔴 Sin Internet</td>
+        <td>Botones de acción deshabilitados automáticamente</td>
+        <td>Se previene pérdida de datos</td>
+      </tr>
+      <tr>
+        <td>🟢 Con Internet</td>
+        <td>Banner verde de confirmación por 3 segundos</td>
+        <td>Usuario puede continuar con confianza</td>
+      </tr>
+      <tr>
+        <td>🟢 Con Internet</td>
+        <td>Botones re-habilitados automáticamente</td>
+        <td>Sistema vuelve al funcionamiento normal</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PÁGINA 2: ESTADOS VACÍOS VISUALES -->
+<div class="page">
+  <h1><span class="section-num">02</span> Estados Vacíos — Diseño Visual</h1>
+
+  <h2>2.1 Estado Vacío: Agenda y Citas</h2>
+  <p>Se activa en el Panel de Administrador cuando no existen citas registradas, ya sea porque el sistema es nuevo o porque los filtros aplicados no arrojan resultados. El diseño usa una paleta <span class="highlight">azul grisácea neutra</span> para transmitir calma y la ausencia de urgencia.</p>
+  <img src="C:\Users\fredd\.gemini\antigravity\brain\f6defc8d-3d3f-4728-8c74-ea6ed6f031b8\empty_state_citas_1786671992360.jpg" class="screenshot" alt="Estado vacío de citas">
+
+  <h2>2.2 Estado Vacío: Prospectos (Proyectos Grandes)</h2>
+  <p>Se activa en la pestaña "Prospectos" cuando aún no se han recibido formularios de proyectos grandes. Incluye el botón especial <strong>"➕ Agregar Datos de Prueba"</strong> que permite al administrador insertar un prospecto ficticio para realizar pruebas del flujo de conversión a cliente, sin necesidad de intervención técnica. El diseño usa una paleta <span class="highlight">azul corporativo</span>, alineada con la identidad de Hidrosys.</p>
+  <img src="C:\Users\fredd\.gemini\antigravity\brain\f6defc8d-3d3f-4728-8c74-ea6ed6f031b8\empty_state_prospectos_1786672009120.jpg" class="screenshot" alt="Estado vacío de prospectos">
+</div>
+
+<!-- PÁGINA 3: MÁS ESTADOS VACÍOS Y OFFLINE -->
+<div class="page">
+  <h1><span class="section-num">03</span> Estados Vacíos y Modo Sin Conexión</h1>
+
+  <h2>3.1 Estado Vacío: Encuestas de Satisfacción</h2>
+  <p>Se activa en la pestaña "Satisfacción" cuando no hay encuestas aún. Explica proactivamente el flujo automático del sistema, educando al administrador sobre cómo se generan las encuestas. El diseño usa una paleta <span class="highlight">verde esmeralda</span> para evocar confianza, éxito y calidad de servicio.</p>
+  <img src="C:\Users\fredd\.gemini\antigravity\brain\f6defc8d-3d3f-4728-8c74-ea6ed6f031b8\empty_state_encuestas_1786672026885.jpg" class="screenshot" alt="Estado vacío de encuestas">
+
+  <h2>3.2 Detector de Modo Sin Conexión (Offline)</h2>
+  <p>El sistema detecta en tiempo real la pérdida de conexión a internet y reacciona mostrando banners informativos. A continuación se muestran los dos estados del banner:</p>
+  <img src="C:\Users\fredd\.gemini\antigravity\brain\f6defc8d-3d3f-4728-8c74-ea6ed6f031b8\offline_banner_1786672048049.jpg" class="screenshot" alt="Banner offline y online">
+  <p style="font-size:12px;color:#94a3b8;text-align:center;">Arriba: Estado offline (banner rojo). Abajo: Estado reconectado (banner verde).</p>
+</div>
+
+<!-- PÁGINA 4: IMPLEMENTACIÓN TÉCNICA -->
+<div class="page">
+  <h1><span class="section-num">04</span> Implementación Técnica</h1>
+
+  <h2>4.1 Archivos Modificados</h2>
+  <table>
+    <thead>
+      <tr><th>Archivo</th><th>Tipo de Cambio</th><th>Descripción</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>public/index.html</code></td><td><span class="badge badge-blue">MODIFICADO</span></td><td>Se añadió el contenedor HTML del banner de estado Offline/Online.</td></tr>
+      <tr><td><code>public/css/style.css</code></td><td><span class="badge badge-blue">MODIFICADO</span></td><td>Se añadieron estilos CSS para el banner con colores, animaciones y transiciones.</td></tr>
+      <tr><td><code>public/js/main.js</code></td><td><span class="badge badge-blue">MODIFICADO</span></td><td>Se actualizaron 3 funciones (loadLeads, loadSurveys, loadAppointments) y se añadieron los eventos offline/online y la función seedSampleLead.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4.2 Código: Detección de Conexión (main.js)</h2>
+  <p>Se utilizan los eventos nativos del navegador para detectar cambios en la red sin depender de librerías externas:</p>
+
+  <div class="code-block">
+<span class="comment">// Evento nativo del navegador: se dispara al perder Internet</span>
+<span class="keyword">window</span>.<span class="func">addEventListener</span>(<span class="string">'offline'</span>, () =&gt; {
+  <span class="keyword">const</span> banner = document.<span class="func">getElementById</span>(<span class="string">'offline-banner'</span>);
+  banner.style.display = <span class="string">'block'</span>;
+  banner.className = <span class="string">'offline-banner'</span>;  <span class="comment">// Clase roja</span>
+
+  <span class="comment">// Deshabilitar botones críticos para proteger datos</span>
+  document.<span class="func">querySelectorAll</span>(<span class="string">'.btn-primary, .btn-success'</span>)
+    .<span class="func">forEach</span>(btn =&gt; {
+      btn.disabled = <span class="keyword">true</span>;
+      btn.textContent = <span class="string">'❌ Sin conexión'</span>;
+    });
+});
+
+<span class="comment">// Evento nativo del navegador: se dispara al recuperar Internet</span>
+<span class="keyword">window</span>.<span class="func">addEventListener</span>(<span class="string">'online'</span>, () =&gt; {
+  banner.className = <span class="string">'offline-banner online'</span>;  <span class="comment">// Clase verde</span>
+  <span class="func">setTimeout</span>(() =&gt; { banner.style.display = <span class="string">'none'</span>; }, 3000);
+
+  <span class="comment">// Re-habilitar botones automáticamente</span>
+  document.<span class="func">querySelectorAll</span>(<span class="string">'.btn-primary, .btn-success'</span>)
+    .<span class="func">forEach</span>(btn =&gt; { btn.disabled = <span class="keyword">false</span>; });
+});
+  </div>
+
+  <h2>4.3 Código: Estado Vacío de Prospectos con Datos de Prueba</h2>
+  <div class="code-block">
+<span class="keyword">if</span> (!leads || leads.length === 0) {
+  container.innerHTML = <span class="string">
+    &lt;div style="..."&gt;
+      &lt;div&gt;🏗️&lt;/div&gt;
+      &lt;h3&gt;Aún no tienes prospectos&lt;/h3&gt;
+      &lt;p&gt;Los prospectos vienen del formulario de Proyectos Grandes...&lt;/p&gt;
+      &lt;button onclick="navigateTo('leads')"&gt;Ir al Formulario&lt;/button&gt;
+      &lt;button onclick="seedSampleLead()"&gt;➕ Agregar Datos de Prueba&lt;/button&gt;
+    &lt;/div&gt;</span>;
+  <span class="keyword">return</span>;
+}
+
+<span class="comment">// Función para insertar datos de prueba con un solo clic</span>
+<span class="keyword">window</span>.seedSampleLead = <span class="keyword">async function</span>() {
+  <span class="keyword">await</span> <span class="func">api</span>(<span class="string">'POST'</span>, <span class="string">'/leads'</span>, {
+    name: <span class="string">'Constructora Andina S.A. (Demo)'</span>,
+    phone: <span class="string">'0987654321'</span>,
+    details: <span class="string">'Proyecto de 120 viviendas...'</span>
+  });
+};
+  </div>
+
+  <div class="conclusion-box" style="margin-top: 40px;">
+    <h2>✅ Conclusión</h2>
+    <p style="margin-top:12px;">La implementación de los Estados Vacíos y el Modo Sin Conexión eleva el sistema HIDROSYS v3.0 al estándar de plataformas empresariales modernas. El usuario nunca verá una pantalla en blanco confusa, y sus datos siempre estarán protegidos ante cortes de internet. Estas mejoras, aunque invisibles cuando el sistema funciona perfectamente, marcan la diferencia entre una aplicación amateur y una solución profesional de calidad.</p>
+  </div>
+
+  <div class="footer">HIDROSYS EC. &mdash; Sistema de Gestión Integral v3.0 &mdash; Agosto 2026 &mdash; Informe de Implementación Técnica</div>
+</div>
+
+</body>
+</html>

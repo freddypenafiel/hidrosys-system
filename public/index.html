@@ -608,9 +608,13 @@
 
         <!-- ==================== ADMIN: CITAS ==================== -->
         <div class="page" id="page-admin-appointments">
-            <div class="page-header">
+            <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div><h2>Gestión de Visitas Técnicas</h2><p>Apruebe pagos, asigne técnicos y monitoree el estado en tiempo real</p></div>
-                <button class="btn btn-outline btn-sm" onclick="loadAppointments()">🔄 Actualizar</button>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn btn-primary btn-sm" onclick="openQuoterModal()" style="display:flex; align-items:center; gap:5px;">📄 Cotizador Express</button>
+                    <button class="btn btn-outline btn-sm" onclick="exportAppointmentsToCSV()" style="display:flex; align-items:center; gap:5px;" title="Descargar reporte en formato Excel .csv">📥 Exportar a Excel</button>
+                    <button class="btn btn-outline btn-sm" onclick="loadAppointments()">🔄 Actualizar</button>
+                </div>
             </div>
             <div class="card">
                 <div class="filter-bar">
@@ -640,8 +644,12 @@
 
         <!-- ==================== ADMIN: CLIENTES ==================== -->
         <div class="page" id="page-admin-clients">
-            <div class="page-header">
+            <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div><h2>Base de Datos de Clientes</h2><p>Registro centralizado con historial de servicios por cliente</p></div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-outline btn-sm" onclick="exportClientsToCSV()" style="display:flex; align-items:center; gap:5px;" title="Descargar lista de clientes en formato Excel .csv">📥 Exportar a Excel</button>
+                    <button class="btn btn-outline btn-sm" onclick="loadClients()">🔄 Actualizar</button>
+                </div>
             </div>
             <div class="card">
                 <div class="filter-bar">
@@ -649,7 +657,7 @@
                 </div>
                 <div class="table-wrapper">
                     <table class="data-table">
-                        <thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Dirección</th><th>Zona</th><th style="text-align:center;">Visitas</th><th>Último Servicio</th></tr></thead>
+                        <thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Dirección</th><th>Zona</th><th style="text-align:center;">Visitas</th><th>Último Servicio</th><th style="text-align:center;">Acciones</th></tr></thead>
                         <tbody id="clients-tbody"></tbody>
                     </table>
                 </div>
@@ -775,6 +783,142 @@
         </div>
         <div style="display:flex;justify-content:center;margin-top:10px;">
             <div style="width:90px;height:4px;background:#555;border-radius:2px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: FICHA DEL CLIENTE 360° ===== -->
+<div class="modal-backdrop" id="client-360-modal">
+    <div class="modal modal-lg" style="max-width:850px;">
+        <div class="modal-header" style="background:var(--blue-50,#eff6ff); border-bottom:1.5px solid var(--blue-200,#bfdbfe);">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:1.4rem;">👤</span>
+                <div>
+                    <h3 style="margin:0; font-size:1.1rem; color:var(--blue-800); font-weight:800;">Ficha del Cliente 360° & Historial Técnico</h3>
+                    <p style="margin:0; font-size:0.75rem; color:var(--gray-500);">Resumen integral, registro de equipos y trazabilidad de visitas</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('client-360-modal')">✕</button>
+        </div>
+        <div class="modal-body" id="client-360-content" style="padding:22px; max-height:75vh; overflow-y:auto;">
+            <!-- Contenido generado dinámicamente por openClient360() -->
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:0.78rem; color:var(--gray-500);" id="client-360-footer-hint">Hidrosys EC &bull; Ficha de Cliente</div>
+            <button class="btn btn-ghost btn-sm" onclick="closeModal('client-360-modal')">Cerrar Ficha</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: COTIZADOR / PROFORMA EXPRESS ===== -->
+<div class="modal-backdrop" id="quoter-modal">
+    <div class="modal modal-lg" style="max-width:880px;">
+        <div class="modal-header" style="background:linear-gradient(135deg, #0f172a, #1e3a8a); color:white;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:1.5rem;">📄</span>
+                <div>
+                    <h3 style="margin:0; font-size:1.15rem; color:white; font-weight:800;">Generador de Proformas & Cotizaciones Express</h3>
+                    <p style="margin:0; font-size:0.75rem; color:rgba(255,255,255,0.75);">Crea proformas membretadas en segundos para clientes y obras</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('quoter-modal')" style="color:white;">✕</button>
+        </div>
+        <div class="modal-body" style="padding:22px; max-height:75vh; overflow-y:auto;">
+            <!-- Datos del Cliente para la Proforma -->
+            <div style="background:var(--gray-50); border:1px solid var(--gray-200); border-radius:10px; padding:16px; margin-bottom:18px;">
+                <div style="font-weight:700; font-size:0.85rem; color:var(--gray-700); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">1. Datos del Cliente / Proyecto</div>
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr 1fr; gap:12px;">
+                    <div>
+                        <label class="form-label" style="font-size:0.75rem;">Nombre / Razón Social <span class="required">*</span></label>
+                        <input type="text" id="quote-client-name" class="form-control" placeholder="Ej. Ing. Carlos Pérez / Residencia Gómez">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.75rem;">Teléfono WhatsApp</label>
+                        <input type="text" id="quote-client-phone" class="form-control" placeholder="Ej. 0987654321">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.75rem;">Ciudad / Cantón</label>
+                        <input type="text" id="quote-client-zone" class="form-control" placeholder="Ej. Azogues / Biblián">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Ítems / Repuestos -->
+            <div style="margin-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div style="font-weight:700; font-size:0.85rem; color:var(--gray-700); text-transform:uppercase; letter-spacing:0.5px;">2. Repuestos, Equipos y Materiales</div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-outline btn-xs" onclick="addQuoterCatalogItem()" style="display:flex; align-items:center; gap:4px;">📦 Desde Catálogo</button>
+                        <button class="btn btn-primary btn-xs" onclick="addQuoterCustomItem()" style="display:flex; align-items:center; gap:4px;">➕ Ítem Personalizado</button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper" style="border-radius:8px; border:1px solid var(--gray-200);">
+                    <table class="data-table" id="quote-items-table" style="font-size:0.85rem;">
+                        <thead>
+                            <tr>
+                                <th style="width:45%;">Descripción del Ítem / Repuesto</th>
+                                <th style="width:15%; text-align:center;">Cant.</th>
+                                <th style="width:18%; text-align:right;">P. Unit ($)</th>
+                                <th style="width:15%; text-align:right;">Subtotal ($)</th>
+                                <th style="width:7%; text-align:center;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="quote-items-tbody">
+                            <!-- Filas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Mano de Obra y Totales -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; align-items:flex-start; margin-bottom:18px;">
+                <div style="background:var(--gray-50); border:1px solid var(--gray-200); border-radius:10px; padding:14px;">
+                    <div style="font-weight:700; font-size:0.85rem; color:var(--gray-700); margin-bottom:8px;">🛠️ Mano de Obra & Servicios</div>
+                    <div class="form-group" style="margin-bottom:8px;">
+                        <label class="form-label" style="font-size:0.75rem;">Descripción del Servicio Técnico</label>
+                        <input type="text" id="quote-labor-desc" class="form-control" placeholder="Ej. Instalación, calibración y pruebas hidráulicas" value="Mano de obra especializada e instalación técnica">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.75rem;">Costo de Mano de Obra ($)</label>
+                        <input type="number" id="quote-labor-cost" class="form-control" value="25.00" step="0.50" min="0" oninput="calcQuoterTotals()">
+                    </div>
+                </div>
+
+                <!-- Resumen de Liquidación -->
+                <div style="background:linear-gradient(135deg, #f8fafc, #eff6ff); border:1.5px solid var(--blue-200,#bfdbfe); border-radius:10px; padding:16px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.88rem; margin-bottom:6px;">
+                        <span style="color:var(--gray-600);">Subtotal Materiales:</span>
+                        <strong id="quote-subtotal-items">$0.00</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.88rem; margin-bottom:6px;">
+                        <span style="color:var(--gray-600);">Mano de Obra:</span>
+                        <strong id="quote-subtotal-labor">$25.00</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.88rem; margin-bottom:8px; border-bottom:1px dashed var(--gray-300); padding-bottom:6px;">
+                        <span style="color:var(--gray-600);">IVA (15%):</span>
+                        <strong id="quote-iva">$3.75</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:1.2rem; font-family:'Outfit',sans-serif; color:var(--blue-800); font-weight:800;">
+                        <span>TOTAL PROFORMA:</span>
+                        <span id="quote-total" style="color:#059669;">$28.75</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área Oculta para Impresión Formal / PDF -->
+            <div id="quote-print-preview" style="display:none;"></div>
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <button class="btn btn-ghost btn-sm" onclick="closeModal('quoter-modal')">Cancelar</button>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-success btn-sm" onclick="sendQuoteViaWA()" style="display:flex; align-items:center; gap:5px; background:#10b981; border-color:#10b981;">
+                    <span>📲</span> Compartir por WhatsApp
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="printOfficialQuote()" style="display:flex; align-items:center; gap:5px;">
+                    <span>🖨️</span> Generar PDF / Imprimir
+                </button>
+            </div>
         </div>
     </div>
 </div>
