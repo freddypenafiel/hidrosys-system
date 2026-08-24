@@ -1,10 +1,10 @@
-// whatsapp/flows.js - Motor de Conversacion del Bot HIDROSYS
-// v4.5 - Botones Interactivos Nativos (Quick Reply & Single Select), Barra de Progreso y Fallback
+// whatsapp/flows.js - Motor de Conversación del Bot HIDROSYS
+// v5.0 - Flujo Guiado con Polls Nativos + Menús Visuales y Respuesta Inmediata
 
 const pool = require('../db/connection');
 
 // ============================================================
-// DATOS GEOGRAFICOS (Provincia del Canar)
+// DATOS GEOGRÁFICOS (Provincia del Cañar)
 // ============================================================
 const CANTONES = {
     '1': { nombre: 'Azogues',    parroquias: ['Azogues','Cojitambo','Guapán','Javier Loyola','Luis Cordero','Pindilig','Rivera','San Miguel','Taday'] },
@@ -26,13 +26,13 @@ const SERVICIOS = [
 ];
 
 const CUENTAS_BANCARIAS = `💳 *Cuentas para Transferencia:*
-1. *B. Pichincha* – Cta: 2201948332
-2. *B. Guayaquil* – Cta: 10482938
-3. *Produbanco* – Cta: 0209384729
-4. *JEP (Cooperativa)* – Cta: 551928374
-5. *B. del Pacífico* – Cta: 72938472
-6. *Coop. MEGO* – Cta: 938482932
-7. *Alianza del Valle* – Cta: 384729221
+1️⃣ *B. Pichincha* – Cta: 2201948332
+2️⃣ *B. Guayaquil* – Cta: 10482938
+3️⃣ *Produbanco* – Cta: 0209384729
+4️⃣ *JEP (Cooperativa)* – Cta: 551928374
+5️⃣ *B. del Pacífico* – Cta: 72938472
+6️⃣ *Coop. MEGO* – Cta: 938482932
+7️⃣ *Alianza del Valle* – Cta: 384729221
 _Titular: HIDROSYS EC. · RUC: 1793000000001_`;
 
 // ============================================================
@@ -68,7 +68,7 @@ const STEP_LABELS = {
     book_name:    [1, 6, 'Tu nombre completo'],
     book_phone:   [2, 6, 'Tu número de celular'],
     book_address: [3, 6, 'Dirección del inmueble'],
-    book_canton:  [4, 6, 'Cantón de la Provincia del Cañar'],
+    book_canton:  [4, 6, 'Cantón de Cañar'],
     book_parish:  [4, 6, 'Parroquia'],
     book_service: [5, 6, 'Tipo de servicio'],
     book_date:    [6, 6, 'Fecha de visita'],
@@ -82,19 +82,20 @@ function stepHeader(k) {
     return 'Paso ' + info[0] + ' de ' + info[1] + ' ' + progressBar(info[0], info[1]) + '\n_' + info[2] + '_\n\n';
 }
 
-function menuPrincipalInteractive() {
-    return {
-        type: 'interactive',
-        title: '💧 HIDROSYS EC. — Asistente Virtual',
-        text: '¡Hola! Bienvenido al sistema oficial de atención de *HIDROSYS EC.*\n\n¿En qué podemos ayudarte hoy? Toca una opción directa:',
-        footer: 'HIDROSYS EC. • Sistemas de Agua y Gas',
-        buttons: [
-            { id: '1', text: '📅 Agendar Visita' },
-            { id: '2', text: '💳 Reportar Pago' },
-            { id: '3', text: '🔍 Consultar Cita' },
-            { id: '4', text: '📦 Ver Catálogo' }
-        ]
-    };
+function menuPrincipalDual() {
+    return [
+        '💧 *HIDROSYS EC. — Asistente Virtual*\n_Atención al Cliente • Sistemas de Agua y Gas_\n\n¡Hola! ¿En qué podemos ayudarte hoy? Toca una opción en la encuesta abajo o escribe el número:\n\n1️⃣ *Agendar Visita Técnica*\n2️⃣ *Reportar Comprobante de Pago*\n3️⃣ *Consultar Estado de Cita*\n4️⃣ *Ver Catálogo y Precios*',
+        {
+            type: 'poll',
+            question: '💧 HIDROSYS EC. — Elige tu opción:',
+            options: [
+                '📅 1. Agendar Visita Técnica',
+                '💳 2. Reportar Pago',
+                '🔍 3. Consultar Estado',
+                '📦 4. Ver Catálogo y Precios'
+            ]
+        }
+    ];
 }
 
 function getTomorrowDateStr() {
@@ -117,7 +118,7 @@ async function processMessage(phone, text, senderJid) {
     if (['menu','hola','hi','inicio','0','cancelar','cancel','empezar'].includes(msgN)) {
         clearSession(phone);
         setSession(phone, 'main_menu', { senderJid });
-        return menuPrincipalInteractive();
+        return menuPrincipalDual();
     }
 
     // Navegación inversa
@@ -130,24 +131,21 @@ async function processMessage(phone, text, senderJid) {
         if (prev === 'book_phone') return stepHeader('book_phone') + '📱 Escribe tu *celular* (10 dígitos):';
         if (prev === 'book_address') return stepHeader('book_address') + '🏠 Escribe la *dirección* del inmueble:';
         if (prev === 'book_canton') {
-            return {
-                type: 'interactive',
-                title: '📍 Cantón de Cañar',
-                text: stepHeader('book_canton') + '¿En qué cantón de la Provincia del Cañar te encuentras?',
-                footer: 'Toca el botón para elegir',
-                listButtonTitle: '🏘️ Elegir Cantón',
-                sections: [{
-                    title: 'Provincia del Cañar',
-                    rows: Object.entries(CANTONES).map(([k, v]) => ({ id: k, title: v.nombre, description: 'Cobertura cantonal ' + v.nombre }))
-                }]
-            };
+            return [
+                stepHeader('book_canton') + '📍 *Selecciona tu Cantón en la Provincia del Cañar:*',
+                {
+                    type: 'poll',
+                    question: '📍 Paso 4 de 6 — Selecciona tu Cantón:',
+                    options: ['1. Azogues', '2. Biblián', '3. Cañar', '4. La Troncal', '5. El Tambo', '6. Déleg', '7. Suscal']
+                }
+            ];
         }
-        return menuPrincipalInteractive();
+        return menuPrincipalDual();
     }
 
-    // Confirmación de disponibilidad
+    // Confirmación de disponibilidad por cliente
     if (step === 'awaiting_availability_confirm') {
-        if (['si','s','1','confirmo','confirmar'].includes(msgN) || msgN.includes('si, disponible') || msgN.includes('disponible')) {
+        if (['si','s','1','confirmo','confirmar'].includes(msgN) || msgN.includes('disponible')) {
             try {
                 let aptId = sess.data.aptId;
                 if (!aptId) {
@@ -165,37 +163,35 @@ async function processMessage(phone, text, senderJid) {
             clearSession(phone);
             return '⚠️ Entendido. Si necesitas reagendar, escribe *menu* para agendar una nueva fecha.';
         }
-        return {
-            type: 'interactive',
-            title: '❓ Confirmar Disponibilidad',
-            text: '¿Estarás disponible en tu domicilio para recibir al técnico en el horario indicado?',
-            footer: 'HIDROSYS EC.',
-            buttons: [
-                { id: '1', text: '✅ SÍ, Disponible' },
-                { id: '2', text: '❌ No, Reagendar' }
-            ]
-        };
+        return [
+            '❓ *Confirmación de Visita Técnica*\n¿Estarás disponible en tu domicilio en el horario indicado?',
+            {
+                type: 'poll',
+                question: '❓ ¿Confirmas tu disponibilidad?',
+                options: ['✅ 1. SÍ, estaré disponible', '❌ 2. NO, necesito reagendar']
+            }
+        ];
     }
 
     // Menú principal
     if (step === 'idle' || step === 'main_menu') {
-        if (msg === '1' || msgN.includes('agendar') || msgN.includes('visita')) {
+        if (msg === '1' || msg.startsWith('1') || msgN.includes('agendar') || msgN.includes('visita')) {
             setSession(phone, 'book_name', { senderJid });
             return stepHeader('book_name') + 'Por favor, escribe tu *nombre completo*:';
         }
-        if (msg === '2' || msgN.includes('pago') || msgN.includes('comprobante') || msgN.includes('reportar')) {
+        if (msg === '2' || msg.startsWith('2') || msgN.includes('pago') || msgN.includes('comprobante') || msgN.includes('reportar')) {
             setSession(phone, 'pay_phone', { senderJid });
             return '💳 *Reportar Comprobante de Pago*\n\nEscribe el *número de teléfono* con el que registraste tu cita (ej. 0987654321):';
         }
-        if (msg === '3' || msgN.includes('consultar') || msgN.includes('estado')) {
+        if (msg === '3' || msg.startsWith('3') || msgN.includes('consultar') || msgN.includes('estado')) {
             setSession(phone, 'status_phone', { senderJid });
             return '🔍 *Consultar Estado de Cita*\n\nEscribe el *número de teléfono* con el que te registraste:';
         }
-        if (msg === '4' || msgN.includes('catalogo') || msgN.includes('precio')) {
+        if (msg === '4' || msg.startsWith('4') || msgN.includes('catalogo') || msgN.includes('precio')) {
             clearSession(phone);
-            return '📦 *Catálogo de Servicios HIDROSYS EC.:*\n\n💧 Instalación medidor agua: $15.00\n🔩 Reparación de tubería: $15.00\n⛽ Red de gas domiciliario: $15.00\n🔨 Mant. sistema hidráulico: $15.00\n🔍 Inspección técnica: $15.00\n\n_Precio incluye visita técnica y diagnóstico. Materiales cotizados en sitio._\n\nEscribe *menu* para volver.';
+            return '📦 *Catálogo de Servicios HIDROSYS EC.:*\n\n💧 Instalación medidor agua: $15.00\n🔩 Reparación de tubería: $15.00\n⛽ Red de gas domiciliario: $15.00\n🔨 Mant. sistema hidráulico: $15.00\n🔍 Inspección técnica: $15.00\n\n_Precio incluye visita técnica y diagnóstico. Materiales se cotizan en sitio._\n\nEscribe *menu* para volver.';
         }
-        return menuPrincipalInteractive();
+        return menuPrincipalDual();
     }
 
     // FLUJO 1: AGENDAR VISITA
@@ -214,68 +210,63 @@ async function processMessage(phone, text, senderJid) {
     if (step === 'book_address') {
         if (msg.length < 5) return '⚠️ Por favor escribe una dirección más detallada (mínimo 5 caracteres).';
         setSession(phone, 'book_canton', { address: msg });
-        return {
-            type: 'interactive',
-            title: '📍 Cantón del Cañar',
-            text: stepHeader('book_canton') + '¿En qué cantón de la Provincia del Cañar se realizará el trabajo?',
-            footer: 'Toca el botón para elegir',
-            listButtonTitle: '🏘️ Elegir Cantón',
-            sections: [{
-                title: 'Provincia del Cañar',
-                rows: Object.entries(CANTONES).map(([k, v]) => ({ id: k, title: v.nombre, description: 'Atención técnica en ' + v.nombre }))
-            }]
-        };
+        return [
+            stepHeader('book_canton') + '📍 *Selecciona tu Cantón en la Provincia del Cañar:*',
+            {
+                type: 'poll',
+                question: '📍 Paso 4 de 6 — Selecciona tu Cantón:',
+                options: ['1. Azogues', '2. Biblián', '3. Cañar', '4. La Troncal', '5. El Tambo', '6. Déleg', '7. Suscal']
+            }
+        ];
     }
 
     if (step === 'book_canton') {
-        let cantonData = CANTONES[msg];
+        let cantonData = CANTONES[msg] || CANTONES[msg.charAt(0)];
         if (!cantonData) {
             const mn = norm(msg);
-            const found = Object.values(CANTONES).find(c => norm(c.nombre) === mn || mn.includes(norm(c.nombre)));
-            cantonData = found;
+            cantonData = Object.values(CANTONES).find(c => norm(c.nombre) === mn || mn.includes(norm(c.nombre)));
         }
         if (!cantonData) {
-            return {
-                type: 'interactive',
-                title: '📍 Cantón de Cañar',
-                text: '❌ Cantón no reconocido. Por favor selecciona tu cantón de la lista:',
-                footer: 'HIDROSYS EC.',
-                listButtonTitle: '🏘️ Elegir Cantón',
-                sections: [{
-                    title: 'Provincia del Cañar',
-                    rows: Object.entries(CANTONES).map(([k, v]) => ({ id: k, title: v.nombre, description: 'Atención en ' + v.nombre }))
-                }]
-            };
+            return [
+                '❌ Cantón no reconocido. Por favor selecciona de la lista:',
+                {
+                    type: 'poll',
+                    question: '📍 Selecciona tu Cantón en Cañar:',
+                    options: ['1. Azogues', '2. Biblián', '3. Cañar', '4. La Troncal', '5. El Tambo', '6. Déleg', '7. Suscal']
+                }
+            ];
         }
 
         setSession(phone, 'book_parish', { canton: cantonData.nombre, parroquias: cantonData.parroquias });
 
         if (cantonData.parroquias.length === 1) {
             setSession(phone, 'book_service', { parish: cantonData.parroquias[0], zone: cantonData.nombre + ' - ' + cantonData.parroquias[0] });
-            return {
-                type: 'interactive',
-                title: '🔧 Tipo de Servicio',
-                text: stepHeader('book_service') + '¿Qué tipo de servicio técnico necesitas?',
-                footer: 'Tarifa base de visita técnica: $15.00',
-                listButtonTitle: '🔧 Elegir Servicio',
-                sections: [{
-                    title: 'Servicios Disponibles',
-                    rows: SERVICIOS.map((s, i) => ({ id: String(i + 1), title: s, description: 'Tarifa básica $15.00' }))
-                }]
-            };
+            return [
+                stepHeader('book_service') + '🔧 *¿Qué tipo de servicio técnico necesitas?*',
+                {
+                    type: 'poll',
+                    question: '🔧 Paso 5 de 6 — Tipo de Servicio:',
+                    options: [
+                        '1. Medidor de Agua ($15)',
+                        '2. Reparación Tubería ($15)',
+                        '3. Red de Gas ($15)',
+                        '4. Mant. Hidráulico ($15)',
+                        '5. Inspección Técnica ($15)',
+                        '6. Otro / Consulta'
+                    ]
+                }
+            ];
         }
 
-        return {
-            type: 'interactive',
-            title: '🏘️ Parroquia (' + cantonData.nombre + ')',
-            text: 'Paso 4 de 6 ▓▓▓▓░░ 67%\n_Selecciona tu parroquia en ' + cantonData.nombre + ':_',
-            footer: 'HIDROSYS EC. • Agendamiento',
-            listButtonTitle: '🏘️ Elegir Parroquia',
-            sections: [{
-                title: cantonData.nombre,
-                rows: cantonData.parroquias.map((p, i) => ({ id: String(i + 1), title: p, description: 'Parroquia ' + p }))
-            }]
-        };
+        const parishOptions = cantonData.parroquias.map((p, i) => (i + 1) + '. ' + p);
+        return [
+            'Paso 4 de 6 ▓▓▓▓░░ 67%\n🏘️ *Parroquia de ' + cantonData.nombre + ':*',
+            {
+                type: 'poll',
+                question: '🏘️ Parroquia de ' + cantonData.nombre + ':',
+                options: parishOptions.slice(0, 10)
+            }
+        ];
     }
 
     if (step === 'book_parish') {
@@ -286,34 +277,35 @@ async function processMessage(phone, text, senderJid) {
             parish = parroquias[idx];
         } else {
             const mn = norm(msg);
-            parish = parroquias.find(p => norm(p) === mn || norm(p).includes(mn));
+            parish = parroquias.find(p => norm(p) === mn || mn.includes(norm(p)));
         }
         if (!parish) {
-            return {
-                type: 'interactive',
-                title: '🏘️ Selecciona tu Parroquia',
-                text: '❌ Parroquia no reconocida. Elige de la lista:',
-                footer: 'HIDROSYS EC.',
-                listButtonTitle: '🏘️ Elegir Parroquia',
-                sections: [{
-                    title: sess.data.canton || 'Parroquias',
-                    rows: parroquias.map((p, i) => ({ id: String(i + 1), title: p, description: 'Parroquia ' + p }))
-                }]
-            };
+            return [
+                '❌ Parroquia no válida. Elige una opción de la lista:',
+                {
+                    type: 'poll',
+                    question: '🏘️ Elige tu Parroquia:',
+                    options: parroquias.map((p, i) => (i + 1) + '. ' + p).slice(0, 10)
+                }
+            ];
         }
 
         setSession(phone, 'book_service', { parish, zone: sess.data.canton + ' - ' + parish });
-        return {
-            type: 'interactive',
-            title: '🔧 Tipo de Servicio',
-            text: stepHeader('book_service') + '¿Qué tipo de servicio técnico necesitas?',
-            footer: 'Tarifa base de visita técnica: $15.00',
-            listButtonTitle: '🔧 Elegir Servicio',
-            sections: [{
-                title: 'Servicios Disponibles',
-                rows: SERVICIOS.map((s, i) => ({ id: String(i + 1), title: s, description: 'Tarifa básica $15.00' }))
-            }]
-        };
+        return [
+            stepHeader('book_service') + '🔧 *¿Qué tipo de servicio técnico necesitas?*',
+            {
+                type: 'poll',
+                question: '🔧 Paso 5 de 6 — Tipo de Servicio:',
+                options: [
+                    '1. Medidor de Agua ($15)',
+                    '2. Reparación Tubería ($15)',
+                    '3. Red de Gas ($15)',
+                    '4. Mant. Hidráulico ($15)',
+                    '5. Inspección Técnica ($15)',
+                    '6. Otro / Consulta'
+                ]
+            }
+        ];
     }
 
     if (step === 'book_service') {
@@ -326,19 +318,24 @@ async function processMessage(phone, text, senderJid) {
             service = SERVICIOS.find(s => mn.includes(norm(s)) || norm(s).includes(mn.replace(/^[\w]+/,'')));
         }
         if (!service) {
-            return {
-                type: 'interactive',
-                title: '🔧 Selecciona un Servicio',
-                text: '❌ Servicio no reconocido. Elige de la lista:',
-                footer: 'HIDROSYS EC.',
-                listButtonTitle: '🔧 Elegir Servicio',
-                sections: [{
-                    title: 'Servicios Disponibles',
-                    rows: SERVICIOS.map((s, i) => ({ id: String(i + 1), title: s, description: 'Tarifa básica $15.00' }))
-                }]
-            };
+            return [
+                '❌ Servicio no reconocido. Elige de la lista:',
+                {
+                    type: 'poll',
+                    question: '🔧 Tipo de Servicio:',
+                    options: [
+                        '1. Medidor de Agua ($15)',
+                        '2. Reparación Tubería ($15)',
+                        '3. Red de Gas ($15)',
+                        '4. Mant. Hidráulico ($15)',
+                        '5. Inspección Técnica ($15)',
+                        '6. Otro / Consulta'
+                    ]
+                }
+            ];
         }
 
+        // Generar 5 días hábiles
         const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
         const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
         const optionsDate = [];
@@ -349,7 +346,7 @@ async function processMessage(phone, text, senderJid) {
             d.setDate(today.getDate() + offset);
             if (d.getDay() !== 0) {
                 const iso = d.toISOString().split('T')[0];
-                const str = dias[d.getDay()] + ' ' + d.getDate() + ' de ' + meses[d.getMonth()];
+                const str = dias[d.getDay()] + ' ' + d.getDate() + ' ' + meses[d.getMonth()];
                 optionsDate.push({ iso, str });
                 count++;
             }
@@ -357,17 +354,14 @@ async function processMessage(phone, text, senderJid) {
         }
 
         setSession(phone, 'book_date', { service, optionsDate });
-        return {
-            type: 'interactive',
-            title: '📅 Fecha de Visita',
-            text: stepHeader('book_date') + '¿Qué día prefieres para la visita técnica?',
-            footer: 'Atención de Lunes a Sábado',
-            listButtonTitle: '📅 Elegir Fecha',
-            sections: [{
-                title: 'Próximos Días Disponibles',
-                rows: optionsDate.map(o => ({ id: o.iso, title: o.str, description: 'Fecha: ' + o.iso }))
-            }]
-        };
+        return [
+            stepHeader('book_date') + '📅 *¿Qué día prefieres para la visita técnica?*',
+            {
+                type: 'poll',
+                question: '📅 Paso 6 de 6 — Elige la Fecha:',
+                options: optionsDate.map((o, i) => (i + 1) + '. ' + o.str)
+            }
+        ];
     }
 
     if (step === 'book_date') {
@@ -388,38 +382,38 @@ async function processMessage(phone, text, senderJid) {
         }
 
         if (!fechaSeleccionada) {
-            return {
-                type: 'interactive',
-                title: '📅 Elige una Fecha',
-                text: '❌ Fecha no válida. Elige una de las opciones disponibles:',
-                footer: 'HIDROSYS EC.',
-                listButtonTitle: '📅 Elegir Fecha',
-                sections: [{
-                    title: 'Días Disponibles',
-                    rows: optionsDate.map(o => ({ id: o.iso, title: o.str, description: 'Fecha: ' + o.iso }))
-                }]
-            };
+            return [
+                '❌ Fecha no válida. Elige una de las opciones disponibles:',
+                {
+                    type: 'poll',
+                    question: '📅 Elige la Fecha:',
+                    options: optionsDate.map((o, i) => (i + 1) + '. ' + o.str)
+                }
+            ];
         }
 
         setSession(phone, 'book_time', { date: fechaSeleccionada });
-        return {
-            type: 'interactive',
-            title: '⏰ Horario de Visita',
-            text: 'Fecha seleccionada: *' + fechaSeleccionada + '*\n\n¿En qué jornada prefieres la visita?',
-            footer: 'El técnico confirmará antes de llegar',
-            buttons: [
-                { id: '1', text: '🌅 Mañana (08-12)' },
-                { id: '2', text: '☀️ Tarde (13-17)' },
-                { id: '3', text: '🌆 Noche (17-19)' }
-            ]
-        };
+        return [
+            'Fecha seleccionada: *' + fechaSeleccionada + '*\n⏰ *¿En qué jornada prefieres la visita?*',
+            {
+                type: 'poll',
+                question: '⏰ Horario Preferido:',
+                options: [
+                    '1. Mañana (08:00 – 12:00)',
+                    '2. Tarde (13:00 – 17:00)',
+                    '3. Tarde-noche (17:00 – 19:00)'
+                ]
+            }
+        ];
     }
 
     if (step === 'book_time') {
         let horaFinal = null;
-        if ({'1':'09:00','2':'14:00','3':'17:00'}[msg]) horaFinal = {'1':'09:00','2':'14:00','3':'17:00'}[msg];
-        else if (/^\d{2}:\d{2}$/.test(msg)) horaFinal = msg;
-        else {
+        if ({'1':'09:00','2':'14:00','3':'17:00'}[msg] || {'1':'09:00','2':'14:00','3':'17:00'}[msg.charAt(0)]) {
+            horaFinal = {'1':'09:00','2':'14:00','3':'17:00'}[msg] || {'1':'09:00','2':'14:00','3':'17:00'}[msg.charAt(0)];
+        } else if (/^\d{2}:\d{2}$/.test(msg)) {
+            horaFinal = msg;
+        } else {
             const mn = norm(msg);
             if (mn.includes('manana') || mn.includes('08') || mn.includes('09')) horaFinal = '09:00';
             else if ((mn.includes('tarde') && !mn.includes('noche')) || (mn.includes('13') || mn.includes('14'))) horaFinal = '14:00';
@@ -428,17 +422,18 @@ async function processMessage(phone, text, senderJid) {
         }
 
         if (!horaFinal) {
-            return {
-                type: 'interactive',
-                title: '⏰ Horario de Visita',
-                text: '❌ Horario no reconocido. Elige una opción:',
-                footer: 'HIDROSYS EC.',
-                buttons: [
-                    { id: '1', text: '🌅 Mañana (08-12)' },
-                    { id: '2', text: '☀️ Tarde (13-17)' },
-                    { id: '3', text: '🌆 Noche (17-19)' }
-                ]
-            };
+            return [
+                '❌ Horario no reconocido. Elige una opción:',
+                {
+                    type: 'poll',
+                    question: '⏰ Horario Preferido:',
+                    options: [
+                        '1. Mañana (08:00 – 12:00)',
+                        '2. Tarde (13:00 – 17:00)',
+                        '3. Tarde-noche (17:00 – 19:00)'
+                    ]
+                }
+            ];
         }
 
         setSession(phone, 'book_confirm', { time: horaFinal });
@@ -463,14 +458,12 @@ async function processMessage(phone, text, senderJid) {
         return [
             resumen,
             {
-                type: 'interactive',
-                title: '✅ Confirmar Solicitud',
-                text: '¿Confirmas estos datos para agendar tu cita?',
-                footer: 'HIDROSYS EC. • Garantía y Calidad',
-                buttons: [
-                    { id: '1', text: '✅ SÍ, Confirmar' },
-                    { id: '2', text: '✍️ Corregir' },
-                    { id: '3', text: '❌ Cancelar' }
+                type: 'poll',
+                question: '✅ ¿Confirmas tu cita en HIDROSYS?',
+                options: [
+                    '✅ 1. SÍ, confirmar mi cita',
+                    '✍️ 2. No, corregir datos',
+                    '❌ 3. Cancelar agendamiento'
                 ]
             }
         ];
@@ -478,26 +471,27 @@ async function processMessage(phone, text, senderJid) {
 
     if (step === 'book_confirm') {
         const mn = norm(msg);
-        if (['2','no','corregir'].includes(mn) || mn.includes('corregir')) {
+        if (['2','no','corregir'].includes(mn) || mn.includes('corregir') || mn.startsWith('2')) {
             setSession(phone, 'book_name', {});
             return stepHeader('book_name') + 'De acuerdo, empecemos de nuevo. Escribe tu *nombre completo*:';
         }
-        if (['3','cancelar','cancel'].includes(mn) || mn.includes('cancelar')) {
+        if (['3','cancelar','cancel'].includes(mn) || mn.includes('cancelar') || mn.startsWith('3')) {
             clearSession(phone);
             return '↩️ Solicitud cancelada. Escribe *menu* cuando desees agendar nuevamente.';
         }
-        if (!['1','si','s','confirmar','confirmo','ok'].includes(mn) && !mn.includes('confirmar')) {
-            return {
-                type: 'interactive',
-                title: '✅ Confirmar Solicitud',
-                text: '¿Deseas registrar esta cita?',
-                footer: 'HIDROSYS EC.',
-                buttons: [
-                    { id: '1', text: '✅ SÍ, Confirmar' },
-                    { id: '2', text: '✍️ Corregir' },
-                    { id: '3', text: '❌ Cancelar' }
-                ]
-            };
+        if (!['1','si','s','confirmar','confirmo','ok'].includes(mn) && !mn.includes('confirmar') && !mn.startsWith('1')) {
+            return [
+                '¿Confirmas la información de tu cita?',
+                {
+                    type: 'poll',
+                    question: '✅ ¿Confirmas tu cita en HIDROSYS?',
+                    options: [
+                        '✅ 1. SÍ, confirmar mi cita',
+                        '✍️ 2. No, corregir datos',
+                        '❌ 3. Cancelar agendamiento'
+                    ]
+                }
+            ];
         }
 
         try {
@@ -519,7 +513,7 @@ async function processMessage(phone, text, senderJid) {
                 '⚠️ *PASO SIGUIENTE PARA CONFIRMAR:*\n' +
                 'Realiza una transferencia de *$15.00* a cualquiera de nuestras cuentas oficiales:\n\n' +
                 CUENTAS_BANCARIAS + '\n\n' +
-                '📲 Una vez realizada la transferencia, escribe *menu* y pulsa *Reportar Pago* para registrar tu comprobante.\n\n' +
+                '📲 Una vez realizada la transferencia, escribe *menu* y pulsa *2. Reportar Pago* para registrar tu comprobante.\n\n' +
                 '_¡Gracias por elegir HIDROSYS EC.! 💧_';
         } catch (err) {
             console.error('[WA] Error al guardar cita:', err.message);
@@ -539,47 +533,51 @@ async function processMessage(phone, text, senderJid) {
                 return '❌ No encontré citas pendientes de pago para ese número.\n\nVerifica e intenta de nuevo, o escribe *menu* para volver al inicio.';
             }
             setSession(phone, 'pay_select_apt', { lookupPhone: numL, aptRows: apts.rows });
-            return {
-                type: 'interactive',
-                title: '📋 Citas Pendientes de Pago',
-                text: 'Se encontraron citas registradas. Selecciona la que deseas reportar:',
-                footer: 'HIDROSYS EC.',
-                listButtonTitle: '📋 Seleccionar Cita',
-                sections: [{
-                    title: 'Citas Encontradas',
-                    rows: apts.rows.map(a => ({
-                        id: String(a.id),
-                        title: 'Cita #' + a.id + ' – ' + a.service_type,
-                        description: 'Fecha: ' + (a.apt_date?.toISOString().split('T')[0] || 'N/A')
-                    }))
-                }]
-            };
+            const aptOptions = apts.rows.map(a => '#' + a.id + ' – ' + a.service_type);
+            return [
+                '📋 *Citas Pendientes de Pago Encontradas:*',
+                {
+                    type: 'poll',
+                    question: '📋 Selecciona la Cita que ya Pagaste:',
+                    options: aptOptions
+                }
+            ];
         } catch (err) { return '❌ Error al buscar citas. Intenta de nuevo escribiendo *menu*.'; }
     }
 
     if (step === 'pay_select_apt') {
         const rows = sess.data.aptRows || [];
-        const matchApt = rows.find(r => String(r.id) === msg);
-        let selectedAptId = matchApt ? matchApt.id : null;
+        let selectedAptId = null;
+        for (const r of rows) {
+            if (msg.includes(String(r.id))) {
+                selectedAptId = r.id;
+                break;
+            }
+        }
         if (!selectedAptId) {
             const idx = parseInt(msg) - 1;
             if (!isNaN(idx) && idx >= 0 && idx < rows.length) selectedAptId = rows[idx].id;
         }
-        if (!selectedAptId) return '❌ Cita no válida. Por favor selecciona una de las opciones mostradas.';
+        if (!selectedAptId) return '❌ Cita no válida. Por favor selecciona una opción de la lista.';
 
         setSession(phone, 'pay_bank', { selectedAptId });
-        const bancos = ['Banco Pichincha','Banco Guayaquil','Produbanco','JEP','Banco del Pacífico','Coop. MEGO','Alianza del Valle','Banco Bolivariano'];
-        return {
-            type: 'interactive',
-            title: '🏦 Banco de Transferencia',
-            text: 'Selecciona el banco o cooperativa donde realizaste el pago:',
-            footer: 'HIDROSYS EC.',
-            listButtonTitle: '🏦 Elegir Banco',
-            sections: [{
-                title: 'Entidades Bancarias',
-                rows: bancos.map((b, i) => ({ id: String(i + 1), title: b, description: 'Cuenta Hidrosys EC.' }))
-            }]
-        };
+        return [
+            '🏦 *¿En qué entidad realizaste la transferencia?*',
+            {
+                type: 'poll',
+                question: '🏦 Banco / Cooperativa:',
+                options: [
+                    '1. Banco Pichincha',
+                    '2. Banco Guayaquil',
+                    '3. Produbanco',
+                    '4. JEP (Cooperativa)',
+                    '5. Banco del Pacífico',
+                    '6. Coop. MEGO',
+                    '7. Alianza del Valle',
+                    '8. Banco Bolivariano'
+                ]
+            }
+        ];
     }
 
     if (step === 'pay_bank') {
@@ -637,70 +635,26 @@ async function processMessage(phone, text, senderJid) {
     if (step === 'awaiting_csat') {
         const rating = parseInt(msg);
         if (rating >= 1 && rating <= 5) return await saveCsatRating(phone, sess.data, rating, msg);
-        return {
-            type: 'interactive',
-            title: '⭐ Calificación del Servicio',
-            text: '¿Cómo calificarías la atención técnica recibida hoy?',
-            footer: 'HIDROSYS EC.',
-            buttons: [
-                { id: '5', text: '😍 Excelente (5/5)' },
-                { id: '4', text: '😊 Bueno (4/5)' },
-                { id: '3', text: '😐 Regular (3/5)' }
-            ]
-        };
-    }
-
-    // Express NLP
-    const expressData = parseExpressBookingText(msg);
-    if (expressData && (step === 'idle' || step === 'main_menu' || step.startsWith('book_'))) {
-        setSession(phone, 'express_confirm', {
-            name: expressData.name || sess.data.name || 'Cliente',
-            clientPhone: expressData.phone || phone,
-            service: expressData.service || 'Inspección Técnica General',
-            address: expressData.address || 'Domicilio del Cliente',
-            canton: expressData.canton || 'Azogues',
-            parish: expressData.parish || expressData.canton || 'Azogues',
-            zone: (expressData.canton || 'Azogues') + ' - ' + (expressData.parish || expressData.canton || 'Azogues'),
-            date: expressData.date || getTomorrowDateStr(),
-            time: expressData.time || '10:00',
-            senderJid: senderJid || sess.data.senderJid
-        });
-        const s = getSession(phone).data;
         return [
-            '📋 *¡Datos detectados automáticamente!* ⚡\n\nHemos preparado tu orden de agendamiento:\n\n👤 *Cliente:* ' + s.name + '\n🔧 *Servicio:* ' + s.service + '\n📍 *Ubicación:* ' + s.address + ', ' + s.canton + '\n📅 *Fecha:* ' + s.date + '\n⏰ *Hora:* ' + s.time + '\n💰 *Valor:* $15.00',
+            '⭐ *¿Cómo calificarías la atención técnica recibida hoy?*',
             {
-                type: 'interactive',
-                title: '⚡ Confirmar Agendamiento Rápido',
-                text: '¿Confirmas estos datos para registrar la cita de inmediato?',
-                footer: 'HIDROSYS EC.',
-                buttons: [
-                    { id: '1', text: '✅ SÍ, Confirmar' },
-                    { id: '0', text: '❌ Cancelar' }
+                type: 'poll',
+                question: '⭐ Calificación de Servicio:',
+                options: [
+                    '😍 5 - Excelente',
+                    '😊 4 - Bueno',
+                    '😐 3 - Regular',
+                    '🙁 2 - Malo',
+                    '😡 1 - Pésimo'
                 ]
             }
         ];
     }
 
-    if (step === 'express_confirm') {
-        const mn = norm(msg);
-        if (['1','si','s','confirmar','confirmo','ok'].includes(mn)) {
-            const s = sess.data;
-            try {
-                await pool.query('INSERT INTO clients (name,phone,address,zone) VALUES ($1,$2,$3,$4) ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name',[s.name,s.clientPhone,s.address,s.zone]);
-                const result = await pool.query('INSERT INTO appointments (client_name,client_phone,address,zone,service_type,apt_date,apt_time,status,payment_amount,payment_status,channel,notes,wa_sender) VALUES ($1,$2,$3,$4,$5,$6,$7,\'Agendado\',$8,\'Pendiente\',\'WhatsApp\',\'Agendamiento Express WhatsApp\',$9) RETURNING id',[s.name,s.clientPhone,s.address,s.zone,s.service,s.date,s.time,15.00,s.senderJid||null]);
-                const aptId = result.rows[0].id; clearSession(phone);
-                return '🎉 *¡Tu cita #' + aptId + ' fue registrada con éxito!*\n\n🛠️ Servicio: *' + s.service + '*\n📅 Fecha: *' + s.date + '* a las *' + s.time + '*\n📍 Dirección: *' + s.address + '* (' + s.canton + ')\n💵 Total: *$15.00*\n\n' + CUENTAS_BANCARIAS + '\n\n👉 _Envía el número de transacción con la opción **2** del menú._';
-            } catch (err) { return '❌ Inconveniente al guardar la cita. Escribe *menu* e intenta de nuevo.'; }
-        } else {
-            clearSession(phone);
-            return menuPrincipalInteractive();
-        }
-    }
-
     // Fallback
     clearSession(phone);
     setSession(phone, 'main_menu', { senderJid });
-    return menuPrincipalInteractive();
+    return menuPrincipalDual();
 }
 
 // ============================================================
@@ -713,10 +667,10 @@ async function processPollVote(phone, selectedOption, senderJid) {
     const step = sess.step;
 
     if (step === 'idle' || step === 'main_menu') {
-        if (optN.includes('agendar') || optN.includes('visita')) return await processMessage(phone, '1', senderJid);
-        if (optN.includes('pago') || optN.includes('comprobante')) return await processMessage(phone, '2', senderJid);
-        if (optN.includes('consultar') || optN.includes('estado')) return await processMessage(phone, '3', senderJid);
-        if (optN.includes('catalogo') || optN.includes('precio')) return await processMessage(phone, '4', senderJid);
+        if (optN.includes('agendar') || optN.includes('visita') || optN.startsWith('1')) return await processMessage(phone, '1', senderJid);
+        if (optN.includes('pago') || optN.includes('comprobante') || optN.startsWith('2')) return await processMessage(phone, '2', senderJid);
+        if (optN.includes('consultar') || optN.includes('estado') || optN.startsWith('3')) return await processMessage(phone, '3', senderJid);
+        if (optN.includes('catalogo') || optN.includes('precio') || optN.startsWith('4')) return await processMessage(phone, '4', senderJid);
     }
 
     if (step === 'awaiting_csat') {
@@ -729,11 +683,17 @@ async function processPollVote(phone, selectedOption, senderJid) {
         return await saveCsatRating(phone, sess.data, rating, opt);
     }
 
+    // Extraer número de opción si viene tipo "1. Azogues"
+    const matchNum = opt.match(/^(\d+)[.\s]/);
+    if (matchNum) {
+        return await processMessage(phone, matchNum[1], senderJid);
+    }
+
     return await processMessage(phone, opt, senderJid);
 }
 
 // ============================================================
-// GUARDAR CALIFICACION CSAT
+// GUARDAR CALIFICACIÓN CSAT
 // ============================================================
 async function saveCsatRating(phone, sessData, rating, rawOption) {
     try {
@@ -744,46 +704,6 @@ async function saveCsatRating(phone, sessData, rating, rawOption) {
         clearSession(phone);
         return '⭐ *¡Gracias por tu calificación!*\n\n' + emojis[rating] + ' *' + labels[rating] + '* (' + rating + '/5)\n\n_Tu opinión nos ayuda a seguir mejorando día a día. ¡Hasta la próxima!_ 💧\n\n_Escribe *menu* si necesitas algo más._';
     } catch (err) { clearSession(phone); return '⭐ ¡Gracias por tu calificación! Tu opinión es muy valiosa para nosotros. 💧'; }
-}
-
-// ============================================================
-// EXPRESS NLP
-// ============================================================
-function parseExpressBookingText(text) {
-    if (!text || text.length < 15) return null;
-    const lower = norm(text);
-    const hasIntent = lower.includes('agendar') || lower.includes('visita') || lower.includes('mantenimiento') || lower.includes('reparar') || lower.includes('fuga') || lower.includes('bomba') || lower.includes('instal') || lower.includes('tuberia') || lower.includes('nombre:');
-    if (!hasIntent) return null;
-    let name = '', address = '', canton = 'Azogues', service = 'Inspección Técnica General', date = getTomorrowDateStr(), time = '10:00';
-    const phoneMatch = text.match(/09\d{8}/);
-    text.split('\n').forEach(l => {
-        const parts = l.split(':');
-        if (parts.length >= 2) {
-            const k = norm(parts[0]);
-            const v = parts.slice(1).join(':').trim();
-            if (k.includes('nombre') || k.includes('cliente')) name = v;
-            if (k.includes('direc') || k.includes('calle') || k.includes('lugar')) address = v;
-            if (k.includes('canton') || k.includes('ciudad')) canton = v;
-            if (k.includes('servicio') || k.includes('trabajo')) service = v;
-            if (k.includes('fecha') || k.includes('dia')) date = v;
-            if (k.includes('hora')) time = v;
-        }
-    });
-    Object.values(CANTONES).forEach(c => { if (lower.includes(norm(c.nombre))) canton = c.nombre; });
-    if (lower.includes('gas')) service = 'Instalación de Red de Gas Domiciliario';
-    else if (lower.includes('bomba') || lower.includes('hidro')) service = 'Mantenimiento de Sistema Hidráulico';
-    else if (lower.includes('medidor')) service = 'Instalación de Medidor de Agua';
-    else if (lower.includes('tuberia') || lower.includes('fuga') || lower.includes('goteo')) service = 'Revisión / Reparación de Tubería';
-    if (!name && lower.includes('soy ')) {
-        const a = text.substring(lower.indexOf('soy ') + 4).split(/[,.\n]/)[0].trim();
-        if (a.length > 2) name = a;
-    }
-    if (!address && (lower.includes('en ') || lower.includes('calle '))) {
-        const a = text.substring(lower.indexOf('en ') + 3).split(/[,.\n]/)[0].trim();
-        if (a.length > 3) address = a;
-    }
-    if (name || address || phoneMatch) return { name: name || 'Cliente Particular', phone: phoneMatch ? phoneMatch[0] : null, address: address || 'Dirección por confirmar', canton: canton || 'Azogues', parish: canton || 'Azogues', service, date, time };
-    return null;
 }
 
 // ============================================================
@@ -810,14 +730,9 @@ async function buildConfirmationMessage(aptId) {
             message: [
                 '✅ *HIDROSYS EC. — ¡Cita Confirmada!*\n\n🎉 Tu pago fue verificado y aprobado exitosamente.\n\n📋 *Cita ID:* #' + a.id + '\n🔧 *Servicio:* ' + a.service_type + '\n📅 *Fecha:* ' + fecha + '\n⏰ *Hora:* ' + String(a.apt_time).slice(0,5) + '\n📍 *Zona:* ' + a.address + ' (' + a.zone + ')\n👷 *Técnico:* ' + (a.tech_name || 'Técnico Especializado HIDROSYS'),
                 {
-                    type: 'interactive',
-                    title: '✅ Confirmar Asistencia',
-                    text: '¿Confirmas que estarás disponible en este horario?',
-                    footer: 'HIDROSYS EC.',
-                    buttons: [
-                        { id: '1', text: '✅ SÍ, Confirmar' },
-                        { id: '2', text: '❌ No, Reagendar' }
-                    ]
+                    type: 'poll',
+                    question: '❓ ¿Confirmas que estarás disponible?',
+                    options: ['✅ 1. SÍ, estaré disponible', '❌ 2. NO, necesito reagendar']
                 }
             ]
         };
@@ -857,15 +772,15 @@ async function buildServiceCompletedMessage(aptId) {
         return {
             phone: targetJid,
             message: '🏁 *HIDROSYS EC. — Servicio Finalizado*\n\nEstimado/a *' + a.client_name + '*, el servicio de *' + a.service_type + '* ha concluido exitosamente.\n\n_¡Gracias por elegir HIDROSYS EC.!_',
-            interactiveFeedback: {
-                type: 'interactive',
-                title: '⭐ Calificación de Servicio',
-                text: '¿Cómo calificarías la atención de nuestro personal técnico?',
-                footer: 'HIDROSYS EC. • Calidad y Control',
-                buttons: [
-                    { id: '5', text: '😍 Excelente (5/5)' },
-                    { id: '4', text: '😊 Bueno (4/5)' },
-                    { id: '3', text: '😐 Regular (3/5)' }
+            poll: {
+                type: 'poll',
+                question: '⭐ ¿Cómo calificas la atención recibida?',
+                options: [
+                    '😍 5 - Excelente',
+                    '😊 4 - Bueno',
+                    '😐 3 - Regular',
+                    '🙁 2 - Malo',
+                    '😡 1 - Pésimo'
                 ]
             }
         };
@@ -881,7 +796,7 @@ async function processAudioMessage(phone, msg, senderJid, waSocket) {
     if (step === 'awaiting_availability_confirm') return '🎙️ *Nota de voz recibida.*\n\nPara confirmar tu disponibilidad, responde *SÍ* o *NO* por texto.';
 
     setSession(phone, 'main_menu', { senderJid, fromAudio: true });
-    return menuPrincipalInteractive();
+    return menuPrincipalDual();
 }
 
 module.exports = { processMessage, processPollVote, buildConfirmationMessage, buildReminderMessage, buildServiceCompletedMessage, processAudioMessage, clearSession, setSession };
