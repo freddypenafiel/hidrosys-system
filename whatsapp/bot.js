@@ -1,6 +1,6 @@
 ﻿// whatsapp/bot.js - Conexion WhatsApp via Baileys para HIDROSYS EC.
 // Libreria: @whiskeysockets/baileys
-// v4.0 - Bot Empresarial con Polls Interactivos Nativos
+// v4.5 - Bot con Botones Interactivos Nativos (Quick Reply & Single Select) y Desencriptacion de Polls
 
 const {
     default: makeWASocket,
@@ -10,7 +10,7 @@ const {
     makeCacheableSignalKeyStore,
     proto,
     generateWAMessageFromContent,
-    getAggregateVotesInPollMessage,
+    decryptPollVote,
 } = require("@whiskeysockets/baileys");
 
 const { Boom }          = require("@hapi/boom");
@@ -18,6 +18,7 @@ const pino              = require("pino");
 const qrcode            = require("qrcode-terminal");
 const path              = require("path");
 const fs                = require("fs");
+const crypto            = require("crypto");
 const { processMessage, buildConfirmationMessage, buildReminderMessage, buildServiceCompletedMessage, processAudioMessage, processPollVote } = require("./flows");
 
 // ============================================================
@@ -29,12 +30,13 @@ let   isConnected = false;
 let   lastQr      = null;
 
 // ============================================================
-// STORE DE MENSAJES (necesario para descifrar votos de poll)
+// STORE DE MENSAJES
 // ============================================================
 const messageStore = new Map();
 const STORE_MAX    = 3000;
 
 function storeMessage(id, msg) {
+    if (!id || !msg) return;
     messageStore.set(id, msg);
     if (messageStore.size > STORE_MAX) {
         const firstKey = messageStore.keys().next().value;
@@ -42,16 +44,14 @@ function storeMessage(id, msg) {
     }
 }
 
-// ============================================================
-// LOGGER SILENCIOSO
-// ============================================================
+// Logger silencioso
 const logger = pino({ level: "silent" });
 
 // ============================================================
 // HELPER: Normalizar JID
 // ============================================================
 function normalizeJid(jidOrPhone) {
-    let jid = jidOrPhone;
+    let jid = String(jidOrPhone || "").trim();
     if (!jid.includes("@")) {
         const cleanPhone = jid.split(":")[0].replace(/\D/g, "");
         let targetPhone = cleanPhone;
@@ -64,16 +64,209 @@ function normalizeJid(jidOrPhone) {
 }
 
 // ============================================================
+// HELPER: Enviar Respuestas Multiples (Secuencial)
+// ============================================================
+async function sendMultiResponse(jid, response) {
+    if (!response) return;
+    if (Array.isArray(response)) {
+        for (const item of response) {
+            await sendMessage(jid, item);
+            await new Promise(r => setTimeout(r, 600));
+        }
+    } else {
+        await sendMessage(jid, response);
+    }
+}
+
+// ============================================================
+// ENVIAR MENSAJE INTERACTIVO CON BOTONES O LISTA (NATIVE FLOW)
+// ============================================================
+async function sendInteractive(jidOrPhone, content) {
+    if (!waSocket || !isConnected) {
+        console.warn("[WA Bot] No conectado. Mensaje interactivo no enviado.");
+        return false;
+    }
+    const jid = normalizeJid(jidOrPhone);
+
+    try {
+        const title   = content.title || "";
+        const text    = content.text || content.body || "";
+        const footer  = content.footer || "HIDROSYS EC. • Atencion al Cliente";
+        const buttons = content.buttons || [];
+        const sections = content.sections || [];
+        const listBtnTitle = content.listButtonTitle || "📋 Ver Opciones";
+
+        let nativeButtons = [];
+
+        // 1. Botones directos (Quick Reply)
+        if (buttons && Array.isArray(buttons) && buttons.length > 0) {
+            nativeButtons = buttons.map((b, idx) => ({
+                name: "quick_reply",
+                buttonParamsJson: JSON.stringify({
+                    display_text: b.text || b.title || b.label || String(b),
+                    id: String(b.id || (idx + 1))
+                })
+            }));
+        }
+        // 2. Menu desplegable (Single Select)
+        else if (sections && Array.isArray(sections) && sections.length > 0) {
+            nativeButtons = [{
+                name: "single_select",
+                buttonParamsJson: JSON.stringify({
+                    title: listBtnTitle,
+                    sections: sections.map(sec => ({
+                        title: sec.title || "Opciones",
+                        rows: (sec.rows || []).map((row, i) => ({
+                            header: "",
+                            title: row.title || row.label || "",
+                            description: row.description || "",
+                            id: String(row.id || row.rowId || (i + 1))
+                        }))
+                    }))
+                })
+            }];
+        }
+
+        const interactiveMessage = {
+            body: { text: text || "" },
+            footer: { text: footer },
+            header: { title: title, hasMediaAttachment: false },
+            nativeFlowMessage: {
+                buttons: nativeButtons
+            }
+        };
+
+        const msg = generateWAMessageFromContent(jid, {
+            viewOnceMessage: {
+                message: {
+                    messageContextInfo: {
+                        deviceListMetadata: {},
+                        deviceListMetadataVersion: 2
+                    },
+                    interactiveMessage: interactiveMessage
+                }
+            }
+        }, {});
+
+        await waSocket.relayMessage(jid, msg.message, { messageId: msg.key.id });
+        console.log("[WA Bot] 🔘 Mensaje interactivo enviado a: " + jid);
+        return true;
+    } catch (err) {
+        console.error("[WA Bot] ❌ Error enviando interactivo:", err.message);
+        // Fallback a texto claro
+        let fallback = "";
+        if (content.title) fallback += "*" + content.title + "*\n\n";
+        if (content.text) fallback += content.text + "\n\n";
+        if (content.buttons && Array.isArray(content.buttons)) {
+            content.buttons.forEach((b, i) => {
+                fallback += (i + 1) + "️⃣ *" + (b.text || b.title || b.label) + "*\n";
+            });
+        } else if (content.sections && Array.isArray(content.sections)) {
+            content.sections.forEach(sec => {
+                if (sec.title) fallback += "*" + sec.title + ":*\n";
+                (sec.rows || []).forEach((r, i) => {
+                    fallback += (i + 1) + "️⃣ *" + r.title + "* " + (r.description ? "– " + r.description : "") + "\n";
+                });
+            });
+        }
+        if (content.footer) fallback += "\n_" + content.footer + "_";
+        return await sendMessage(jid, fallback);
+    }
+}
+
+// ============================================================
+// ENVIAR POLL INTERACTIVO NATIVO
+// ============================================================
+async function sendPoll(jidOrPhone, question, options) {
+    if (!waSocket || !isConnected) return null;
+    const jid = normalizeJid(jidOrPhone);
+    try {
+        const msgResult = await waSocket.sendMessage(jid, {
+            poll: { name: question, values: options, selectableCount: 1 }
+        });
+        if (msgResult?.key?.id) {
+            storeMessage(msgResult.key.id, msgResult);
+        }
+        console.log("[WA Bot] 📊 Poll enviado a: " + jid + " — \"" + question + "\"");
+        return msgResult;
+    } catch (err) {
+        console.error("[WA Bot] ❌ Error enviando poll:", err.message);
+        const fallback = "*" + question + "*\n\n" + options.map((o, i) => (i+1) + ". " + o).join("\n") + "\n\n_Responde escribiendo el numero de tu opcion._";
+        await sendMessage(jid, fallback);
+        return null;
+    }
+}
+
+// ============================================================
+// ENVIAR IMAGEN CON CAPTION
+// ============================================================
+async function sendImageWithCaption(jidOrPhone, imagePath, caption) {
+    if (!waSocket || !isConnected) return false;
+    const jid = normalizeJid(jidOrPhone);
+    try {
+        if (imagePath && fs.existsSync(imagePath)) {
+            const imageBuffer = fs.readFileSync(imagePath);
+            await waSocket.sendMessage(jid, { image: imageBuffer, caption: caption });
+        } else {
+            await sendMessage(jid, caption);
+        }
+        return true;
+    } catch (err) {
+        console.error("[WA Bot] ❌ Error enviando imagen:", err.message);
+        await sendMessage(jid, caption);
+        return false;
+    }
+}
+
+// ============================================================
+// ENVIAR MENSAJE (HELPER GENERAL)
+// ============================================================
+async function sendMessage(jidOrPhone, content) {
+    if (!waSocket || !isConnected) {
+        console.warn("[WA Bot] No conectado. Mensaje no enviado.");
+        return false;
+    }
+    const jid = normalizeJid(jidOrPhone);
+
+    try {
+        if (typeof content === "object" && content !== null) {
+            // Caso 1: Objeto interactivo con botones o menu desplegable
+            if (content.type === "interactive" || (content.buttons && content.buttons.length) || (content.sections && content.sections.length)) {
+                return await sendInteractive(jid, content);
+            }
+            // Caso 2: Objeto Poll
+            if (content.type === "poll") {
+                return await sendPoll(jid, content.question, content.options);
+            }
+
+            // Caso 3: Fallback texto
+            let formatted = "";
+            if (content.title) formatted += "*" + content.title + "*\n\n";
+            if (content.text) formatted += content.text + "\n";
+            if (content.footer) formatted += "\n_" + content.footer + "_";
+            content = formatted.trim() || JSON.stringify(content);
+        }
+
+        await waSocket.sendMessage(jid, { text: String(content) });
+        console.log("[WA Bot] ✅ Mensaje enviado exitosamente a: " + jid);
+        return true;
+    } catch (err) {
+        console.error("[WA Bot] ❌ Error enviando mensaje:", err.message);
+        return false;
+    }
+}
+
+// ============================================================
 // INICIALIZAR BOT
 // ============================================================
 async function startWhatsAppBot() {
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_FOLDER);
     const { version }          = await fetchLatestBaileysVersion();
 
-    console.log("\n+------------------------------------------+");
-    console.log("�  ?? HIDROSYS � Bot de WhatsApp v4.0      �");
-    console.log("�  Iniciando conexion con Baileys...       �");
-    console.log("+------------------------------------------+\n");
+    console.log("\n╔══════════════════════════════════════════╗");
+    console.log("║  💬 HIDROSYS – Bot de WhatsApp v4.5      ║");
+    console.log("║  Botones Interactivos y Agendamiento     ║");
+    console.log("╚══════════════════════════════════════════╝\n");
 
     waSocket = makeWASocket({
         version,
@@ -95,10 +288,10 @@ async function startWhatsAppBot() {
                 const cleanNum = pairingNum.replace(/\D/g, "");
                 const code = await waSocket.requestPairingCode(cleanNum);
                 console.log("\n==================================================");
-                console.log("?? NUEVO CODIGO DE VINCULACION: " + code);
+                console.log("🔑 NUEVO CODIGO DE VINCULACION: " + code);
                 console.log("==================================================");
             } catch (err) {
-                console.error("? Error generando codigo de emparejamiento:", err.message);
+                console.error("❌ Error generando codigo de emparejamiento:", err.message);
             }
         }, 6000);
     }
@@ -111,7 +304,7 @@ async function startWhatsAppBot() {
         if (qr) {
             lastQr = qr;
             if (!pairingNum) {
-                console.log("\n?? �ESCANEA EL SIGUIENTE QR CON WHATSAPP!\n");
+                console.log("\n📱 ¡ESCANEA EL SIGUIENTE QR CON WHATSAPP!\n");
                 qrcode.generate(qr, { small: true });
             }
         }
@@ -121,13 +314,13 @@ async function startWhatsAppBot() {
             lastQr = null;
             const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
             if (reason === DisconnectReason.loggedOut) {
-                console.log("\n??  [WA Bot] Sesion cerrada. Eliminando credenciales...");
+                console.log("\n⚠️  [WA Bot] Sesion cerrada. Eliminando credenciales...");
                 if (fs.existsSync(AUTH_FOLDER)) {
                     fs.rmSync(AUTH_FOLDER, { recursive: true, force: true });
                 }
                 console.log("   Reinicia el servidor para generar un nuevo QR.\n");
             } else {
-                console.log("\n?? [WA Bot] Desconectado (codigo: " + reason + "). Reconectando en 5s...");
+                console.log("\n🔄 [WA Bot] Desconectado (codigo: " + reason + "). Reconectando en 5s...");
                 setTimeout(startWhatsAppBot, 5000);
             }
         }
@@ -136,16 +329,16 @@ async function startWhatsAppBot() {
             isConnected = true;
             lastQr = null;
             const phone = waSocket.user?.id?.split(":")[0] || "desconocido";
-            console.log("\n? [WA Bot] �Conectado exitosamente!");
-            console.log("   ?? Numero vinculado: +" + phone);
-            console.log("   El bot esta activo y recibiendo mensajes.\n");
+            console.log("\n✅ [WA Bot] ¡Conectado exitosamente!");
+            console.log("   📱 Numero vinculado: +" + phone);
+            console.log("   El bot esta activo con botones interactivos y respuestas.\n");
         }
     });
 
     const processedMessageIds = new Set();
     const userLastMsgTime     = new Map();
 
-    // -- Mensajes de texto/audio entrantes --------------------
+    // ── PROCESAR MENSAJES ENTRANTES (BOTONES, POLLS, TEXTO, AUDIO) ────────
     waSocket.ev.on("messages.upsert", async ({ messages, type }) => {
         if (type !== "notify") return;
 
@@ -154,8 +347,64 @@ async function startWhatsAppBot() {
             if (msg.key.remoteJid === "status@broadcast")       continue;
             if (msg.key.remoteJid?.endsWith("@g.us"))           continue;
 
+            const jid      = msg.key.remoteJid;
+            const cleanJid = jid.split(":")[0];
+            const phone    = cleanJid.split("@")[0].replace(/\D/g, "");
+
             if (msg.key.id) storeMessage(msg.key.id, msg);
 
+            // 1. DETECTAR VOTO EN POLL
+            const pollUpdate = msg.message?.pollUpdateMessage;
+            if (pollUpdate) {
+                console.log("[WA] 🗳️ Voto de Poll detectado de +" + phone);
+                try {
+                    const creationId = pollUpdate.pollCreationMessageKey?.id;
+                    const storedMsg = creationId ? messageStore.get(creationId) : null;
+                    let selectedOption = null;
+
+                    if (storedMsg && storedMsg.message?.pollCreationMessage) {
+                        const pollOptions = storedMsg.message.pollCreationMessage.options?.map(o => o.optionName) || [];
+                        const messageSecret = storedMsg.message?.messageContextInfo?.messageSecret;
+
+                        if (messageSecret && pollUpdate.vote) {
+                            try {
+                                const decrypted = await decryptPollVote(pollUpdate.vote, {
+                                    pollCreatorJid: pollUpdate.pollCreationMessageKey?.remoteJid,
+                                    pollMsgId: creationId,
+                                    pollEncKey: messageSecret,
+                                    voterJid: jid
+                                });
+                                if (decrypted?.selectedOptions?.length) {
+                                    const selHash = Buffer.from(decrypted.selectedOptions[0]).toString("hex");
+                                    for (const opt of pollOptions) {
+                                        const optHash = crypto.createHash("sha256").update(opt).digest("hex");
+                                        if (optHash === selHash) {
+                                            selectedOption = opt;
+                                            break;
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn("[WA Poll] Descifrado falló, buscando opción activa:", e.message);
+                            }
+                        }
+                    }
+
+                    if (selectedOption) {
+                        console.log("[WA Poll] ✅ Voto procesado: \"" + selectedOption + "\"");
+                        await waSocket.sendPresenceUpdate("composing", jid);
+                        const response = await processPollVote(phone, selectedOption, jid);
+                        if (response) {
+                            await sendMultiResponse(jid, response);
+                        }
+                        continue;
+                    }
+                } catch (pollErr) {
+                    console.error("[WA Poll] Error:", pollErr.message);
+                }
+            }
+
+            // 2. DEDUPLICACION
             if (msg.key.id) {
                 if (processedMessageIds.has(msg.key.id)) continue;
                 processedMessageIds.add(msg.key.id);
@@ -165,24 +414,35 @@ async function startWhatsAppBot() {
                 }
             }
 
-            const jid      = msg.key.remoteJid;
-            const cleanJid = jid.split(":")[0];
-            const phone    = cleanJid.split("@")[0].replace(/\D/g, "");
-            const isAudio  = Boolean(msg.message?.audioMessage);
+            const isAudio = Boolean(msg.message?.audioMessage);
 
+            // 3. EXTRAER TEXTO DE RESPUESTAS INTERACTIVAS, BOTONES O TEXTO LIBRE
             let text = "";
-            if (msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId) {
-                text = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
-            } else if (msg.message?.buttonsResponseMessage?.selectedButtonId) {
-                text = msg.message.buttonsResponseMessage.selectedButtonId;
-            } else if (msg.message?.templateButtonReplyMessage?.selectedId) {
-                text = msg.message.templateButtonReplyMessage.selectedId;
-            } else if (msg.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson) {
+
+            // A. Botón o Menú interactivo (NativeFlowMessage / Quick Reply / Single Select)
+            if (msg.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson) {
                 try {
                     const params = JSON.parse(msg.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson);
-                    if (params.id) text = params.id;
+                    text = params.id || params.title || params.display_text || "";
+                    console.log("[WA] 🔘 Clic en botón interactivo detectado: id=" + text);
                 } catch (e) {}
             }
+            // B. Single select reply (List message)
+            else if (msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId) {
+                text = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
+                console.log("[WA] 📋 Opción de lista seleccionada: id=" + text);
+            }
+            // C. Button reply
+            else if (msg.message?.buttonsResponseMessage?.selectedButtonId) {
+                text = msg.message.buttonsResponseMessage.selectedButtonId;
+                console.log("[WA] 🔘 Botón pulsado: id=" + text);
+            }
+            // D. Template button reply
+            else if (msg.message?.templateButtonReplyMessage?.selectedId) {
+                text = msg.message.templateButtonReplyMessage.selectedId;
+            }
+
+            // E. Texto directo
             if (!text) {
                 text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || "";
             }
@@ -196,7 +456,7 @@ async function startWhatsAppBot() {
 
             try {
                 if (isAudio) {
-                    console.log("[WA] ??? Nota de voz recibida de +" + phone);
+                    console.log("[WA] 🎙️ Nota de voz de +" + phone);
                     try {
                         await waSocket.sendPresenceUpdate("recording", jid);
                         await new Promise(r => setTimeout(r, 900));
@@ -205,64 +465,22 @@ async function startWhatsAppBot() {
                     const response = await processAudioMessage(phone, msg, jid, waSocket);
                     if (response) {
                         await new Promise(r => setTimeout(r, 600));
-                        await sendMessage(jid, response);
+                        await sendMultiResponse(jid, response);
                     }
                     continue;
                 }
 
-                console.log("[WA] ?? Mensaje de +" + phone + ": \"" + text + "\"");
+                console.log("[WA] 📨 Mensaje de +" + phone + ": \"" + text + "\"");
                 await waSocket.sendPresenceUpdate("composing", jid);
 
                 const response = await processMessage(phone, text, jid);
                 if (response) {
                     await new Promise(r => setTimeout(r, 700));
-                    await sendMessage(jid, response);
-                    console.log("[WA] ? Respuesta enviada a +" + phone);
+                    await sendMultiResponse(jid, response);
+                    console.log("[WA] ✅ Respuesta enviada a +" + phone);
                 }
             } catch (err) {
-                console.error("[WA] ? Error procesando mensaje de +" + phone + ":", err.message);
-            }
-        }
-    });
-
-    // -- Votos de Poll (messages.update) ----------------------
-    waSocket.ev.on("messages.update", async (updates) => {
-        for (const update of updates) {
-            if (!update.update?.pollUpdates) continue;
-
-            const pollMsgId = update.key?.id;
-            const voterJid  = update.key?.remoteJid;
-            if (!pollMsgId || !voterJid) continue;
-
-            const originalPollMsg = messageStore.get(pollMsgId);
-            if (!originalPollMsg) {
-                console.log("[WA Poll] No se encontro el mensaje de poll original (id: " + pollMsgId + ")");
-                continue;
-            }
-
-            try {
-                const pollVotes = getAggregateVotesInPollMessage({
-                    message: originalPollMsg.message,
-                    pollUpdates: update.update.pollUpdates,
-                });
-
-                const selected = pollVotes?.find(v => v.voters && v.voters.length > 0);
-                if (!selected) continue;
-
-                const selectedOption = selected.name;
-                const phone = voterJid.split(":")[0].split("@")[0].replace(/\D/g, "");
-
-                console.log("[WA Poll] ??? +" + phone + " voto: \"" + selectedOption + "\"");
-                await waSocket.sendPresenceUpdate("composing", voterJid);
-
-                const response = await processPollVote(phone, selectedOption, voterJid);
-                if (response) {
-                    await new Promise(r => setTimeout(r, 700));
-                    await sendMessage(voterJid, response);
-                    console.log("[WA Poll] ? Respuesta a voto enviada a +" + phone);
-                }
-            } catch (err) {
-                console.error("[WA Poll] ? Error procesando voto de poll:", err.message);
+                console.error("[WA] ❌ Error procesando mensaje de +" + phone + ":", err.message);
             }
         }
     });
@@ -271,91 +489,7 @@ async function startWhatsAppBot() {
 }
 
 // ============================================================
-// ENVIAR POLL INTERACTIVO NATIVO
-// ============================================================
-async function sendPoll(jid, question, options) {
-    if (!waSocket || !isConnected) {
-        console.warn("[WA Bot] No conectado. Poll no enviado.");
-        return null;
-    }
-    jid = normalizeJid(jid);
-    try {
-        const msgResult = await waSocket.sendMessage(jid, {
-            poll: { name: question, values: options, selectableCount: 1 }
-        });
-        if (msgResult?.key?.id) storeMessage(msgResult.key.id, msgResult);
-        console.log("[WA Bot] ?? Poll enviado a: " + jid + " � \"" + question + "\"");
-        return msgResult;
-    } catch (err) {
-        console.error("[WA Bot] ? Error enviando poll:", err.message);
-        const fallback = "*" + question + "*\n\n" + options.map((o, i) => (i+1) + ". " + o).join("\n") + "\n\n_Responde escribiendo el numero de tu opcion._";
-        await sendMessage(jid, fallback);
-        return null;
-    }
-}
-
-// ============================================================
-// ENVIAR IMAGEN CON CAPTION (Bienvenida corporativa)
-// ============================================================
-async function sendImageWithCaption(jid, imagePath, caption) {
-    if (!waSocket || !isConnected) return false;
-    jid = normalizeJid(jid);
-    try {
-        if (imagePath && fs.existsSync(imagePath)) {
-            const imageBuffer = fs.readFileSync(imagePath);
-            await waSocket.sendMessage(jid, { image: imageBuffer, caption: caption });
-        } else {
-            await sendMessage(jid, caption);
-        }
-        return true;
-    } catch (err) {
-        console.error("[WA Bot] ? Error enviando imagen:", err.message);
-        await sendMessage(jid, caption);
-        return false;
-    }
-}
-
-// ============================================================
-// ENVIAR MENSAJE (helper publico)
-// ============================================================
-async function sendMessage(jidOrPhone, content) {
-    if (!waSocket || !isConnected) {
-        console.warn("[WA Bot] No conectado. Mensaje no enviado.");
-        return false;
-    }
-    const jid = normalizeJid(jidOrPhone);
-    try {
-        if (typeof content === "object" && content !== null && content.type === "poll") {
-            return await sendPoll(jid, content.question, content.options);
-        }
-        let text = content;
-        if (typeof text === "object" && text !== null) {
-            let formatted = "";
-            if (text.title) formatted += "*" + text.title + "*\n\n";
-            if (text.text) formatted += text.text + "\n";
-            if (text.sections && Array.isArray(text.sections)) {
-                formatted += "\n";
-                text.sections.forEach(sec => {
-                    if (sec.title) formatted += "*" + sec.title + ":*\n";
-                    (sec.rows || []).forEach((row, i) => {
-                        formatted += (i + 1) + "?? *" + row.title + "* " + (row.description ? "� " + row.description : "") + "\n";
-                    });
-                });
-            }
-            if (text.footer) formatted += "\n_" + text.footer + "_";
-            text = formatted.trim() || JSON.stringify(text);
-        }
-        await waSocket.sendMessage(jid, { text: String(text) });
-        console.log("[WA Bot] ? Mensaje enviado exitosamente a: " + jid);
-        return true;
-    } catch (err) {
-        console.error("[WA Bot] ? Error enviando mensaje:", err.message);
-        return false;
-    }
-}
-
-// ============================================================
-// NOTIFICAR CONFIRMACION DE PAGO
+// NOTIFICACIONES AUTOMATICAS
 // ============================================================
 async function notifyPaymentApproved(aptId) {
     const payload = await buildConfirmationMessage(aptId);
@@ -370,46 +504,34 @@ async function notifyPaymentApproved(aptId) {
     return sent1 || sent2;
 }
 
-// ============================================================
-// NOTIFICAR RECORDATORIO AUTOMATICO DE CITA
-// ============================================================
 async function notifyAppointmentReminder(aptId) {
     const payload = await buildReminderMessage(aptId);
     if (!payload || !payload.phone) return false;
     return await sendMessage(payload.phone, payload.message);
 }
 
-// ============================================================
-// NOTIFICAR SERVICIO COMPLETADO / ENCUESTA CSAT
-// ============================================================
 async function notifyServiceCompleted(aptId) {
     const payload = await buildServiceCompletedMessage(aptId);
     if (!payload || !payload.phone) return false;
     const jid = normalizeJid(payload.phone);
-    await sendMessage(jid, payload.message);
-    if (payload.pollQuestion && payload.pollOptions) {
-        await new Promise(r => setTimeout(r, 1200));
-        await sendPoll(jid, payload.pollQuestion, payload.pollOptions);
+    if (payload.message) await sendMessage(jid, payload.message);
+    if (payload.interactiveFeedback) {
+        await new Promise(r => setTimeout(r, 1000));
+        await sendMessage(jid, payload.interactiveFeedback);
     }
     return true;
 }
 
-// ============================================================
-// ENVIAR CODIGO OTP DE VERIFICACION DE IDENTIDAD
-// ============================================================
 async function sendClientVerificationOtp(phone, clientName, code) {
     if (!phone) return false;
     let cleanPhone = String(phone).replace(/\D/g, "");
     if (cleanPhone.startsWith("0")) cleanPhone = "593" + cleanPhone.substring(1);
     if (!cleanPhone.startsWith("593")) cleanPhone = "593" + cleanPhone;
     const jid = cleanPhone + "@s.whatsapp.net";
-    const message = "?? *HIDROSYS EC. - Verificacion de Identidad*\n\nHola *" + clientName + "*,\n\nTu codigo de seguridad para confirmar tu identidad es:\n\n?? *" + code + "*\n\n_Valido por 5 minutos. Si no solicitaste este codigo, ignoralo._\n\n_HIDROSYS EC. � Seguridad y Control_";
+    const message = "🔐 *HIDROSYS EC. - Verificacion de Identidad*\n\nHola *" + clientName + "*,\n\nTu codigo de seguridad para confirmar tu identidad es:\n\n👉 *" + code + "*\n\n_Valido por 5 minutos. Si no solicitaste este codigo, ignoralo._\n\n_HIDROSYS EC. • Seguridad y Control_";
     return await sendMessage(jid, message);
 }
 
-// ============================================================
-// STATUS
-// ============================================================
 function getBotStatus() {
     return { connected: isConnected, phone: waSocket?.user?.id?.split(":")[0] || "593968245633", qr: lastQr };
 }
@@ -430,6 +552,7 @@ async function restartWhatsAppBot() {
 module.exports = {
     startWhatsAppBot,
     sendMessage,
+    sendInteractive,
     sendPoll,
     sendImageWithCaption,
     notifyPaymentApproved,
