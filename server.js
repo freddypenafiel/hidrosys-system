@@ -346,6 +346,29 @@ app.post('/api/clients', async (req, res) => {
     }
 });
 
+app.post('/api/surveys', async (req, res) => {
+    try {
+        const { appointmentId, rating, comment, audioDuration } = req.body;
+        const result = await pool.query(
+            `INSERT INTO surveys (appointment_id, rating, comment, audio_duration)
+             VALUES ($1,$2,$3,$4) RETURNING *`,
+            [appointmentId, rating, comment, audioDuration]
+        );
+        // Marcar cita como calificada y enviar confirmación por WhatsApp
+        if (appointmentId) {
+            await pool.query('UPDATE appointments SET survey_completed = TRUE WHERE id = $1', [appointmentId]);
+            if (waBot && waBot.notifySurveyReceived) {
+                waBot.notifySurveyReceived(parseInt(appointmentId), parseInt(rating)).catch(err => {
+                    console.error('[WA Bot] Error notificando recepción de encuesta:', err.message);
+                });
+            }
+        }
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.put('/api/clients/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -609,7 +632,61 @@ app.put('/api/appointments/:id', async (req, res) => {
             });
         }
 
+        // 5. Si se envía reporte de pago desde la web o cliente
+        if (waBot && waBot.notifyPaymentReported && (fields.bank || fields.receiptNo || fields.status === 'Reportado') && prevApt.status === 'Pre-agendado') {
+            waBot.notifyPaymentReported(parseInt(id), fields.bank, fields.receiptNo).catch(err => {
+                console.error('[WA Bot] Error en notificación de reporte de pago:', err.message);
+            });
+        }
+
         res.json(updatedApt);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Endpoint para consultar citas pendientes de pago (Búsqueda por Cédula, Teléfono o ID)
+app.get('/api/appointments/pending-payment', async (req, res) => {
+    try {
+        const { q } = req.query;
+        let query = `
+            SELECT a.*, c.cedula
+            FROM appointments a
+            LEFT JOIN clients c ON a.client_phone = c.phone
+            WHERE a.status = 'Pre-agendado' AND (a.receipt_no IS NULL OR a.receipt_no = 'null' OR a.receipt_no = '')
+        `;
+        const params = [];
+        if (q && q.trim()) {
+            params.push(`%${q.trim()}%`);
+            query += ` AND (a.client_phone ILIKE $1 OR a.client_name ILIKE $1 OR c.cedula ILIKE $1 OR CAST(a.id AS TEXT) = $1)`;
+        }
+        query += ' ORDER BY a.id DESC LIMIT 20';
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Endpoint para consultar citas completadas pendientes de encuesta (Búsqueda por Cédula, Teléfono o ID)
+app.get('/api/appointments/pending-survey', async (req, res) => {
+    try {
+        const { q } = req.query;
+        let query = `
+            SELECT a.*, c.cedula, t.name as tech_name
+            FROM appointments a
+            LEFT JOIN clients c ON a.client_phone = c.phone
+            LEFT JOIN technicians t ON a.tech_id = t.id
+            WHERE a.status = 'Terminado' AND (a.survey_completed = FALSE OR a.survey_completed IS NULL)
+        `;
+        const params = [];
+        if (q && q.trim()) {
+            params.push(`%${q.trim()}%`);
+            query += ` AND (a.client_phone ILIKE $1 OR a.client_name ILIKE $1 OR c.cedula ILIKE $1 OR CAST(a.id AS TEXT) = $1)`;
+        }
+        query += ' ORDER BY a.id DESC LIMIT 20';
+        const result = await pool.query(query, params);
+        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

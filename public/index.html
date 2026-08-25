@@ -485,18 +485,38 @@
         <!-- ==================== REPORTAR PAGO ==================== -->
         <div class="page" id="page-payments">
             <div class="page-header">
-                <div><h2>Reportar Transferencia Bancaria</h2>
-                <p>Adjunte los datos de su pago para que el administrador lo valide y confirme su cita</p></div>
+                <div>
+                    <h2>Reportar Transferencia Bancaria 💳</h2>
+                    <p>Adjunte los datos de su pago para que el administrador lo valide y confirme su cita</p>
+                </div>
             </div>
-            <div class="card">
+            
+            <!-- Banner de Continuidad de Cita Recién Registrada -->
+            <div id="pay-prefill-banner" style="display:none; max-width:650px; background:linear-gradient(135deg,#eff6ff,#dbeafe); border:1.5px solid #bfdbfe; border-radius:14px; padding:18px; margin-bottom:20px; box-shadow:var(--shadow-sm);"></div>
+
+            <div class="card" style="max-width:650px;">
                 <div class="card-body">
-                    <form id="payment-form" class="form-grid" style="max-width:650px;">
+                    <!-- Buscador de Cita Pendiente por Cédula o Teléfono -->
+                    <div style="background:var(--blue-50); border:1px solid var(--blue-200); border-radius:12px; padding:16px; margin-bottom:20px;">
+                        <label style="font-size:0.85rem; font-weight:700; color:var(--blue-900); display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                            <span>🔍</span> ¿Ya agendaste tu cita? Busca con tu Cédula o Celular:
+                        </label>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <input type="text" id="pay-search-input" class="form-control" placeholder="Ingrese Cédula, Celular o ID de Cita..." style="flex:1; min-width:200px; font-size:0.85rem;" onkeypress="if(event.key==='Enter'){event.preventDefault();lookupPendingPaymentApts();}">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="lookupPendingPaymentApts()" style="white-space:nowrap; padding:8px 16px;">
+                                🔍 Buscar Mi Cita
+                            </button>
+                        </div>
+                        <div id="pay-search-feedback" style="font-size:0.8rem; margin-top:6px; font-weight:600;"></div>
+                    </div>
+
+                    <form id="payment-form" class="form-grid">
                         <div class="form-group col-2">
-                            <label class="form-label">Seleccione su cita pendiente de pago</label>
+                            <label class="form-label">Seleccione su cita pendiente de pago <span class="required">*</span></label>
                             <select id="pay-apt-select" class="form-control"></select>
                         </div>
                         <div class="form-group col-2">
-                            <label class="form-label">Entidad Bancaria donde realizó la transferencia</label>
+                            <label class="form-label">Entidad Bancaria donde realizó la transferencia <span class="required">*</span></label>
                             <div class="bank-grid">
                                 <div class="bank-card" data-bank="Banco Pichincha"><div class="bank-logo bk-yellow">Pichincha</div><span class="bank-name">B. Pichincha</span><span class="bank-acc">Cta: 2201948332</span></div>
                                 <div class="bank-card" data-bank="Banco Guayaquil"><div class="bank-logo bk-purple">Guayaquil</div><span class="bank-name">B. Guayaquil</span><span class="bank-acc">Cta: 10482938</span></div>
@@ -517,7 +537,7 @@
                             </div>
                         </div>
                         <div class="form-group col-2">
-                            <button type="submit" class="btn btn-primary btn-block">📤 Enviar Reporte de Pago</button>
+                            <button type="submit" class="btn btn-primary btn-block btn-lg" style="font-weight:700;">📤 Enviar Reporte de Pago</button>
                         </div>
                     </form>
                 </div>
@@ -527,13 +547,29 @@
         <!-- ==================== CALIFICAR SERVICIO ==================== -->
         <div class="page" id="page-survey">
             <div class="page-header">
-                <div><h2>Evaluar Servicio Técnico</h2>
-                <p>Si nuestra visita ya fue completada, por favor califique el desempeño del técnico</p></div>
+                <div>
+                    <h2>Evaluar Servicio Técnico ⭐</h2>
+                    <p>Si nuestra visita ya fue completada, por favor califique el desempeño del técnico</p>
+                </div>
             </div>
             <div class="card" style="max-width:600px;">
                 <div class="card-body">
+                    <!-- Buscador de Visitas Completadas por Cédula o Teléfono -->
+                    <div style="background:var(--blue-50); border:1px solid var(--blue-200); border-radius:12px; padding:16px; margin-bottom:20px;">
+                        <label style="font-size:0.85rem; font-weight:700; color:var(--blue-900); display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                            <span>🔍</span> Consultar visitas completadas con tu Cédula o Celular:
+                        </label>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <input type="text" id="survey-search-input" class="form-control" placeholder="Ingrese Cédula, Celular o ID de Cita..." style="flex:1; min-width:200px; font-size:0.85rem;" onkeypress="if(event.key==='Enter'){event.preventDefault();lookupCompletedSurveys();}">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="lookupCompletedSurveys()" style="white-space:nowrap; padding:8px 16px;">
+                                🔍 Buscar Visitas
+                            </button>
+                        </div>
+                        <div id="survey-search-feedback" style="font-size:0.8rem; margin-top:6px; font-weight:600;"></div>
+                    </div>
+
                     <div class="form-group" style="margin-bottom:20px;">
-                        <label class="form-label">Seleccionar visita finalizada</label>
+                        <label class="form-label">Seleccionar visita finalizada <span class="required">*</span></label>
                         <div style="display:flex;gap:10px;">
                             <select id="survey-apt-select" class="form-control" style="flex:1;"></select>
                             <button class="btn btn-outline btn-sm" id="view-report-btn">📄 Ver Informe</button>

@@ -335,6 +335,62 @@ async function sendClientVerificationOtp(phone, clientName, code) {
     return await sendMessage(jid, message);
 }
 
+// 6. Reporte de Pago Recibido desde la Web
+async function notifyPaymentReported(aptId, bank, receiptNo) {
+    if (!aptId) return false;
+    try {
+        const result = await pool.query('SELECT a.* FROM appointments a WHERE a.id = $1', [aptId]);
+        if (!result.rows.length) return false;
+        const a = result.rows[0];
+        let targetJid = a.wa_sender || '';
+        if (!targetJid && a.client_phone) {
+            const digits = String(a.client_phone).replace(/\D/g,'');
+            targetJid = (digits.length <= 10 ? '593' + digits.replace(/^0/,'') : digits) + '@s.whatsapp.net';
+        }
+        if (!targetJid) return false;
+        const msg = '✅ *HIDROSYS EC. — Comprobante Recibido desde la Web*\n\n' +
+            'Hola *' + a.client_name + '*, hemos registrado tu reporte de transferencia:\n\n' +
+            '📋 *Cita ID:* #' + a.id + '\n' +
+            '🔧 *Servicio:* ' + a.service_type + '\n' +
+            '🏦 *Banco:* ' + (bank || a.bank || 'Transferencia Bancaria') + '\n' +
+            '🧾 *Comprobante:* ' + (receiptNo || a.receipt_no || 'Registrado') + '\n\n' +
+            'Un administrador verificará el depósito en breve para aprobar y activar al técnico asignado.\n\n' +
+            '_¡Gracias por tu pago! HIDROSYS EC. 💧_';
+        return await sendMessage(targetJid, msg);
+    } catch (err) {
+        console.error('[WA Bot] Error notifyPaymentReported:', err.message);
+        return false;
+    }
+}
+
+// 7. Calificación / Encuesta Recibida desde la Web
+async function notifySurveyReceived(aptId, rating) {
+    if (!aptId) return false;
+    try {
+        const result = await pool.query('SELECT a.* FROM appointments a WHERE a.id = $1', [aptId]);
+        if (!result.rows.length) return false;
+        const a = result.rows[0];
+        let targetJid = a.wa_sender || '';
+        if (!targetJid && a.client_phone) {
+            const digits = String(a.client_phone).replace(/\D/g,'');
+            targetJid = (digits.length <= 10 ? '593' + digits.replace(/^0/,'') : digits) + '@s.whatsapp.net';
+        }
+        if (!targetJid) return false;
+        const emojis = { 5:'😍', 4:'😊', 3:'😐', 2:'🙁', 1:'😡' };
+        const labels = { 5:'¡Excelente!', 4:'Bueno', 3:'Regular', 2:'Malo', 1:'Pésimo' };
+        const starEmoji = emojis[rating] || '⭐';
+        const label = labels[rating] || '';
+        const msg = '⭐ *HIDROSYS EC. — ¡Gracias por tu Calificación!*\n\n' +
+            'Hola *' + a.client_name + '*, hemos recibido tu evaluación registrada desde nuestra web:\n\n' +
+            '⭐ *Calificación:* ' + starEmoji + ' *' + label + '* (' + rating + '/5)\n\n' +
+            '_Tu opinión nos ayuda a seguir brindando el mejor servicio. ¡Gracias por confiar en HIDROSYS EC.!_ 💧';
+        return await sendMessage(targetJid, msg);
+    } catch (err) {
+        console.error('[WA Bot] Error notifySurveyReceived:', err.message);
+        return false;
+    }
+}
+
 function getBotStatus() {
     return { connected: isConnected, phone: waSocket?.user?.id?.split(':')[0] || '593968245633', qr: lastQr };
 }
@@ -360,6 +416,8 @@ module.exports = {
     notifyAppointmentReminder,
     notifyServiceCompleted,
     sendClientVerificationOtp,
+    notifyPaymentReported,
+    notifySurveyReceived,
     getBotStatus,
     getLastQr,
     restartWhatsAppBot
