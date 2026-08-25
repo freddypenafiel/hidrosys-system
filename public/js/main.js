@@ -287,6 +287,7 @@ const PAGE_TITLES = {
     'leads':               ['Proyectos Grandes', 'Cotizaciones para constructoras'],
     'catalog':             ['Catálogo de Productos', 'Equipos y materiales hidráulicos'],
     'admin-appointments':  ['Gestión de Citas', 'Panel del administrador'],
+    'admin-technicians':   ['Gestión de Técnicos', 'Configuración de técnicos, cobertura y WhatsApp oficial'],
     'admin-clients':       ['Clientes Activos', 'Base de datos de clientes'],
     'admin-leads':         ['Prospectos', 'Solicitudes de proyectos'],
     'admin-surveys':       ['Satisfacción', 'Encuestas de calidad del servicio'],
@@ -312,6 +313,7 @@ function navigateTo(pageId) {
         'admin-dashboard':    loadDashboard,
         'catalog':            loadProducts,
         'admin-appointments': loadAppointments,
+        'admin-technicians':  loadAdminTechnicians,
         'admin-clients':      loadClients,
         'admin-leads':        loadLeads,
         'admin-surveys':      loadSurveys,
@@ -1074,7 +1076,12 @@ function payBadgeClass(status) {
 async function assignTech(aptId, techId) {
     try {
         await api('PUT', `/appointments/${aptId}`, { techId: techId ? parseInt(techId) : null });
-        toast('Técnico asignado.', 'success');
+        if (techId) {
+            toast('👷 Técnico asignado y orden de trabajo enviada a su WhatsApp.', 'success', 5000);
+        } else {
+            toast('Técnico desasignado de la cita.', 'info');
+        }
+        loadAppointments();
     } catch (err) { toast(`Error: ${err.message}`, 'error'); }
 }
 
@@ -1088,20 +1095,8 @@ async function approvePayment(aptId, currentTechId) {
         await api('PUT', `/appointments/${aptId}`, {
             paymentStatus: 'Pagado', status: 'Confirmado', techId: finalTechId,
         });
-        // Obtener nombre del técnico
-        const techs = await api('GET', '/technicians');
-        const tech = techs.find(t => t.id == techId) || { name: 'Técnico Hidrosys', avatar: '👷' };
-
-        toast('✅ Pago aprobado y cita confirmada.', 'success');
-
-        // La notificación por WhatsApp se envía automáticamente desde el backend en PUT /appointments/:id
-        toast('💬 Notificación de confirmación enviada al cliente por WhatsApp.', 'success', 5000);
-
-        // Mantener mensaje en el simulador interno también (solo si NO somos administrador)
-        const isAdmin = document.getElementById('nav-group-admin')?.style.display !== 'none';
-        if (!isAdmin) {
-            sendWAMsg('system', `*HIDROSYS – Cita Confirmada* ✅\nTu transferencia fue verificada. Tu cita está confirmada:\n🛠️ Técnico: *${tech.name}*\n\n¿Confirmas tu asistencia?`, true, aptId);
-        }
+        toast('✅ Pago aprobado y cita confirmada exitosamente.', 'success', 4000);
+        toast('💬 Notificaciones automáticas enviadas al cliente y al técnico por WhatsApp.', 'success', 6000);
         loadAppointments();
     } catch (err) { toast(`Error: ${err.message}`, 'error'); }
 }
@@ -1222,6 +1217,222 @@ async function convertLead(id) {
         loadLeads(); loadClients(); loadDashboard();
     } catch (err) { toast(`Error: ${err.message}`, 'error'); }
 }
+
+// ============================================================
+// ADMIN: GESTIÓN DE TÉCNICOS (CRUD Y CONFIGURACIÓN)
+// ============================================================
+let allAdminTechsCache = [];
+
+async function loadAdminTechnicians() {
+    const container = document.getElementById('tech-cards-container');
+    if (!container) return;
+    try {
+        allAdminTechsCache = await api('GET', '/technicians?all=true');
+        renderAdminTechnicians();
+    } catch (err) {
+        toast(`Error al cargar técnicos: ${err.message}`, 'error');
+    }
+}
+
+function renderAdminTechnicians() {
+    const container = document.getElementById('tech-cards-container');
+    if (!container) return;
+
+    const q = (document.getElementById('tech-search')?.value || '').toLowerCase().trim();
+    const zone = document.getElementById('tech-zone-filter')?.value || 'all';
+    const status = document.getElementById('tech-status-filter')?.value || 'all';
+
+    let list = allAdminTechsCache;
+
+    if (q) {
+        list = list.filter(t => 
+            (t.name || '').toLowerCase().includes(q) ||
+            (t.specialty || '').toLowerCase().includes(q) ||
+            (t.phone || '').toLowerCase().includes(q) ||
+            (t.email || '').toLowerCase().includes(q)
+        );
+    }
+    if (zone !== 'all') {
+        list = list.filter(t => t.zone === zone || t.zone === 'Toda la Provincia');
+    }
+    if (status === 'active') {
+        list = list.filter(t => t.active === true);
+    } else if (status === 'inactive') {
+        list = list.filter(t => t.active === false);
+    }
+
+    if (!list || list.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column:1/-1;">
+                <div style="background:var(--gray-50); border:1px solid var(--gray-200); border-radius:16px; padding:40px 24px; text-align:center;">
+                    <div style="font-size:3rem; margin-bottom:12px;">👷</div>
+                    <h3 style="font-family:'Outfit',sans-serif; font-size:1.2rem; font-weight:700; color:var(--gray-800); margin-bottom:6px;">No se encontraron técnicos</h3>
+                    <p style="color:var(--gray-500); max-width:400px; margin:0 auto 18px; font-size:0.85rem;">Prueba cambiando los filtros o registra un nuevo técnico para el equipo de HIDROSYS.</p>
+                    <button class="btn btn-primary btn-sm" onclick="openTechModal()">➕ Agregar Nuevo Técnico</button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = list.map(t => {
+        const isActive = t.active !== false;
+        const statusBadge = isActive 
+            ? '<span class="badge badge-green">✓ Activo</span>' 
+            : '<span class="badge badge-red">✕ Inactivo</span>';
+
+        const cleanPhone = (t.phone || '').replace(/\D/g, '');
+        const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('593') ? cleanPhone : '593' + cleanPhone.replace(/^0/, '')}` : '#';
+
+        return `
+            <div class="card" style="padding:20px; border-radius:14px; position:relative; display:flex; flex-direction:column; justify-content:space-between; transition:var(--transition); ${!isActive ? 'opacity:0.65; border-style:dashed;' : ''}">
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="font-size:2.2rem; background:var(--blue-50); width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center; border:1px solid var(--blue-100);">
+                                ${t.avatar || '👷'}
+                            </div>
+                            <div>
+                                <h4 style="font-family:'Outfit',sans-serif; font-weight:700; font-size:1.05rem; color:var(--blue-900); margin:0 0 3px 0;">${t.name}</h4>
+                                <div style="font-size:0.78rem; font-weight:600; color:var(--blue-700);">${t.specialty || 'Técnico Especialista'}</div>
+                            </div>
+                        </div>
+                        <div>${statusBadge}</div>
+                    </div>
+
+                    <div style="background:var(--gray-50); padding:10px 12px; border-radius:8px; border:1px solid var(--gray-200); font-size:0.8rem; margin-bottom:14px; display:flex; flex-direction:column; gap:6px;">
+                        <div>📍 <strong>Cantón / Cobertura:</strong> ${t.zone || 'Toda la Provincia'}</div>
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <span>📱 <strong>WhatsApp:</strong> ${t.phone || 'No registrado'}</span>
+                            ${cleanPhone ? `<a href="${waLink}" target="_blank" class="badge badge-green" style="text-decoration:none; font-size:0.7rem; padding:2px 6px;">Chat WA ↗</a>` : ''}
+                        </div>
+                        ${t.email ? `<div>✉️ <strong>Email:</strong> ${t.email}</div>` : ''}
+                        <div>⭐ <strong>Calificación:</strong> ${parseFloat(t.rating || 5.0).toFixed(1)} / 5.0</div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; pt-2; border-top:1px dashed var(--gray-200); margin-top:6px; padding-top:10px;">
+                    <button class="btn btn-xs ${isActive ? 'btn-outline' : 'btn-success'}" onclick="toggleTechActive(${t.id}, ${!isActive})" style="font-size:0.75rem; padding:4px 10px;">
+                        ${isActive ? '⏸️ Pausar' : '▶️ Activar'}
+                    </button>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-xs btn-outline" onclick="openTechModal(${t.id})" style="font-size:0.75rem; padding:4px 10px;">✏️ Editar</button>
+                        <button class="btn btn-xs" onclick="deleteTech(${t.id})" style="background:var(--red-bg); color:var(--red); border:none; font-size:0.75rem; padding:4px 8px;" title="Eliminar técnico">🗑️</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+window.openTechModal = function(id = null) {
+    const modal = document.getElementById('modal-tech');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('modal-tech-title');
+    const idEl = document.getElementById('tech-id');
+    const nameEl = document.getElementById('tech-name');
+    const specEl = document.getElementById('tech-specialty');
+    const zoneEl = document.getElementById('tech-zone');
+    const phoneEl = document.getElementById('tech-phone');
+    const emailEl = document.getElementById('tech-email');
+    const avatarEl = document.getElementById('tech-avatar');
+    const activeEl = document.getElementById('tech-active');
+
+    if (id) {
+        const tech = allAdminTechsCache.find(t => t.id == id);
+        if (tech) {
+            titleEl.textContent = `👷 Editar Técnico: ${tech.name}`;
+            idEl.value = tech.id;
+            nameEl.value = tech.name || '';
+            specEl.value = tech.specialty || '';
+            zoneEl.value = tech.zone || 'Azogues';
+            phoneEl.value = tech.phone || '';
+            emailEl.value = tech.email || '';
+            avatarEl.value = tech.avatar || '👨‍💻';
+            activeEl.checked = tech.active !== false;
+        }
+    } else {
+        titleEl.textContent = '➕ Nuevo Técnico de HIDROSYS';
+        idEl.value = '';
+        nameEl.value = '';
+        specEl.value = '';
+        zoneEl.value = 'Azogues';
+        phoneEl.value = '';
+        emailEl.value = '';
+        avatarEl.value = '👨‍💻';
+        activeEl.checked = true;
+    }
+
+    modal.style.display = 'flex';
+};
+
+window.closeTechModal = function() {
+    const modal = document.getElementById('modal-tech');
+    if (modal) modal.style.display = 'none';
+};
+
+window.saveTech = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-tech');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    const id = document.getElementById('tech-id').value;
+    const data = {
+        name:      document.getElementById('tech-name').value.trim(),
+        specialty: document.getElementById('tech-specialty').value.trim(),
+        zone:      document.getElementById('tech-zone').value,
+        phone:     document.getElementById('tech-phone').value.trim(),
+        email:     document.getElementById('tech-email').value.trim(),
+        avatar:    document.getElementById('tech-avatar').value,
+        active:    document.getElementById('tech-active').checked
+    };
+
+    try {
+        if (id) {
+            await api('PUT', `/technicians/${id}`, data);
+            toast('✅ Datos del técnico actualizados correctamente.', 'success');
+        } else {
+            await api('POST', '/technicians', data);
+            toast('✅ Nuevo técnico registrado en el sistema.', 'success');
+        }
+        closeTechModal();
+        await loadAdminTechnicians();
+        loadAppointments(); // Refrescar dropdowns de citas
+    } catch (err) {
+        toast(`Error: ${err.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 Guardar Técnico';
+    }
+};
+
+window.toggleTechActive = async function(id, newStatus) {
+    try {
+        await api('PUT', `/technicians/${id}`, { active: newStatus });
+        toast(newStatus ? '✅ Técnico reactivado.' : '⏸️ Técnico pausado/inactivo.', 'info');
+        await loadAdminTechnicians();
+        loadAppointments();
+    } catch (err) {
+        toast(`Error: ${err.message}`, 'error');
+    }
+};
+
+window.deleteTech = async function(id) {
+    const tech = allAdminTechsCache.find(t => t.id == id);
+    const techName = tech ? tech.name : 'este técnico';
+    if (!confirm(`¿Estás seguro de eliminar a ${techName}? Si tiene citas previas quedará marcado como inactivo para proteger el historial.`)) return;
+
+    try {
+        const res = await api('DELETE', `/technicians/${id}`);
+        toast(res.message || 'Técnico procesado.', 'info');
+        await loadAdminTechnicians();
+        loadAppointments();
+    } catch (err) {
+        toast(`Error: ${err.message}`, 'error');
+    }
+};
 
 // ============================================================
 // ADMIN: ENCUESTAS

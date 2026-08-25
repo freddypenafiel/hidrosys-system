@@ -179,12 +179,33 @@ app.get('/api/products', async (req, res) => {
 });
 
 // ============================================================
-// TÉCNICOS
+// TÉCNICOS (Gestión Completa y Configurable)
 // ============================================================
 app.get('/api/technicians', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM technicians WHERE active = TRUE ORDER BY name');
+        const { all } = req.query;
+        let query = 'SELECT * FROM technicians';
+        if (all !== 'true') {
+            query += ' WHERE active = TRUE';
+        }
+        query += ' ORDER BY id ASC';
+        const result = await pool.query(query);
         res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/technicians', async (req, res) => {
+    try {
+        const { name, specialty, zone, phone, email, avatar = '👷', active = true } = req.body;
+        if (!name || !name.trim()) return res.status(400).json({ error: 'El nombre del técnico es obligatorio' });
+        const result = await pool.query(
+            `INSERT INTO technicians (name, specialty, zone, phone, email, avatar, active, rating)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 5.00) RETURNING *`,
+            [name.trim(), specialty?.trim() || '', zone?.trim() || 'Toda la Provincia', phone?.trim() || '', email?.trim() || '', avatar || '👷', active !== false]
+        );
+        res.status(201).json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -193,12 +214,85 @@ app.get('/api/technicians', async (req, res) => {
 app.put('/api/technicians/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, specialty, zone, phone, email, rating } = req.body;
+        const { name, specialty, zone, phone, email, avatar, rating, active } = req.body;
         const result = await pool.query(
-            `UPDATE technicians SET name=$1, specialty=$2, zone=$3, phone=$4, email=$5, rating=$6 WHERE id=$7 RETURNING *`,
-            [name, specialty, zone, phone, email, rating, id]
+            `UPDATE technicians SET 
+                name = COALESCE($1, name),
+                specialty = COALESCE($2, specialty),
+                zone = COALESCE($3, zone),
+                phone = COALESCE($4, phone),
+                email = COALESCE($5, email),
+                avatar = COALESCE($6, avatar),
+                rating = COALESCE($7, rating),
+                active = COALESCE($8, active)
+             WHERE id = $9 RETURNING *`,
+            [name, specialty, zone, phone, email, avatar, rating, active, id]
         );
+        if (!result.rows.length) return res.status(404).json({ error: 'Técnico no encontrado' });
         res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/technicians/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const check = await pool.query('SELECT COUNT(*) FROM appointments WHERE tech_id = $1', [id]);
+        const count = parseInt(check.rows[0].count);
+        if (count > 0) {
+            await pool.query('UPDATE technicians SET active = FALSE WHERE id = $1', [id]);
+            return res.json({ message: 'Técnico desactivado para preservar historial de citas asociadas', deactivated: true });
+        }
+        await pool.query('DELETE FROM technicians WHERE id = $1', [id]);
+        res.json({ message: 'Técnico eliminado permanentemente' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+// DISPONIBILIDAD Y CONTROL DE CUPOS / HORARIOS
+// ============================================================
+app.get('/api/availability', async (req, res) => {
+    try {
+        const { date } = req.query;
+        if (!date) return res.status(400).json({ error: 'Fecha requerida (date=YYYY-MM-DD)' });
+
+        const techRes = await pool.query('SELECT COUNT(*) FROM technicians WHERE active = TRUE');
+        const totalTechs = parseInt(techRes.rows[0]?.count || '4');
+
+        const aptRes = await pool.query(
+            "SELECT apt_time, COUNT(*) as booked FROM appointments WHERE apt_date = $1 AND status NOT IN ('Cancelado') GROUP BY apt_time",
+            [date]
+        );
+
+        const slots = [
+            { id: '1', time: '09:00', label: 'Mañana (08:00 – 12:00)' },
+            { id: '2', time: '14:00', label: 'Tarde (13:00 – 17:00)' },
+            { id: '3', time: '17:00', label: 'Tarde-Noche (17:00 – 19:00)' }
+        ];
+
+        const availability = slots.map(s => {
+            const row = aptRes.rows.find(r => String(r.apt_time).startsWith(s.time.slice(0, 2)));
+            const booked = row ? parseInt(row.booked) : 0;
+            const free = Math.max(0, totalTechs - booked);
+            return {
+                id: s.id,
+                time: s.time,
+                label: s.label,
+                totalTechs,
+                booked,
+                free,
+                available: free > 0
+            };
+        });
+
+        res.json({
+            date,
+            totalTechs,
+            slots: availability
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -427,6 +521,11 @@ app.put('/api/appointments/:id', async (req, res) => {
         const { id } = req.params;
         const fields = req.body;
 
+        // 1. Obtener estado previo de la cita para detectar cambios reales y evitar duplicados
+        const prevRes = await pool.query('SELECT * FROM appointments WHERE id = $1', [id]);
+        if (!prevRes.rows.length) return res.status(404).json({ error: 'Cita no encontrada' });
+        const prevApt = prevRes.rows[0];
+
         // Mapear campos del frontend a columnas de la DB
         const fieldMap = {
             status:          'status',
@@ -459,24 +558,28 @@ app.put('/api/appointments/:id', async (req, res) => {
         if (!result.rows.length) return res.status(404).json({ error: 'Cita no encontrada' });
 
         const updatedApt = result.rows[0];
-        // Si el estado o pago se actualiza a Confirmado / Pagado, enviar automáticamente confirmación de WhatsApp
-        if (waBot && waBot.notifyPaymentApproved && (
-            updatedApt.status === 'Confirmado' ||
-            updatedApt.payment_status === 'Pagado' ||
-            updatedApt.payment_status === 'Aprobado' ||
-            fields.status === 'Confirmado' ||
-            fields.paymentStatus === 'Pagado'
-        )) {
+
+        // 2. Notificación al CLIENTE solo cuando pasa a Confirmado / Pagado por primera vez (evita duplicados)
+        const isNowConfirmed = (updatedApt.status === 'Confirmado' || fields.status === 'Confirmado' || updatedApt.payment_status === 'Pagado' || fields.paymentStatus === 'Pagado');
+        const wasAlreadyConfirmed = (prevApt.status === 'Confirmado' || prevApt.status === 'Conf. Cliente');
+
+        if (waBot && waBot.notifyPaymentApproved && isNowConfirmed && !wasAlreadyConfirmed) {
             waBot.notifyPaymentApproved(parseInt(id)).catch(err => {
                 console.error('[WA Bot] Error en notificación automática PUT /appointments/:id:', err.message);
             });
         }
 
-        // Si el estado se actualiza a Terminado, enviar automáticamente mensaje de conclusión y encuesta CSAT
-        if (waBot && waBot.notifyServiceCompleted && (
-            updatedApt.status === 'Terminado' ||
-            fields.status === 'Terminado'
-        )) {
+        // 3. Notificación al TÉCNICO asignado cuando se le asigna o actualiza una cita
+        const newTechId = updatedApt.tech_id;
+        const prevTechId = prevApt.tech_id;
+        if (waBot && waBot.notifyTechnicianJobAssigned && newTechId && (newTechId !== prevTechId || (isNowConfirmed && !wasAlreadyConfirmed))) {
+            waBot.notifyTechnicianJobAssigned(parseInt(id), parseInt(newTechId)).catch(err => {
+                console.error('[WA Bot] Error notificando al técnico asignado:', err.message);
+            });
+        }
+
+        // 4. Si el estado se actualiza a Terminado, enviar automáticamente mensaje de conclusión y encuesta CSAT
+        if (waBot && waBot.notifyServiceCompleted && (updatedApt.status === 'Terminado' || fields.status === 'Terminado') && prevApt.status !== 'Terminado') {
             waBot.notifyServiceCompleted(parseInt(id)).catch(err => {
                 console.error('[WA Bot] Error enviando encuesta de servicio completado:', err.message);
             });
@@ -706,7 +809,20 @@ app.listen(PORT, async () => {
         // Migraciones de columnas necesarias
         await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS wa_sender VARCHAR(50)');
         await pool.query('ALTER TABLE clients ADD COLUMN IF NOT EXISTS cedula VARCHAR(20)');
-        console.log('✅ Migraciones de DB: Columnas "wa_sender" y "cedula" verificadas/creadas.\n');
+        
+        // Limpieza y deduplicación de técnicos si hubiesen duplicados en producción
+        try {
+            await pool.query(`
+                DELETE FROM technicians WHERE id NOT IN (
+                    SELECT MIN(id) FROM technicians GROUP BY LOWER(TRIM(name))
+                );
+            `);
+            await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_technicians_unique_name ON technicians (LOWER(TRIM(name)));`);
+        } catch (e) {
+            console.warn('[DB Migration] Aviso índice técnicos:', e.message);
+        }
+
+        console.log('✅ Migraciones de DB: Columnas, índice de técnicos y deduplicación verificadas.\n');
     } catch (err) {
         console.error(`❌ PostgreSQL NO conectado o error en migración: ${err.message}`);
         console.error('   Verifica tu archivo .env y que PostgreSQL esté corriendo\n');

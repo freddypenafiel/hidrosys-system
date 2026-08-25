@@ -1,5 +1,5 @@
 // whatsapp/flows.js - Motor de Conversación del Bot HIDROSYS
-// v5.1 - Menús Visuales Profesionales, Reconocimiento Inteligente y Flujo Ininterrumpido
+// v5.5 - Agendamiento Inteligente, Verificación de Cupos de Técnicos y Flujo Preciso
 
 const pool = require('../db/connection');
 
@@ -86,11 +86,6 @@ function menuPrincipal() {
     return '💧 *HIDROSYS EC. — Asistente Virtual*\n_Atención al Cliente • Sistemas de Agua y Gas_\n\n¡Hola! ¿En qué podemos ayudarte hoy? Escribe el *número* de tu opción:\n\n1️⃣ *Agendar Visita Técnica* ($15.00)\n2️⃣ *Reportar Comprobante de Pago*\n3️⃣ *Consultar Estado de mi Cita*\n4️⃣ *Ver Catálogo y Precios*\n\n👉 _Escribe **1**, **2**, **3** o **4** para continuar._';
 }
 
-function getTomorrowDateStr() {
-    const d = new Date(); d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
-}
-
 // ============================================================
 // PROCESADOR PRINCIPAL DE MENSAJES
 // ============================================================
@@ -115,7 +110,7 @@ async function processMessage(phone, text, senderJid) {
         const back = { book_phone:'book_name', book_address:'book_phone', book_canton:'book_address', book_parish:'book_canton', book_service:'book_canton', book_date:'book_service', book_time:'book_date', book_confirm:'book_time' };
         const prev = back[step];
         setSession(phone, prev, {});
-        if (prev === 'book_name') return stepHeader('book_name') + 'Escribe de nuevo tu *nombre completo*:';
+        if (prev === 'book_name') return stepHeader('book_name') + 'Escribe de nuevo tu *nombre y apellido*:';
         if (prev === 'book_phone') return stepHeader('book_phone') + '📱 Escribe tu *celular* (10 dígitos):';
         if (prev === 'book_address') return stepHeader('book_address') + '🏠 Escribe la *dirección* del inmueble:';
         if (prev === 'book_canton') {
@@ -125,17 +120,17 @@ async function processMessage(phone, text, senderJid) {
         return menuPrincipal();
     }
 
-    // Confirmación de disponibilidad por cliente
+    // Confirmación de disponibilidad por cliente (1 sola respuesta sin duplicados)
     if (step === 'awaiting_availability_confirm') {
         if (['si','s','1','confirmo','confirmar'].includes(msgN) || msgN.includes('disponible')) {
             try {
                 let aptId = sess.data.aptId;
                 if (!aptId) {
-                    const res = await pool.query('SELECT id FROM appointments WHERE client_phone LIKE $1 AND status = \'Confirmado\' ORDER BY id DESC LIMIT 1', ['%' + phone.slice(-9) + '%']);
+                    const res = await pool.query("SELECT id FROM appointments WHERE client_phone LIKE $1 AND status IN ('Confirmado','Pre-agendado') ORDER BY id DESC LIMIT 1", ['%' + phone.slice(-9) + '%']);
                     if (res.rows.length) aptId = res.rows[0].id;
                 }
                 if (aptId) {
-                    await pool.query('UPDATE appointments SET status = \'Conf. Cliente\' WHERE id = $1', [aptId]);
+                    await pool.query("UPDATE appointments SET status = 'Conf. Cliente' WHERE id = $1", [aptId]);
                     clearSession(phone);
                     return '✅ *¡Perfecto! Disponibilidad confirmada.*\n\n📋 Tu cita *#' + aptId + '* ha quedado registrada como *Confirmada por el Cliente*.\n👷 Nuestro técnico asignado se comunicará contigo antes de la visita.\n\n¡Gracias por confiar en *HIDROSYS EC.*!\n_Escribe *menu* si necesitas algo más._';
                 }
@@ -170,7 +165,7 @@ async function processMessage(phone, text, senderJid) {
     }
 
     // ══════════════════════════════════════════════════════════
-    // FLUJO 1: AGENDAR VISITA
+    // FLUJO 1: AGENDAR VISITA TÉCNICA
     // ══════════════════════════════════════════════════════════
     if (step === 'book_name') {
         if (msg.length < 3) return '⚠️ Por favor escribe tu nombre completo (mínimo 3 letras).';
@@ -234,6 +229,7 @@ async function processMessage(phone, text, senderJid) {
         return stepHeader('book_service') + '🔧 *¿Qué tipo de servicio técnico necesitas?*\n\n' + listaServ + '\n\n👉 _Escribe el número del **1 al 6**._';
     }
 
+    // PASO 5: TIPO DE SERVICIO Y CHEQUEO DE CUPOS DE TÉCNICOS
     if (step === 'book_service') {
         let service = null;
         const idx = parseInt(msg) - 1;
@@ -248,7 +244,11 @@ async function processMessage(phone, text, senderJid) {
             return '❌ Servicio no reconocido. Escribe un número del 1 al 6:\n\n' + listaServ;
         }
 
-        // Generar 5 días hábiles próximos
+        // Consultar técnicos activos para calcular capacidad
+        const techRes = await pool.query('SELECT COUNT(*) FROM technicians WHERE active = TRUE');
+        const totalTechs = parseInt(techRes.rows[0]?.count || '4');
+
+        // Generar 5 días hábiles verificando cupos
         const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
         const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
         const optionsDate = [];
@@ -259,62 +259,109 @@ async function processMessage(phone, text, senderJid) {
             d.setDate(today.getDate() + offset);
             if (d.getDay() !== 0) {
                 const iso = d.toISOString().split('T')[0];
+                const countRes = await pool.query(
+                    "SELECT COUNT(*) FROM appointments WHERE apt_date = $1 AND status NOT IN ('Cancelado')",
+                    [iso]
+                );
+                const bookedCount = parseInt(countRes.rows[0]?.count || '0');
+                const maxDayCapacity = totalTechs * 3;
+                const hasCapacity = bookedCount < maxDayCapacity;
                 const str = dias[d.getDay()] + ' ' + d.getDate() + ' de ' + meses[d.getMonth()];
-                optionsDate.push({ num: String(count + 1), iso, str });
+                const statusLabel = hasCapacity ? '✅ Disponible' : '❌ Cupos Llenos';
+
+                optionsDate.push({ num: String(count + 1), iso, str, hasCapacity, statusLabel });
                 count++;
             }
             offset++;
         }
 
-        setSession(phone, 'book_date', { service, optionsDate });
-        const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '* (' + o.iso + ')').join('\n');
+        setSession(phone, 'book_date', { service, optionsDate, totalTechs });
+        const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '* (' + o.iso + ') — ' + o.statusLabel).join('\n');
         return stepHeader('book_date') + '📅 *¿Qué día prefieres para la visita técnica?*\n\n' + listaFechas + '\n\n👉 _Escribe el número del **1 al 5** o la fecha en formato AAAA-MM-DD._';
     }
 
+    // PASO 6: FECHA Y CHEQUEO DE HORARIOS DISPONIBLES EN TIEMPO REAL
     if (step === 'book_date') {
         const optionsDate = sess.data.optionsDate || [];
-        let fechaSeleccionada = null;
+        let fechaObj = null;
         const matchOpt = optionsDate.find(o => o.num === msg || o.iso === msg);
         if (matchOpt) {
-            fechaSeleccionada = matchOpt.iso;
+            fechaObj = matchOpt;
         } else {
             const idx = parseInt(msg) - 1;
             if (!isNaN(idx) && idx >= 0 && idx < optionsDate.length) {
-                fechaSeleccionada = optionsDate[idx].iso;
+                fechaObj = optionsDate[idx];
             } else if (/^\d{4}-\d{2}-\d{2}$/.test(msg)) {
                 const f = new Date(msg);
                 const h = new Date(); h.setHours(0,0,0,0);
-                if (f > h) fechaSeleccionada = msg;
+                if (f > h) fechaObj = { iso: msg, hasCapacity: true };
             }
         }
 
-        if (!fechaSeleccionada) {
-            const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '*').join('\n');
+        if (!fechaObj) {
+            const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '* — ' + o.statusLabel).join('\n');
             return '❌ Fecha no válida. Escribe un número del 1 al 5:\n\n' + listaFechas;
         }
 
-        setSession(phone, 'book_time', { date: fechaSeleccionada });
-        return '📅 Fecha seleccionada: *' + fechaSeleccionada + '*\n\n⏰ *¿En qué horario prefieres la visita técnica?*\n\n1️⃣ *Mañana* (08:00 – 12:00)\n2️⃣ *Tarde* (13:00 – 17:00)\n3️⃣ *Tarde-Noche* (17:00 – 19:00)\n\n👉 _Escribe **1**, **2** o **3**._';
+        if (fechaObj.hasCapacity === false) {
+            return '⚠️ Lo sentimos, ese día ya no tiene cupos disponibles. Por favor selecciona otra fecha disponible (1 al 5).';
+        }
+
+        const fechaSeleccionada = fechaObj.iso;
+        const totalTechs = sess.data.totalTechs || 4;
+
+        // Consultar ocupación por franja horaria para esa fecha
+        const aptRes = await pool.query(
+            "SELECT apt_time, COUNT(*) as booked FROM appointments WHERE apt_date = $1 AND status NOT IN ('Cancelado') GROUP BY apt_time",
+            [fechaSeleccionada]
+        );
+
+        const slots = [
+            { id: '1', time: '09:00', label: 'Mañana (08:00 – 12:00)' },
+            { id: '2', time: '14:00', label: 'Tarde (13:00 – 17:00)' },
+            { id: '3', time: '17:00', label: 'Tarde-Noche (17:00 – 19:00)' }
+        ];
+
+        const slotAvailability = slots.map(s => {
+            const row = aptRes.rows.find(r => String(r.apt_time).startsWith(s.time.slice(0, 2)));
+            const booked = row ? parseInt(row.booked) : 0;
+            const free = Math.max(0, totalTechs - booked);
+            return {
+                ...s,
+                booked,
+                free,
+                available: free > 0,
+                statusText: free > 0 ? '✅ Disponible (' + free + ' ' + (free === 1 ? 'cupo libre' : 'cupos libres') + ')' : '❌ Lleno'
+            };
+        });
+
+        setSession(phone, 'book_time', { date: fechaSeleccionada, slotAvailability });
+        const listaSlots = slotAvailability.map(s => s.id + '️⃣ *' + s.label + '* — ' + s.statusText).join('\n');
+
+        return '📅 Fecha seleccionada: *' + fechaSeleccionada + '*\n\n⏰ *¿En qué horario prefieres la visita técnica?*\n_Disponibilidad de técnicos en tiempo real:_\n\n' + listaSlots + '\n\n👉 _Escribe **1**, **2** o **3**._';
     }
 
     if (step === 'book_time') {
-        let horaFinal = null;
-        if ({'1':'09:00','2':'14:00','3':'17:00'}[msg] || {'1':'09:00','2':'14:00','3':'17:00'}[msg.charAt(0)]) {
-            horaFinal = {'1':'09:00','2':'14:00','3':'17:00'}[msg] || {'1':'09:00','2':'14:00','3':'17:00'}[msg.charAt(0)];
-        } else if (/^\d{2}:\d{2}$/.test(msg)) {
-            horaFinal = msg;
-        } else {
-            const mn = norm(msg);
-            if (mn.includes('manana') || mn.includes('08') || mn.includes('09') || mn.includes('8')) horaFinal = '09:00';
-            else if ((mn.includes('tarde') && !mn.includes('noche')) || (mn.includes('13') || mn.includes('14') || mn.includes('2'))) horaFinal = '14:00';
-            else if (mn.includes('noche') || mn.includes('17') || mn.includes('tarde-noche') || mn.includes('3')) horaFinal = '17:00';
-            else if (mn.includes('tarde')) horaFinal = '14:00';
+        const slotAvailability = sess.data.slotAvailability || [];
+        let chosenSlot = null;
+
+        if (msg === '1' || msg.startsWith('1') || norm(msg).includes('manana') || norm(msg).includes('08') || norm(msg).includes('09')) {
+            chosenSlot = slotAvailability.find(s => s.id === '1') || { time: '09:00', available: true };
+        } else if (msg === '2' || msg.startsWith('2') || (norm(msg).includes('tarde') && !norm(msg).includes('noche')) || norm(msg).includes('13') || norm(msg).includes('14')) {
+            chosenSlot = slotAvailability.find(s => s.id === '2') || { time: '14:00', available: true };
+        } else if (msg === '3' || msg.startsWith('3') || norm(msg).includes('noche') || norm(msg).includes('17')) {
+            chosenSlot = slotAvailability.find(s => s.id === '3') || { time: '17:00', available: true };
         }
 
-        if (!horaFinal) {
+        if (!chosenSlot) {
             return '❌ Horario no reconocido. Escribe **1** (Mañana), **2** (Tarde) o **3** (Tarde-Noche).';
         }
 
+        if (!chosenSlot.available) {
+            return '⚠️ *Horario sin técnicos disponibles:*\nEl horario seleccionado ya alcanzó su capacidad máxima de técnicos asignados. Por favor elige otro horario con cupos disponibles (1, 2 o 3) o escribe *atras* para cambiar de fecha.';
+        }
+
+        const horaFinal = chosenSlot.time;
         setSession(phone, 'book_confirm', { time: horaFinal });
         const d = getSession(phone).data;
         const dobj = new Date(d.date + 'T12:00:00');
@@ -388,7 +435,7 @@ async function processMessage(phone, text, senderJid) {
         const numL = msg.replace(/\D/g, '').slice(-9);
         try {
             const apts = await pool.query(
-                'SELECT id,service_type,apt_date,status FROM appointments WHERE REGEXP_REPLACE(client_phone,\'\\D\',\'\',\'g\') LIKE \'%\'||$1 AND status=\'Pre-agendado\' AND (receipt_no IS NULL OR receipt_no=\'null\' OR receipt_no=\'\') ORDER BY created_at DESC LIMIT 5',
+                "SELECT id,service_type,apt_date,status FROM appointments WHERE REGEXP_REPLACE(client_phone,'\\D','','g') LIKE '%'||$1 AND status='Pre-agendado' AND (receipt_no IS NULL OR receipt_no='null' OR receipt_no='') ORDER BY created_at DESC LIMIT 5",
                 [numL]
             );
             if (!apts.rows.length) {
@@ -445,7 +492,7 @@ async function processMessage(phone, text, senderJid) {
             const aptId = sess.data.selectedAptId;
             const fullJid = sess.data.senderJid || null;
             await pool.query(
-                'UPDATE appointments SET bank=$1,receipt_no=$2,status=\'Reportado\',payment_status=\'Pendiente de Validación\',wa_sender=COALESCE(wa_sender,$4) WHERE id=$3',
+                "UPDATE appointments SET bank=$1,receipt_no=$2,status='Reportado',payment_status='Pendiente de Validación',wa_sender=COALESCE(wa_sender,$4) WHERE id=$3",
                 [sess.data.bank, msg, aptId, fullJid]
             );
             clearSession(phone);
@@ -512,19 +559,17 @@ async function buildConfirmationMessage(aptId) {
         const result = await pool.query('SELECT a.*,t.name as tech_name,t.phone as tech_phone FROM appointments a LEFT JOIN technicians t ON a.tech_id=t.id WHERE a.id=$1',[aptId]);
         if (!result.rows.length) return null;
         const a = result.rows[0]; const fecha = a.apt_date?.toISOString().split('T')[0] || 'N/A';
-        let targetJid = a.wa_sender || '', clientPhoneJid = '';
-        if (a.client_phone) {
+        let targetJid = a.wa_sender || '';
+        if (!targetJid && a.client_phone) {
             const digits = String(a.client_phone).replace(/\D/g,'');
             const pn = digits.length <= 10 ? '593' + digits.replace(/^0/,'') : digits;
-            clientPhoneJid = pn + '@s.whatsapp.net';
+            targetJid = pn + '@s.whatsapp.net';
         }
-        if (!targetJid) targetJid = clientPhoneJid;
-        const phoneKey = targetJid.split('@')[0].replace(/\D/g,'') || clientPhoneJid.split('@')[0].replace(/\D/g,'');
+        const phoneKey = targetJid.split('@')[0].replace(/\D/g,'');
         setSession(phoneKey, 'awaiting_availability_confirm', { aptId: a.id });
 
         return {
             phone: targetJid,
-            clientPhoneJid: clientPhoneJid !== targetJid ? clientPhoneJid : null,
             message: '✅ *HIDROSYS EC. — ¡Cita Confirmada!*\n\n🎉 Tu pago ha sido verificado y aprobado exitosamente.\n\n📋 *Cita ID:* #' + a.id + '\n🔧 *Servicio:* ' + a.service_type + '\n📅 *Fecha:* ' + fecha + '\n⏰ *Hora:* ' + String(a.apt_time).slice(0,5) + '\n📍 *Zona:* ' + a.address + ' (' + a.zone + ')\n👷 *Técnico Asignado:* ' + (a.tech_name || 'Técnico Especializado HIDROSYS') + '\n\n¿Confirmas que estarás disponible en este horario?\n\n1️⃣ *SÍ, estaré disponible*\n2️⃣ *NO, necesito reagendar*\n\n👉 _Responde **1** o **2**._'
         };
     } catch (err) { console.error('[WA] Error buildConfirmationMessage:', err.message); return null; }

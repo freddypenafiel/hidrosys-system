@@ -1,6 +1,6 @@
 // whatsapp/bot.js - Conexión WhatsApp via Baileys para HIDROSYS EC.
 // Librería: @whiskeysockets/baileys
-// v5.1 - Motor Ultra-Rápido, Robusto y Confiable 100%
+// v5.5 - Control Antiduplicados, Notificación al Técnico y Entrega Inmediata
 
 const {
     default: makeWASocket,
@@ -15,6 +15,7 @@ const pino              = require('pino');
 const qrcode            = require('qrcode-terminal');
 const path              = require('path');
 const fs                = require('fs');
+const pool              = require('../db/connection');
 const { processMessage, buildConfirmationMessage, buildReminderMessage, buildServiceCompletedMessage, processAudioMessage } = require('./flows');
 
 // ============================================================
@@ -27,6 +28,12 @@ let   lastQr      = null;
 
 // Logger silencioso
 const logger = pino({ level: 'silent' });
+
+// ============================================================
+// CONTROL DE DEDUPLICACIÓN DE NOTIFICACIONES
+// ============================================================
+const notifiedPaymentAptIds = new Set();
+const notifiedTechJobKeys   = new Set();
 
 // ============================================================
 // HELPER: Normalizar JID
@@ -45,7 +52,7 @@ function normalizeJid(jidOrPhone) {
 }
 
 // ============================================================
-// ENVIAR MENSAJE (helper público)
+// ENVIAR MENSAJE
 // ============================================================
 async function sendMessage(jidOrPhone, content) {
     if (!waSocket || !isConnected) {
@@ -81,8 +88,8 @@ async function startWhatsAppBot() {
     const { version }          = await fetchLatestBaileysVersion();
 
     console.log('\n╔══════════════════════════════════════════╗');
-    console.log('║  💬 HIDROSYS – Bot de WhatsApp v5.1      ║');
-    console.log('║  Respuestas Inmediatas y Flujo Eficiente ║');
+    console.log('║  💬 HIDROSYS – Bot de WhatsApp v5.5      ║');
+    console.log('║  Control Antiduplicados y Notificaciones ║');
     console.log('╚══════════════════════════════════════════╝\n');
 
     waSocket = makeWASocket({
@@ -231,33 +238,93 @@ async function startWhatsAppBot() {
 }
 
 // ============================================================
-// NOTIFICACIONES AUTOMÁTICAS
+// NOTIFICACIONES AUTOMÁTICAS (CONTROL ANTIDUPLICADOS)
 // ============================================================
+
+// 1. Confirmación de Cita al CLIENTE (1 solo envío garantizado)
 async function notifyPaymentApproved(aptId) {
-    const payload = await buildConfirmationMessage(aptId);
-    if (!payload) return false;
-    let sent1 = await sendMessage(payload.phone, payload.message);
-    const digits1 = (payload.phone || '').replace(/\D/g, '');
-    const digits2 = (payload.clientPhoneJid || '').replace(/\D/g, '');
-    let sent2 = false;
-    if (payload.clientPhoneJid && digits2 && digits2 !== digits1) {
-        sent2 = await sendMessage(payload.clientPhoneJid, payload.message);
+    if (!aptId) return false;
+    const cacheKey = String(aptId);
+    if (notifiedPaymentAptIds.has(cacheKey)) {
+        console.log('[WA Bot] ℹ️ Notificación de pago para cita #' + aptId + ' ya enviada. Omitiendo duplicado.');
+        return true;
     }
-    return sent1 || sent2;
+
+    const payload = await buildConfirmationMessage(aptId);
+    if (!payload || !payload.phone) return false;
+
+    notifiedPaymentAptIds.add(cacheKey);
+    return await sendMessage(payload.phone, payload.message);
 }
 
+// 2. Notificación de Trabajo Asignado al TÉCNICO
+async function notifyTechnicianJobAssigned(aptId, techId) {
+    if (!aptId || !techId) return false;
+    const cacheKey = aptId + '_' + techId;
+    if (notifiedTechJobKeys.has(cacheKey)) return true;
+
+    try {
+        const aptRes = await pool.query(
+            `SELECT a.*, t.name as tech_name, t.phone as tech_phone, t.email as tech_email
+             FROM appointments a
+             LEFT JOIN technicians t ON a.tech_id = t.id
+             WHERE a.id = $1`,
+            [aptId]
+        );
+        if (!aptRes.rows.length) return false;
+        const apt = aptRes.rows[0];
+        const techPhone = apt.tech_phone;
+        if (!techPhone) {
+            console.log('[WA Bot] ⚠️ Técnico #' + techId + ' (' + apt.tech_name + ') no tiene teléfono.');
+            return false;
+        }
+
+        const dobj = apt.apt_date ? new Date(apt.apt_date) : new Date();
+        const diasL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+        const mesesL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        const fechaLeg = diasL[dobj.getDay()] + ' ' + dobj.getDate() + ' de ' + mesesL[dobj.getMonth()] + ' (' + (apt.apt_date?.toISOString().split('T')[0] || 'Por coordinar') + ')';
+
+        const msgTech = '👷 *HIDROSYS EC. — Nueva Orden de Trabajo Asignada*\n\n' +
+            'Hola *' + apt.tech_name + '*, el administrador te ha asignado una nueva visita técnica:\n\n' +
+            '📋 *Orden de Trabajo:* #' + apt.id + '\n' +
+            '👤 *Cliente:* ' + apt.client_name + '\n' +
+            '📱 *Teléfono Cliente:* ' + apt.client_phone + '\n' +
+            '🏠 *Dirección:* ' + apt.address + '\n' +
+            '📍 *Zona:* ' + apt.zone + '\n' +
+            '🔧 *Servicio:* ' + apt.service_type + '\n' +
+            '📅 *Fecha:* ' + fechaLeg + '\n' +
+            '⏰ *Horario:* ' + String(apt.apt_time || '').slice(0,5) + '\n' +
+            '💰 *Estado de Pago:* ' + (apt.payment_status || 'Pagado') + '\n' +
+            (apt.notes ? '📝 *Notas:* "' + apt.notes + '"\n' : '') +
+            '\n👉 _Por favor comunícate con el cliente previo a la visita para coordinar tu llegada._';
+
+        notifiedTechJobKeys.add(cacheKey);
+        const sent = await sendMessage(techPhone, msgTech);
+        if (sent) {
+            console.log('[WA Bot] 👷 Notificación de orden enviada al técnico ' + apt.tech_name + ' (' + techPhone + ')');
+        }
+        return sent;
+    } catch (err) {
+        console.error('[WA Bot] ❌ Error notificando al técnico:', err.message);
+        return false;
+    }
+}
+
+// 3. Recordatorio de Cita
 async function notifyAppointmentReminder(aptId) {
     const payload = await buildReminderMessage(aptId);
     if (!payload || !payload.phone) return false;
     return await sendMessage(payload.phone, payload.message);
 }
 
+// 4. Servicio Concluido y Encuesta CSAT
 async function notifyServiceCompleted(aptId) {
     const payload = await buildServiceCompletedMessage(aptId);
     if (!payload || !payload.phone) return false;
     return await sendMessage(payload.phone, payload.message);
 }
 
+// 5. OTP de Verificación
 async function sendClientVerificationOtp(phone, clientName, code) {
     if (!phone) return false;
     let cleanPhone = String(phone).replace(/\D/g, '');
@@ -289,6 +356,7 @@ module.exports = {
     startWhatsAppBot,
     sendMessage,
     notifyPaymentApproved,
+    notifyTechnicianJobAssigned,
     notifyAppointmentReminder,
     notifyServiceCompleted,
     sendClientVerificationOtp,
