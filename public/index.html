@@ -299,7 +299,7 @@
                                     </p>
                                     
                                     <div id="cedula-step-1" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                        <input id="bk-cedula-input" class="form-control" placeholder="Ingresa tu Nº de Cédula (10 dígitos)" maxlength="10" style="flex: 1; min-width: 200px;">
+                                        <input id="bk-cedula-input" class="form-control" placeholder="Ingresa tu Nº de Cédula (10 dígitos)" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)" style="flex: 1; min-width: 200px;">
                                         <button type="button" class="btn btn-primary" id="btn-request-otp" onclick="requestCedulaOtp()" style="display:flex; align-items:center; gap:6px;">
                                             <span>📲</span> Enviar Código a mi WhatsApp
                                         </button>
@@ -312,7 +312,7 @@
                                             <button type="button" class="btn btn-ghost btn-xs" onclick="resetCedulaLookup()" style="font-size:0.75rem;">Cambiar Cédula</button>
                                         </div>
                                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                            <input id="bk-otp-input" class="form-control" placeholder="Código de 4 dígitos" maxlength="4" style="flex: 1; min-width: 160px; font-size:1.1rem; letter-spacing:4px; font-weight:700; text-align:center;">
+                                            <input id="bk-otp-input" class="form-control" placeholder="Código de 4 dígitos" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" style="flex: 1; min-width: 160px; font-size:1.1rem; letter-spacing:4px; font-weight:700; text-align:center;">
                                             <button type="button" class="btn btn-success" id="btn-verify-otp" onclick="verifyCedulaOtp()" style="display:flex; align-items:center; gap:6px; background:#10b981; border-color:#10b981;">
                                                 <span>✅</span> Confirmar Identidad
                                             </button>
@@ -326,11 +326,11 @@
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label class="form-label">Nombre Completo <span class="required">*</span></label>
-                                        <input id="bk-name" class="form-control" required placeholder="Ej. Freddy Loor">
+                                        <input id="bk-name" class="form-control" required placeholder="Ej. Freddy Loor" oninput="this.value=this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g,'')">
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Celular de Contacto <span class="required">*</span></label>
-                                        <input id="bk-phone" class="form-control" required placeholder="+593 98 765 4321">
+                                        <input id="bk-phone" class="form-control" required placeholder="Ej. 0987654321" inputmode="tel" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)">
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Correo Electrónico</label>
@@ -338,7 +338,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Dirección <span class="required">*</span></label>
-                                        <input id="bk-address" class="form-control" required placeholder="Ej. Av. Granados N32-15 y Eloy Alfaro">
+                                        <input id="bk-address" class="form-control" required placeholder="Ej. Av. 24 de Mayo y Bolívar, junto al parque">
                                     </div>
                                 </div>
                                 <div class="wz-buttons">
@@ -1153,7 +1153,7 @@
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
                 <div class="form-group">
                     <label style="font-size:0.82rem; font-weight:700; color:var(--gray-700); margin-bottom:4px; display:block;">Teléfono WhatsApp *</label>
-                    <input type="text" id="tech-phone" class="form-control" placeholder="0987654321" required>
+                    <input type="text" id="tech-phone" class="form-control" placeholder="0987654321" inputmode="tel" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)" required>
                 </div>
                 <div class="form-group">
                     <label style="font-size:0.82rem; font-weight:700; color:var(--gray-700); margin-bottom:4px; display:block;">Avatar</label>
@@ -1198,16 +1198,16 @@
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
                 <div class="form-group">
                     <label style="font-size:0.82rem; font-weight:700; color:var(--gray-700); margin-bottom:4px; display:block;">Número de Cédula *</label>
-                    <input type="text" id="client-cedula" class="form-control" placeholder="ej: 0302886403" maxlength="20" required>
+                    <input type="text" id="client-cedula" class="form-control" placeholder="ej: 0302886403" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)" required>
                 </div>
                 <div class="form-group">
                     <label style="font-size:0.82rem; font-weight:700; color:var(--gray-700); margin-bottom:4px; display:block;">Celular WhatsApp *</label>
-                    <input type="text" id="client-phone" class="form-control" placeholder="ej: 0998952547" required>
+                    <input type="text" id="client-phone" class="form-control" placeholder="ej: 0998952547" inputmode="tel" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)" required>
                 </div>
             </div>
             <div class="form-group" style="margin-bottom:14px;">
                 <label style="font-size:0.82rem; font-weight:700; color:var(--gray-700); margin-bottom:4px; display:block;">Nombre Completo *</label>
-                <input type="text" id="client-name" class="form-control" placeholder="ej: Freddy Peñafiel" required>
+                <input type="text" id="client-name" class="form-control" placeholder="ej: Freddy Peñafiel" oninput="this.value=this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g,'')" required>
             </div>
             <div class="form-group" style="margin-bottom:14px;">
                 <label style="font-size:0.82rem; font-weight:700; color:var(--gray-700); margin-bottom:4px; display:block;">Correo Electrónico</label>

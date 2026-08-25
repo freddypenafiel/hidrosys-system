@@ -165,23 +165,31 @@ async function processMessage(phone, text, senderJid) {
     }
 
     // ══════════════════════════════════════════════════════════
-    // FLUJO 1: AGENDAR VISITA TÉCNICA
+    // FLUJO 1: AGENDAR VISITA TÉCNICA (VALIDACIONES RIGUROSAS)
     // ══════════════════════════════════════════════════════════
     if (step === 'book_name') {
-        if (msg.length < 3) return '⚠️ Por favor escribe tu nombre completo (mínimo 3 letras).';
-        setSession(phone, 'book_phone', { name: msg });
-        return stepHeader('book_phone') + '📱 Escribe tu número de *celular* (10 dígitos, ej. 0987654321):';
+        const cleanName = msg.replace(/[0-9!@#$%^&*()_+={}\[\]:;<>?,./\\]/g, '').trim();
+        if (cleanName.length < 3) {
+            return '⚠️ *Nombre no válido.* Por favor escribe tu nombre y apellido usando solo letras (mínimo 3 caracteres).\n\n_Ejemplo: Freddy Peñafiel_';
+        }
+        setSession(phone, 'book_phone', { name: cleanName });
+        return stepHeader('book_phone') + '📱 Escribe tu número de *celular* (10 dígitos numéricos, ej. 0987654321):';
     }
 
     if (step === 'book_phone') {
-        if (!/^0[0-9]{9}$/.test(msg)) return '⚠️ Número inválido. Debe tener 10 dígitos y empezar con 0 (ej: 0987654321).';
-        setSession(phone, 'book_address', { clientPhone: msg });
+        const digits = msg.replace(/\D/g, '');
+        if (!/^09\d{8}$/.test(digits) && !/^0[2-7]\d{7}$/.test(digits) && digits.length !== 10) {
+            return '⚠️ *Número de celular inválido.* Debe tener exactamente 10 dígitos numéricos y comenzar con 09 (ej: 0987654321).\n\n_Por favor intenta de nuevo:_';
+        }
+        setSession(phone, 'book_address', { clientPhone: digits });
         return stepHeader('book_address') + '🏠 Escribe la *dirección* o referencia del inmueble:\n_(ej: Barrio El Portete, calle Principal y Bolívar, casa azul de dos pisos)_';
     }
 
     if (step === 'book_address') {
-        if (msg.length < 5) return '⚠️ Por favor escribe una dirección más detallada (mínimo 5 caracteres).';
-        setSession(phone, 'book_canton', { address: msg });
+        if (msg.trim().length < 5) {
+            return '⚠️ *Dirección demasiado corta.* Por favor escribe una dirección más detallada con calle y referencia (mínimo 5 caracteres).';
+        }
+        setSession(phone, 'book_canton', { address: msg.trim() });
         const lista = Object.entries(CANTONES).map(([k,v]) => k + '️⃣ *' + v.nombre + '*').join('\n');
         return stepHeader('book_canton') + '📍 *¿En qué cantón de la Provincia del Cañar te encuentras?*\n\n' + lista + '\n\n👉 _Escribe el número del **1 al 7** o el nombre del cantón._';
     }
@@ -194,7 +202,7 @@ async function processMessage(phone, text, senderJid) {
         }
         if (!cantonData) {
             const lista = Object.entries(CANTONES).map(([k,v]) => k + '️⃣ *' + v.nombre + '*').join('\n');
-            return '❌ Cantón no reconocido. Por favor escribe un número del 1 al 7:\n\n' + lista;
+            return '❌ *Cantón no reconocido.* Por favor escribe únicamente un número del **1 al 7** o el nombre del cantón:\n\n' + lista;
         }
 
         setSession(phone, 'book_parish', { canton: cantonData.nombre, parroquias: cantonData.parroquias });
@@ -221,7 +229,7 @@ async function processMessage(phone, text, senderJid) {
         }
         if (!parish) {
             const listaPar = parroquias.map((p, i) => (i + 1) + '️⃣ *' + p + '*').join('\n');
-            return '❌ Parroquia no válida. Escribe el número correcto:\n\n' + listaPar;
+            return '❌ *Parroquia no válida.* Por favor escribe el número correcto de la lista (1 al ' + parroquias.length + '):\n\n' + listaPar;
         }
 
         setSession(phone, 'book_service', { parish, zone: sess.data.canton + ' - ' + parish });
@@ -241,7 +249,7 @@ async function processMessage(phone, text, senderJid) {
         }
         if (!service) {
             const listaServ = SERVICIOS.map((s, i) => (i + 1) + '️⃣ *' + s + '*').join('\n');
-            return '❌ Servicio no reconocido. Escribe un número del 1 al 6:\n\n' + listaServ;
+            return '❌ *Servicio no reconocido.* Por favor responde con un número del **1 al 6**:\n\n' + listaServ;
         }
 
         // Consultar técnicos activos para calcular capacidad

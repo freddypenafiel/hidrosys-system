@@ -554,6 +554,23 @@ function setupBookingForm() {
                 channel:     'Formulario',
                 audioUrl:    uploadedAudioUrl
             };
+
+            const cleanPhone = data.clientPhone.replace(/\D/g, '');
+            if (!/^09\d{8}$/.test(cleanPhone) && !/^5939\d{8}$/.test(cleanPhone) && cleanPhone.length !== 10) {
+                toast('⚠️ El número de celular debe contener 10 dígitos numéricos (ej. 0987654321).', 'warning');
+                btn.disabled = false; btn.textContent = '✅ Confirmar y Registrar Cita';
+                return;
+            }
+            if (data.clientName.length < 3) {
+                toast('⚠️ Por favor ingrese su nombre y apellido completo (mínimo 3 letras).', 'warning');
+                btn.disabled = false; btn.textContent = '✅ Confirmar y Registrar Cita';
+                return;
+            }
+            if (data.clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.clientEmail)) {
+                toast('⚠️ Por favor ingrese un correo electrónico válido (ej. usuario@correo.com).', 'warning');
+                btn.disabled = false; btn.textContent = '✅ Confirmar y Registrar Cita';
+                return;
+            }
             const bankList = `*Cuentas Oficiales para Transferencia (HIDROSYS EC):*
 1. *B. Pichincha* (Cte): 2201948332
 2. *B. Guayaquil* (Aho): 10482938
@@ -1352,6 +1369,18 @@ window.saveClient = async function(e) {
         notes:   document.getElementById('client-notes').value.trim(),
     };
 
+    if (data.cedula && !/^\d{10}$/.test(data.cedula)) {
+        toast('⚠️ La cédula debe contener exactamente 10 dígitos numéricos.', 'warning');
+        btn.disabled = false; btn.textContent = '💾 Guardar Cliente';
+        return;
+    }
+    const cleanPhone = data.phone.replace(/\D/g, '');
+    if (!/^09\d{8}$/.test(cleanPhone) && !/^5939\d{8}$/.test(cleanPhone) && cleanPhone.length !== 10) {
+        toast('⚠️ El celular WhatsApp debe tener 10 dígitos numéricos (ej. 0987654321).', 'warning');
+        btn.disabled = false; btn.textContent = '💾 Guardar Cliente';
+        return;
+    }
+
     try {
         if (id) {
             await api('PUT', `/clients/${id}`, data);
@@ -1621,6 +1650,13 @@ window.saveTech = async function(e) {
         avatar:    document.getElementById('tech-avatar').value,
         active:    document.getElementById('tech-active').checked
     };
+
+    const cleanPhone = data.phone.replace(/\D/g, '');
+    if (!/^09\d{8}$/.test(cleanPhone) && !/^5939\d{8}$/.test(cleanPhone) && cleanPhone.length !== 10) {
+        toast('⚠️ El teléfono WhatsApp del técnico debe contener 10 dígitos (ej. 0987654321).', 'warning');
+        btn.disabled = false; btn.textContent = '💾 Guardar Técnico';
+        return;
+    }
 
     try {
         if (id) {
