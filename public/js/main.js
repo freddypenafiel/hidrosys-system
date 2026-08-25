@@ -1126,30 +1126,148 @@ async function deleteApt(aptId) {
 }
 
 // ============================================================
-// ADMIN: CLIENTES
+// ADMIN: CLIENTES (CRUD Y GESTIÓN CON CÉDULA)
 // ============================================================
+let allClientsCache = [];
+
 async function loadClients() {
     const tbody = document.getElementById('clients-tbody');
     if (!tbody) return;
     const q = document.getElementById('cli-search')?.value || '';
     try {
-        const clients = await api('GET', `/clients?q=${encodeURIComponent(q)}`);
-        tbody.innerHTML = clients.length ? clients.map(c => `
-            <tr>
-                <td><strong style="color:var(--blue-800); cursor:pointer;" onclick="openClient360(${c.id}, '${c.phone}')" title="Ver ficha técnica 360°">${c.name}</strong></td>
-                <td>${c.phone}</td>
-                <td>${c.email || '—'}</td>
-                <td>${c.address || '—'}</td>
-                <td>${c.zone || '—'}</td>
-                <td style="text-align:center;"><span class="badge badge-blue">${c.total_appointments||0}</span></td>
-                <td>${c.last_service_date ? formatDate(c.last_service_date) : '—'}</td>
-                <td style="text-align:center;">
-                    <button class="btn btn-ghost btn-xs" onclick="openClient360(${c.id}, '${c.phone}')" style="font-size:0.75rem; padding:4px 8px; border:1px solid var(--gray-300);" title="Ver ficha técnica completa">🔍 Ficha 360°</button>
-                </td>
-            </tr>
-        `).join('') : '<tr class="empty-row"><td colspan="8">Sin clientes registrados.</td></tr>';
+        allClientsCache = await api('GET', `/clients?q=${encodeURIComponent(q)}`);
+        tbody.innerHTML = allClientsCache.length ? allClientsCache.map(c => {
+            const cleanCedula = c.cedula ? `<span class="badge badge-blue" style="font-family:monospace; font-size:0.8rem;">${c.cedula}</span>` : '<span style="color:var(--gray-400); font-size:0.75rem; font-style:italic;">Sin cédula</span>';
+            const cleanPhone = (c.phone || '').replace(/\D/g, '');
+            const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('593') ? cleanPhone : '593' + cleanPhone.replace(/^0/, '')}` : '#';
+
+            return `
+                <tr>
+                    <td>${cleanCedula}</td>
+                    <td>
+                        <strong style="color:var(--blue-900); cursor:pointer;" onclick="openClient360(${c.id}, '${c.phone}')" title="Ver ficha técnica 360°">
+                            ${c.name}
+                        </strong>
+                    </td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span>${c.phone}</span>
+                            ${cleanPhone ? `<a href="${waLink}" target="_blank" class="badge badge-green" style="text-decoration:none; font-size:0.68rem; padding:1px 5px;" title="Chatear por WhatsApp">WA ↗</a>` : ''}
+                        </div>
+                    </td>
+                    <td>${c.email || '<span style="color:var(--gray-400);">—</span>'}</td>
+                    <td>${c.address || '<span style="color:var(--gray-400);">—</span>'}</td>
+                    <td><strong style="color:var(--blue-700);">${c.zone || '—'}</strong></td>
+                    <td style="text-align:center;"><span class="badge badge-blue">${c.total_appointments || 0}</span></td>
+                    <td>${c.last_service_date ? formatDate(c.last_service_date) : '<span style="color:var(--gray-400);">—</span>'}</td>
+                    <td style="text-align:center;">
+                        <div style="display:flex; gap:4px; justify-content:center;">
+                            <button class="btn btn-xs btn-outline" onclick="openClientModal(${c.id})" style="font-size:0.75rem; padding:3px 8px;" title="Editar cliente y cédula">✏️ Editar</button>
+                            <button class="btn btn-ghost btn-xs" onclick="openClient360(${c.id}, '${c.phone}')" style="font-size:0.75rem; padding:3px 8px; border:1px solid var(--gray-300);" title="Ver historial 360°">🔍 Ficha</button>
+                            <button class="btn btn-xs" onclick="deleteClient(${c.id})" style="background:var(--red-bg); color:var(--red); border:none; font-size:0.75rem; padding:3px 6px;" title="Eliminar cliente">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('') : '<tr class="empty-row"><td colspan="9">Sin clientes registrados.</td></tr>';
     } catch (err) { toast(`Error: ${err.message}`, 'error'); }
 }
+
+window.openClientModal = function(id = null) {
+    const modal = document.getElementById('modal-client');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('modal-client-title');
+    const idEl = document.getElementById('client-id');
+    const cedulaEl = document.getElementById('client-cedula');
+    const nameEl = document.getElementById('client-name');
+    const phoneEl = document.getElementById('client-phone');
+    const emailEl = document.getElementById('client-email');
+    const addressEl = document.getElementById('client-address');
+    const zoneEl = document.getElementById('client-zone');
+    const notesEl = document.getElementById('client-notes');
+
+    if (id) {
+        const client = allClientsCache.find(c => c.id == id);
+        if (client) {
+            titleEl.textContent = `👥 Editar Cliente: ${client.name}`;
+            idEl.value = client.id;
+            cedulaEl.value = client.cedula || '';
+            nameEl.value = client.name || '';
+            phoneEl.value = client.phone || '';
+            emailEl.value = client.email || '';
+            addressEl.value = client.address || '';
+            zoneEl.value = client.zone || '';
+            notesEl.value = client.notes || '';
+        }
+    } else {
+        titleEl.textContent = '➕ Registrar Nuevo Cliente';
+        idEl.value = '';
+        cedulaEl.value = '';
+        nameEl.value = '';
+        phoneEl.value = '';
+        emailEl.value = '';
+        addressEl.value = '';
+        zoneEl.value = 'Azogues';
+        notesEl.value = '';
+    }
+
+    modal.style.display = 'flex';
+};
+
+window.closeClientModal = function() {
+    const modal = document.getElementById('modal-client');
+    if (modal) modal.style.display = 'none';
+};
+
+window.saveClient = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-client');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    const id = document.getElementById('client-id').value;
+    const data = {
+        cedula:  document.getElementById('client-cedula').value.trim(),
+        name:    document.getElementById('client-name').value.trim(),
+        phone:   document.getElementById('client-phone').value.trim(),
+        email:   document.getElementById('client-email').value.trim(),
+        address: document.getElementById('client-address').value.trim(),
+        zone:    document.getElementById('client-zone').value.trim(),
+        notes:   document.getElementById('client-notes').value.trim(),
+    };
+
+    try {
+        if (id) {
+            await api('PUT', `/clients/${id}`, data);
+            toast('✅ Cliente y cédula actualizados correctamente.', 'success');
+        } else {
+            await api('POST', '/clients', data);
+            toast('✅ Nuevo cliente registrado en el sistema.', 'success');
+        }
+        closeClientModal();
+        await loadClients();
+    } catch (err) {
+        toast(`Error: ${err.message}`, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 Guardar Cliente';
+    }
+};
+
+window.deleteClient = async function(id) {
+    const client = allClientsCache.find(c => c.id == id);
+    const name = client ? client.name : 'este cliente';
+    if (!confirm(`¿Eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
+
+    try {
+        const res = await api('DELETE', `/clients/${id}`);
+        toast(res.message || 'Cliente eliminado.', 'info');
+        await loadClients();
+    } catch (err) {
+        toast(`Error: ${err.message}`, 'error');
+    }
+};
 
 // ============================================================
 // ADMIN: LEADS

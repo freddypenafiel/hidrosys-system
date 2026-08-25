@@ -299,7 +299,7 @@ app.get('/api/availability', async (req, res) => {
 });
 
 // ============================================================
-// CLIENTES
+// CLIENTES (Gestión Completa, Cédula y Configuración)
 // ============================================================
 app.get('/api/clients', async (req, res) => {
     try {
@@ -311,9 +311,9 @@ app.get('/api/clients', async (req, res) => {
             LEFT JOIN appointments a ON c.phone = a.client_phone
         `;
         const params = [];
-        if (q) {
-            params.push(`%${q}%`);
-            query += ` WHERE c.name ILIKE $1 OR c.phone ILIKE $1`;
+        if (q && q.trim()) {
+            params.push(`%${q.trim()}%`);
+            query += ` WHERE c.name ILIKE $1 OR c.phone ILIKE $1 OR c.cedula ILIKE $1 OR c.email ILIKE $1`;
         }
         query += ' GROUP BY c.id ORDER BY c.created_at DESC';
         const result = await pool.query(query, params);
@@ -325,13 +325,20 @@ app.get('/api/clients', async (req, res) => {
 
 app.post('/api/clients', async (req, res) => {
     try {
-        const { name, phone, email, address, zone, notes } = req.body;
+        const { name, phone, email, address, zone, notes, cedula } = req.body;
+        if (!name || !phone) return res.status(400).json({ error: 'Nombre y teléfono son obligatorios.' });
         const result = await pool.query(
-            `INSERT INTO clients (name, phone, email, address, zone, notes)
-             VALUES ($1,$2,$3,$4,$5,$6)
-             ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name, email=EXCLUDED.email, address=EXCLUDED.address, zone=EXCLUDED.zone, notes=COALESCE(EXCLUDED.notes, clients.notes)
+            `INSERT INTO clients (name, phone, email, address, zone, notes, cedula)
+             VALUES ($1,$2,$3,$4,$5,$6,$7)
+             ON CONFLICT (phone) DO UPDATE SET 
+                name = EXCLUDED.name, 
+                email = COALESCE(EXCLUDED.email, clients.email), 
+                address = COALESCE(EXCLUDED.address, clients.address), 
+                zone = COALESCE(EXCLUDED.zone, clients.zone), 
+                notes = COALESCE(EXCLUDED.notes, clients.notes),
+                cedula = COALESCE(EXCLUDED.cedula, clients.cedula)
              RETURNING *`,
-            [name, phone, email, address, zone, notes]
+            [name.trim(), phone.trim(), email?.trim() || null, address?.trim() || null, zone || null, notes?.trim() || null, cedula?.trim() || null]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -354,10 +361,27 @@ app.put('/api/clients/:id', async (req, res) => {
                  cedula = COALESCE($7, cedula)
              WHERE id = $8
              RETURNING *`,
-            [name, phone, email, address, zone, notes, cedula, id]
+            [name?.trim(), phone?.trim(), email?.trim() || null, address?.trim() || null, zone, notes?.trim() || null, cedula?.trim() || null, id]
         );
         if (!result.rows.length) return res.status(404).json({ error: 'Cliente no encontrado' });
         res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/clients/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const cli = await pool.query('SELECT phone FROM clients WHERE id = $1', [id]);
+        if (!cli.rows.length) return res.status(404).json({ error: 'Cliente no encontrado' });
+        const phone = cli.rows[0].phone;
+        const aptCheck = await pool.query('SELECT COUNT(*) FROM appointments WHERE client_phone = $1', [phone]);
+        if (parseInt(aptCheck.rows[0].count) > 0) {
+            return res.status(400).json({ error: 'No se puede eliminar este cliente porque tiene citas registradas en el historial. Puedes editar sus datos.' });
+        }
+        await pool.query('DELETE FROM clients WHERE id = $1', [id]);
+        res.json({ message: 'Cliente eliminado exitosamente' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
