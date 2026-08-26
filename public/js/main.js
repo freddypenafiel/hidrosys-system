@@ -1017,8 +1017,12 @@ function setupPaymentForm() {
                         reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
-                    const uploadRes = await api('POST', '/upload-image', { imageBase64: base64Img });
-                    uploadedReceiptUrl = uploadRes.url || '';
+                    try {
+                        const uploadRes = await api('POST', '/upload-image', { imageBase64: base64Img });
+                        uploadedReceiptUrl = uploadRes.url || base64Img;
+                    } catch (upErr) {
+                        uploadedReceiptUrl = base64Img;
+                    }
                 } catch (imgErr) {
                     console.warn('Error subiendo imagen de comprobante:', imgErr.message);
                 }
@@ -1026,7 +1030,7 @@ function setupPaymentForm() {
 
             await api('PUT', `/appointments/${aptId}`, {
                 bank: selectedBank, receiptNo,
-                receiptImg: uploadedReceiptUrl || file?.name || '',
+                receiptImg: uploadedReceiptUrl || '',
                 status: 'Reportado',
                 paymentStatus: 'Pendiente de Validación'
             });
@@ -1304,9 +1308,9 @@ async function loadAppointments() {
                                         </div>
                                         ${a.receipt_img ? `
                                             <div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--blue-200,#bfdbfe);display:flex;align-items:center;gap:8px;">
-                                                <a href="${a.receipt_img}" target="_blank" class="btn btn-xs btn-outline" style="font-size:0.72rem;padding:3px 8px;border-color:var(--blue-400);color:var(--blue-700);background:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+                                                <button type="button" class="btn btn-xs btn-outline" onclick="openReceiptModal('${encodeURIComponent(a.receipt_img||'')}', ${a.id}, '${escapeHtml(a.client_name||'')}', '${escapeHtml(a.bank||'')}', '${escapeHtml(a.receipt_no||'')}')" style="font-size:0.75rem;padding:3px 10px;border-color:var(--blue-500);color:var(--blue-800);background:#fff;font-weight:700;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(0,0,0,0.08);cursor:pointer;border-radius:6px;">
                                                     <span>🖼️</span> Ver Comprobante Adjunto
-                                                </a>
+                                                </button>
                                             </div>
                                         ` : ''}
                                     </div>` : `<p style="font-size:0.78rem;color:var(--gray-400);">Sin reporte de pago.</p>`}
@@ -2086,6 +2090,63 @@ async function showTechReport(aptId) {
         modal.classList.add('open');
     } catch (err) { toast(`Error al generar informe: ${err.message}`, 'error'); }
 }
+
+window.openReceiptModal = function(imgSrc, aptId, clientName, bank, receiptNo) {
+    const modal = document.getElementById('receipt-modal');
+    const body = document.getElementById('receipt-modal-body');
+    const title = document.getElementById('receipt-modal-title');
+    const sub = document.getElementById('receipt-modal-sub');
+    const info = document.getElementById('receipt-modal-info');
+    const dlBtn = document.getElementById('receipt-modal-download');
+    if (!modal || !body) return;
+
+    const rawSrc = decodeURIComponent(imgSrc || '');
+    if (title) title.textContent = `Comprobante — Cita #${aptId}`;
+    if (sub) sub.textContent = `Cliente: ${clientName || 'Cliente'} · Banco: ${bank || 'No especificado'}`;
+    if (info) info.textContent = `Nº de Transferencia: ${receiptNo || 'S/N'}`;
+
+    if (rawSrc && (rawSrc.startsWith('data:image') || rawSrc.startsWith('/uploads/') || rawSrc.startsWith('http://') || rawSrc.startsWith('https://'))) {
+        body.innerHTML = `
+            <div style="display:flex; justify-content:center; align-items:center; min-height:220px;">
+                <img src="${rawSrc}" alt="Comprobante de Pago" style="max-width:100%; max-height:60vh; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.5); object-fit:contain;">
+            </div>
+        `;
+        if (dlBtn) {
+            dlBtn.href = rawSrc;
+            dlBtn.style.display = 'inline-flex';
+        }
+    } else if (rawSrc && (rawSrc.endsWith('.jpg') || rawSrc.endsWith('.png') || rawSrc.endsWith('.jpeg') || rawSrc.endsWith('.webp') || rawSrc.endsWith('.pdf'))) {
+        const attemptUrl = rawSrc.startsWith('/') ? rawSrc : `/uploads/${rawSrc}`;
+        body.innerHTML = `
+            <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:220px; gap:12px;">
+                <img src="${attemptUrl}" onerror="this.style.display='none'; document.getElementById('receipt-fallback-text').style.display='block';" alt="Comprobante de Pago" style="max-width:100%; max-height:60vh; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.5); object-fit:contain;">
+                <div id="receipt-fallback-text" style="display:none; color:white; font-size:0.88rem; background:rgba(255,255,255,0.1); padding:16px; border-radius:8px; text-align:center;">
+                    📄 Archivo reportado: <strong>${rawSrc}</strong><br>
+                    <small style="color:#cbd5e1;">(Transferencia Nº ${receiptNo || 'S/N'} en ${bank || 'Banco'})</small>
+                </div>
+            </div>
+        `;
+        if (dlBtn) {
+            dlBtn.href = attemptUrl;
+            dlBtn.style.display = 'inline-flex';
+        }
+    } else {
+        body.innerHTML = `
+            <div style="padding:30px 15px; color:white; text-align:center;">
+                <div style="font-size:2.8rem; margin-bottom:8px;">🧾</div>
+                <h4 style="color:white; margin-bottom:6px;">Transferencia Registrada</h4>
+                <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:12px;">El cliente reportó el comprobante por texto sin archivo adjunto.</p>
+                <div style="background:rgba(255,255,255,0.1); padding:12px; border-radius:8px; display:inline-block; font-size:0.85rem;">
+                    🏦 <strong>Banco:</strong> ${bank || 'N/A'}<br>
+                    🔢 <strong>Nº Transferencia:</strong> ${receiptNo || 'N/A'}
+                </div>
+            </div>
+        `;
+        if (dlBtn) dlBtn.style.display = 'none';
+    }
+
+    modal.classList.add('open');
+};
 
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 document.addEventListener('click', e => { if (e.target.classList.contains('modal-backdrop')) closeModal(e.target.id); });

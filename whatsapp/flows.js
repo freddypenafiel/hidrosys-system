@@ -83,7 +83,7 @@ function stepHeader(k) {
 }
 
 function menuPrincipal() {
-    return '💧 *HIDROSYS EC. — Asistente Virtual*\n_Atención al Cliente • Sistemas de Agua y Gas_\n\n¡Hola! ¿En qué podemos ayudarte hoy? Escribe el *número* de tu opción:\n\n1️⃣ *Agendar Visita Técnica* ($15.00)\n2️⃣ *Reportar Comprobante de Pago*\n3️⃣ *Consultar Estado de mi Cita*\n4️⃣ *Ver Catálogo y Precios*\n\n👉 _Escribe **1**, **2**, **3** o **4** para continuar._';
+    return '💧 *HIDROSYS EC. — Asistente Virtual*\n_Atención al Cliente • Sistemas de Agua y Gas_\n\n¡Hola! ¿En qué podemos ayudarte hoy? Escribe el *número* de tu opción:\n\n1️⃣ *Agendar Visita Técnica* ($15.00)\n2️⃣ *Reportar Comprobante de Pago*\n3️⃣ *Consultar Estado de mi Cita*\n4️⃣ *Ver Catálogo y Precios*\n\n👉 Escribe 1, 2, 3 o 4 para continuar.';
 }
 
 async function getRescheduleDateOptions() {
@@ -142,7 +142,7 @@ async function processMessage(phone, text, senderJid) {
             setSession(phone, 'reschedule_date', {});
             const { optionsDate } = await getRescheduleDateOptions();
             const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '* (' + o.iso + ') — ' + o.statusLabel).join('\n');
-            return '📅 *Selecciona tu nueva fecha:* \n\n' + listaFechas;
+            return '📅 *Selecciona tu nueva fecha:* \n\n' + listaFechas + '\n\n👉 Escribe el número del 1 al 5 o la fecha (AAAA-MM-DD).';
         }
         const back = { book_phone:'book_name', book_address:'book_phone', book_canton:'book_address', book_parish:'book_canton', book_service:'book_canton', book_date:'book_service', book_time:'book_date', book_confirm:'book_time' };
         const prev = back[step];
@@ -152,7 +152,7 @@ async function processMessage(phone, text, senderJid) {
         if (prev === 'book_address') return stepHeader('book_address') + '🏠 Escribe la *dirección* del inmueble:';
         if (prev === 'book_canton') {
             const lista = Object.entries(CANTONES).map(([k,v]) => k + '️⃣ *' + v.nombre + '*').join('\n');
-            return stepHeader('book_canton') + '📍 *Selecciona tu Cantón en Cañar:*\n\n' + lista + '\n\n👉 _Escribe el número del 1 al 7 o el nombre del cantón._';
+            return stepHeader('book_canton') + '📍 *Selecciona tu Cantón en Cañar:*\n\n' + lista + '\n\n👉 Escribe el número del 1 al 7 o el nombre del cantón.';
         }
         return menuPrincipal();
     }
@@ -161,23 +161,33 @@ async function processMessage(phone, text, senderJid) {
     // CONFIRMACIÓN DE DISPONIBILIDAD Y REAGENDAMIENTO INTELIGENTE
     // ══════════════════════════════════════════════════════════
     if (step === 'awaiting_availability_confirm' || step === 'idle' || step === 'main_menu') {
-        const cleanPhone9 = phone.slice(-9);
+        const cleanPhone9 = String(phone).replace(/\D/g, '').slice(-9);
 
         // 1. Confirmar disponibilidad (Opción 1 o frases afirmativas)
-        if (['1','1️⃣','si','s','confirmo','confirmar','disponible','de acuerdo','correcto','estare','ok'].includes(msgN) || (msgN.startsWith('si') && !msgN.includes('nuevo'))) {
+        if (['1','1️⃣','si','s','confirmo','confirmar','disponible','de acuerdo','correcto','estare','ok'].includes(msgN) || (msgN.startsWith('si') && !msgN.includes('nuevo') && !msgN.includes('cedula'))) {
             try {
                 let aptId = sess.data.aptId;
                 if (!aptId) {
                     const res = await pool.query(
-                        "SELECT id FROM appointments WHERE (client_phone LIKE $1 OR RIGHT(client_phone, 9) = RIGHT($1, 9)) AND status IN ('Confirmado','Pre-agendado') ORDER BY id DESC LIMIT 1",
-                        ['%' + cleanPhone9 + '%']
+                        `SELECT id FROM appointments 
+                         WHERE (
+                            wa_sender = $1 
+                            OR client_phone LIKE $2 
+                            OR RIGHT(REGEXP_REPLACE(client_phone, '\\D', '', 'g'), 9) = $3
+                         ) 
+                         AND status NOT IN ('Cancelado', 'Terminado') 
+                         ORDER BY id DESC LIMIT 1`,
+                        [senderJid || '', '%' + cleanPhone9 + '%', cleanPhone9]
                     );
                     if (res.rows.length) aptId = res.rows[0].id;
                 }
                 if (aptId) {
                     await pool.query("UPDATE appointments SET status = 'Conf. Cliente' WHERE id = $1", [aptId]);
                     clearSession(phone);
-                    return '✅ *¡Disponibilidad Confirmada!*\n\n📋 Tu cita *#' + aptId + '* ha quedado registrada como *Confirmada por el Cliente*.\n👷 Nuestro técnico asignado se comunicará contigo antes de la visita.\n\n¡Gracias por confiar en *HIDROSYS EC.*! 💧\n_Escribe *menu* si necesitas algo más._';
+                    return '✅ *¡Disponibilidad Confirmada!*\n\n📋 Tu cita *#' + aptId + '* ha quedado registrada como *Confirmada por el Cliente*.\n👷 Nuestro técnico asignado se comunicará contigo antes de la visita.\n\n¡Muchas gracias por confiar en *HIDROSYS EC.*! 💧\n_Escribe menu si necesitas algo más._';
+                } else if (step === 'awaiting_availability_confirm') {
+                    clearSession(phone);
+                    return '✅ *¡Disponibilidad Confirmada!*\n\n📋 Tu cita ha quedado registrada como *Confirmada por el Cliente*.\n👷 Nuestro técnico asignado se comunicará contigo antes de la visita.\n\n¡Muchas gracias por confiar en *HIDROSYS EC.*! 💧\n_Escribe menu si necesitas algo más._';
                 }
             } catch (err) {
                 console.error('[WA] Error Conf. Cliente:', err.message);
@@ -190,8 +200,17 @@ async function processMessage(phone, text, senderJid) {
                 let aptId = sess.data.aptId;
                 let aptData = null;
                 const res = await pool.query(
-                    "SELECT a.*, t.name as tech_name FROM appointments a LEFT JOIN technicians t ON a.tech_id = t.id WHERE (a.client_phone LIKE $1 OR RIGHT(a.client_phone, 9) = RIGHT($1, 9)) AND a.status IN ('Confirmado','Conf. Cliente','Pre-agendado','Reportado') ORDER BY a.id DESC LIMIT 1",
-                    ['%' + cleanPhone9 + '%']
+                    `SELECT a.*, t.name as tech_name 
+                     FROM appointments a 
+                     LEFT JOIN technicians t ON a.tech_id = t.id 
+                     WHERE (
+                        a.wa_sender = $1 
+                        OR a.client_phone LIKE $2 
+                        OR RIGHT(REGEXP_REPLACE(a.client_phone, '\\D', '', 'g'), 9) = $3
+                     ) 
+                     AND a.status NOT IN ('Cancelado', 'Terminado') 
+                     ORDER BY a.id DESC LIMIT 1`,
+                    [senderJid || '', '%' + cleanPhone9 + '%', cleanPhone9]
                 );
                 if (res.rows.length) {
                     aptData = res.rows[0];
@@ -200,9 +219,14 @@ async function processMessage(phone, text, senderJid) {
 
                 if (aptId && aptData) {
                     const { optionsDate, totalTechs } = await getRescheduleDateOptions();
-                    setSession(phone, 'reschedule_date', { aptId, aptData, optionsDate, totalTechs });
+                    setSession(phone, 'reschedule_date', { aptId, aptData, optionsDate, totalTechs, senderJid });
                     const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '* (' + o.iso + ') — ' + o.statusLabel).join('\n');
-                    return '📅 *Reagendamiento de Visita Técnica*\n\nHola *' + aptData.client_name + '*, vamos a cambiar la fecha de tu cita *#' + aptId + '* (' + aptData.service_type + ').\n\n*Selecciona el nuevo día disponible:*\n\n' + listaFechas + '\n\n👉 _Escribe el número del **1 al 5** o la fecha (AAAA-MM-DD)._';
+                    return '📅 *Reagendamiento de Visita Técnica*\n\nHola *' + aptData.client_name + '*, vamos a coordinar una nueva fecha para tu cita *#' + aptId + '* (' + aptData.service_type + ').\n\n*Selecciona el nuevo día disponible:*\n\n' + listaFechas + '\n\n👉 Escribe el número del 1 al 5 o la fecha (AAAA-MM-DD).';
+                } else if (step === 'awaiting_availability_confirm') {
+                    const { optionsDate, totalTechs } = await getRescheduleDateOptions();
+                    setSession(phone, 'reschedule_date', { optionsDate, totalTechs, senderJid });
+                    const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '* (' + o.iso + ') — ' + o.statusLabel).join('\n');
+                    return '📅 *Reagendamiento de Visita Técnica*\n\n*Selecciona tu nueva fecha disponible:*\n\n' + listaFechas + '\n\n👉 Escribe el número del 1 al 5 o la fecha (AAAA-MM-DD).';
                 }
             } catch (err) {
                 console.error('[WA] Error Reagendar lookup:', err.message);
@@ -316,7 +340,7 @@ async function processMessage(phone, text, senderJid) {
     if (step === 'idle' || step === 'main_menu') {
         if (msg === '1' || msg.startsWith('1') || msgN.includes('agendar') || msgN.includes('visita') || msgN.includes('cita')) {
             setSession(phone, 'book_is_existing_client', { senderJid });
-            return '💧 *Agendar Visita Técnica ($15.00)*\n\n¿Ya eres cliente de HIDROSYS o has solicitado servicios antes?\n\n1️⃣ *Sí, validar con mi Cédula* (Autocompletar datos)\n2️⃣ *No, soy cliente nuevo*\n\n👉 _Responde con **1** o **2**._';
+            return '💧 *Agendar Visita Técnica ($15.00)*\n\n¿Ya eres cliente de HIDROSYS o has solicitado servicios antes?\n\n1️⃣ *Sí, validar con mi Cédula* (Autocompletar datos)\n2️⃣ *No, soy cliente nuevo*\n\n👉 Responde con el número 1 o 2.';
         }
         if (msg === '2' || msg.startsWith('2') || msgN.includes('pago') || msgN.includes('comprobante') || msgN.includes('reportar')) {
             setSession(phone, 'pay_phone', { senderJid });
@@ -328,7 +352,7 @@ async function processMessage(phone, text, senderJid) {
         }
         if (msg === '4' || msg.startsWith('4') || msgN.includes('catalogo') || msgN.includes('precio')) {
             clearSession(phone);
-            return '📦 *Catálogo de Servicios HIDROSYS EC.:*\n\n💧 *Instalación de medidor de agua:* $15.00\n🔩 *Reparación de tubería / fugas:* $15.00\n⛽ *Red de gas domiciliario:* $15.00\n🔨 *Mantenimiento sistema hidráulico:* $15.00\n🔍 *Inspección técnica general:* $15.00\n\n_Nota: El valor de $15.00 incluye visita técnica y diagnóstico profesional. Materiales se cotizan en sitio._\n\n👉 _Escribe **1** para agendar ahora o **menu** para volver._';
+            return '📦 *Catálogo de Servicios HIDROSYS EC.:*\n\n💧 *Instalación de medidor de agua:* $15.00\n🔩 *Reparación de tubería / fugas:* $15.00\n⛽ *Red de gas domiciliario:* $15.00\n🔨 *Mantenimiento sistema hidráulico:* $15.00\n🔍 *Inspección técnica general:* $15.00\n\n_Nota: El valor de $15.00 incluye visita técnica y diagnóstico profesional. Materiales se cotizan en sitio._\n\n👉 Escribe 1 para agendar ahora o escribe menu para volver.';
         }
         return menuPrincipal();
     }
@@ -344,7 +368,7 @@ async function processMessage(phone, text, senderJid) {
             setSession(phone, 'book_name', {});
             return stepHeader('book_name') + 'Por favor, escribe tu *nombre y apellido*:';
         } else {
-            return '❓ Por favor responde con:\n1️⃣ *Sí, validar con mi Cédula*\n2️⃣ *No, soy cliente nuevo*';
+            return '❓ Por favor responde con:\n1️⃣ *Sí, validar con mi Cédula*\n2️⃣ *No, soy cliente nuevo*\n\n👉 Responde con el número 1 o 2.';
         }
     }
 
@@ -406,7 +430,7 @@ async function processMessage(phone, text, senderJid) {
             });
 
             const listaServ = SERVICIOS.map((s, i) => (i + 1) + '️⃣ *' + s + '* ($15.00)').join('\n');
-            return `🎉 *¡Identidad Confirmada!*\n\nBienvenido/a de nuevo *${clientName}*.\n📍 *Dirección registrada:* ${address} (${zone})\n\n` + stepHeader('book_service') + '🔧 *¿Qué tipo de servicio técnico necesitas?*\n\n' + listaServ + '\n\n👉 _Escribe el número del **1 al 6**._';
+            return `🎉 *¡Identidad Confirmada!*\n\nBienvenido/a de nuevo *${clientName}*.\n📍 *Dirección registrada:* ${address} (${zone})\n\n` + stepHeader('book_service') + '🔧 *¿Qué tipo de servicio técnico necesitas?*\n\n' + listaServ + '\n\n👉 Escribe el número del 1 al 6.';
         } else {
             sess.data.otpAttempts = (sess.data.otpAttempts || 0) + 1;
             if (sess.data.otpAttempts >= 3) {
@@ -441,7 +465,7 @@ async function processMessage(phone, text, senderJid) {
         }
         setSession(phone, 'book_canton', { address: msg.trim() });
         const lista = Object.entries(CANTONES).map(([k,v]) => k + '️⃣ *' + v.nombre + '*').join('\n');
-        return stepHeader('book_canton') + '📍 *¿En qué cantón de la Provincia del Cañar te encuentras?*\n\n' + lista + '\n\n👉 _Escribe el número del **1 al 7** o el nombre del cantón._';
+        return stepHeader('book_canton') + '📍 *¿En qué cantón de la Provincia del Cañar te encuentras?*\n\n' + lista + '\n\n👉 Escribe el número del 1 al 7 o el nombre del cantón.';
     }
 
     if (step === 'book_canton') {
@@ -452,7 +476,7 @@ async function processMessage(phone, text, senderJid) {
         }
         if (!cantonData) {
             const lista = Object.entries(CANTONES).map(([k,v]) => k + '️⃣ *' + v.nombre + '*').join('\n');
-            return '❌ *Cantón no reconocido.* Por favor escribe únicamente un número del **1 al 7** o el nombre del cantón:\n\n' + lista;
+            return '❌ *Cantón no reconocido.* Por favor escribe el número del 1 al 7 o el nombre del cantón:\n\n' + lista;
         }
 
         setSession(phone, 'book_parish', { canton: cantonData.nombre, parroquias: cantonData.parroquias });
@@ -460,11 +484,11 @@ async function processMessage(phone, text, senderJid) {
         if (cantonData.parroquias.length === 1) {
             setSession(phone, 'book_service', { parish: cantonData.parroquias[0], zone: cantonData.nombre + ' - ' + cantonData.parroquias[0] });
             const listaServ = SERVICIOS.map((s, i) => (i + 1) + '️⃣ *' + s + '* ($15.00)').join('\n');
-            return stepHeader('book_service') + '🔧 *¿Qué tipo de servicio técnico necesitas?*\n\n' + listaServ + '\n\n👉 _Escribe el número del **1 al 6**._';
+            return stepHeader('book_service') + '🔧 *¿Qué tipo de servicio técnico necesitas?*\n\n' + listaServ + '\n\n👉 Escribe el número del 1 al 6.';
         }
 
         const listaPar = cantonData.parroquias.map((p, i) => (i + 1) + '️⃣ *' + p + '*').join('\n');
-        return '📊 *Paso 4 de 6* ▓▓▓▓░░ 67%\n_Parroquia de ' + cantonData.nombre + '_\n\n🏘️ *Selecciona tu parroquia:*\n\n' + listaPar + '\n\n👉 _Escribe el número de tu parroquia._';
+        return '📊 *Paso 4 de 6* ▓▓▓▓░░ 67%\n_Parroquia de ' + cantonData.nombre + '_\n\n🏘️ *Selecciona tu parroquia:*\n\n' + listaPar + '\n\n👉 Escribe el número de tu parroquia.';
     }
 
     if (step === 'book_parish') {
@@ -484,7 +508,7 @@ async function processMessage(phone, text, senderJid) {
 
         setSession(phone, 'book_service', { parish, zone: sess.data.canton + ' - ' + parish });
         const listaServ = SERVICIOS.map((s, i) => (i + 1) + '️⃣ *' + s + '* ($15.00)').join('\n');
-        return stepHeader('book_service') + '🔧 *¿Qué tipo de servicio técnico necesitas?*\n\n' + listaServ + '\n\n👉 _Escribe el número del **1 al 6**._';
+        return stepHeader('book_service') + '🔧 *¿Qué tipo de servicio técnico necesitas?*\n\n' + listaServ + '\n\n👉 Escribe el número del 1 al 6.';
     }
 
     // PASO 5: TIPO DE SERVICIO Y CHEQUEO DE CUPOS DE TÉCNICOS
@@ -499,7 +523,7 @@ async function processMessage(phone, text, senderJid) {
         }
         if (!service) {
             const listaServ = SERVICIOS.map((s, i) => (i + 1) + '️⃣ *' + s + '*').join('\n');
-            return '❌ *Servicio no reconocido.* Por favor responde con un número del **1 al 6**:\n\n' + listaServ;
+            return '❌ *Servicio no reconocido.* Por favor responde con un número del 1 al 6:\n\n' + listaServ;
         }
 
         // Consultar técnicos activos para calcular capacidad
@@ -535,7 +559,7 @@ async function processMessage(phone, text, senderJid) {
 
         setSession(phone, 'book_date', { service, optionsDate, totalTechs });
         const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '* (' + o.iso + ') — ' + o.statusLabel).join('\n');
-        return stepHeader('book_date') + '📅 *¿Qué día prefieres para la visita técnica?*\n\n' + listaFechas + '\n\n👉 _Escribe el número del **1 al 5** o la fecha en formato AAAA-MM-DD._';
+        return stepHeader('book_date') + '📅 *¿Qué día prefieres para la visita técnica?*\n\n' + listaFechas + '\n\n👉 Escribe el número del 1 al 5 o la fecha en formato AAAA-MM-DD.';
     }
 
     // PASO 6: FECHA Y CHEQUEO DE HORARIOS DISPONIBLES EN TIEMPO REAL
@@ -596,7 +620,7 @@ async function processMessage(phone, text, senderJid) {
         setSession(phone, 'book_time', { date: fechaSeleccionada, slotAvailability });
         const listaSlots = slotAvailability.map(s => s.id + '️⃣ *' + s.label + '* — ' + s.statusText).join('\n');
 
-        return '📅 Fecha seleccionada: *' + fechaSeleccionada + '*\n\n⏰ *¿En qué horario prefieres la visita técnica?*\n_Disponibilidad de técnicos en tiempo real:_\n\n' + listaSlots + '\n\n👉 _Escribe **1**, **2** o **3**._';
+        return '📅 Fecha seleccionada: *' + fechaSeleccionada + '*\n\n⏰ *¿En qué horario prefieres la visita técnica?*\n_Disponibilidad de técnicos en tiempo real:_\n\n' + listaSlots + '\n\n👉 Escribe 1, 2 o 3.';
     }
 
     if (step === 'book_time') {
@@ -612,7 +636,7 @@ async function processMessage(phone, text, senderJid) {
         }
 
         if (!chosenSlot) {
-            return '❌ Horario no reconocido. Escribe **1** (Mañana), **2** (Tarde) o **3** (Tarde-Noche).';
+            return '❌ Horario no reconocido. Escribe 1 (Mañana), 2 (Tarde) o 3 (Tarde-Noche).';
         }
 
         if (!chosenSlot.available) {
@@ -642,7 +666,7 @@ async function processMessage(phone, text, senderJid) {
             '1️⃣ *SÍ, confirmar mi cita*\n' +
             '2️⃣ *No, corregir datos*\n' +
             '3️⃣ *Cancelar*\n\n' +
-            '👉 _Escribe **1** para confirmar o **2** para corregir._';
+            '👉 Escribe 1 para confirmar, 2 para corregir o 3 para cancelar.';
     }
 
     if (step === 'book_confirm') {
@@ -653,10 +677,10 @@ async function processMessage(phone, text, senderJid) {
         }
         if (['3','cancelar','cancel'].includes(mn) || mn.includes('cancelar') || mn.startsWith('3')) {
             clearSession(phone);
-            return '↩️ Solicitud cancelada. Escribe *menu* cuando desees agendar nuevamente.';
+            return '↩️ Solicitud cancelada. Escribe menu cuando desees agendar nuevamente.';
         }
         if (!['1','si','s','confirmar','confirmo','ok'].includes(mn) && !mn.includes('confirmar') && !mn.startsWith('1')) {
-            return '❓ Por favor responde con:\n\n1️⃣ *SÍ, confirmar*\n2️⃣ *Corregir datos*\n3️⃣ *Cancelar*';
+            return '❓ Por favor responde con:\n\n1️⃣ *SÍ, confirmar*\n2️⃣ *Corregir datos*\n3️⃣ *Cancelar*\n\n👉 Escribe 1 para confirmar, 2 para corregir o 3 para cancelar.';
         }
 
         try {
@@ -678,11 +702,11 @@ async function processMessage(phone, text, senderJid) {
                 '⚠️ *SIGUIENTE PASO:*\n' +
                 'Para confirmar tu cita, realiza una transferencia de *$15.00* a cualquiera de nuestras cuentas:\n\n' +
                 CUENTAS_BANCARIAS + '\n\n' +
-                '📲 Una vez realizada la transferencia, escribe *2* en el menú para reportar tu comprobante y activar al técnico asignado.\n\n' +
+                '📲 Una vez realizada la transferencia, escribe 2 en el menú para reportar tu comprobante y activar al técnico asignado.\n\n' +
                 '_¡Gracias por confiar en HIDROSYS EC.! 💧_';
         } catch (err) {
             console.error('[WA] Error al guardar cita:', err.message);
-            return '❌ Ocurrió un error al registrar tu cita. Por favor intenta nuevamente escribiendo *menu*.';
+            return '❌ Ocurrió un error al registrar tu cita. Por favor intenta nuevamente escribiendo menu.';
         }
     }
 
@@ -697,12 +721,12 @@ async function processMessage(phone, text, senderJid) {
                 [numL]
             );
             if (!apts.rows.length) {
-                return '❌ No encontré citas pendientes de pago para ese número.\n\nVerifica y escribe nuevamente tu número de teléfono (ej. 0987654321), o escribe *menu* para volver al inicio.';
+                return '❌ No encontré citas pendientes de pago para ese número.\n\nVerifica y escribe nuevamente tu número de teléfono (ej. 0987654321), o escribe menu para volver al inicio.';
             }
             setSession(phone, 'pay_select_apt', { lookupPhone: numL, aptRows: apts.rows });
             const lista = apts.rows.map((a, i) => (i + 1) + '️⃣ *Cita #' + a.id + '* – ' + a.service_type + ' (' + (a.apt_date?.toISOString().split('T')[0]) + ')').join('\n');
-            return '📋 *Citas pendientes de pago:*\n\n' + lista + '\n\n👉 _Escribe el **número de la cita** que ya pagaste (1 al ' + apts.rows.length + ')._';
-        } catch (err) { return '❌ Error al buscar citas. Intenta de nuevo escribiendo *menu*.'; }
+            return '📋 *Citas pendientes de pago:*\n\n' + lista + '\n\n👉 Escribe el número de la cita que ya pagaste (1 al ' + apts.rows.length + ').';
+        } catch (err) { return '❌ Error al buscar citas. Intenta de nuevo escribiendo menu.'; }
     }
 
     if (step === 'pay_select_apt') {
@@ -723,7 +747,7 @@ async function processMessage(phone, text, senderJid) {
         setSession(phone, 'pay_bank', { selectedAptId });
         const bancos = ['Banco Pichincha','Banco Guayaquil','Produbanco','JEP','Banco del Pacífico','Coop. MEGO','Alianza del Valle','Banco Bolivariano'];
         const listaBancos = bancos.map((b, i) => (i + 1) + '️⃣ *' + b + '*').join('\n');
-        return '🏦 *¿En qué banco o cooperativa realizaste la transferencia?*\n\n' + listaBancos + '\n\n👉 _Escribe el número del **1 al 8** o el nombre del banco._';
+        return '🏦 *¿En qué banco o cooperativa realizaste la transferencia?*\n\n' + listaBancos + '\n\n👉 Escribe el número del 1 al 8 o el nombre del banco.';
     }
 
     if (step === 'pay_bank') {
@@ -754,7 +778,7 @@ async function processMessage(phone, text, senderJid) {
                 [sess.data.bank, msg, aptId, fullJid]
             );
             clearSession(phone);
-            return '✅ *¡Pago reportado correctamente!*\n\n📋 Cita: *#' + aptId + '*\n🏦 Banco: *' + sess.data.bank + '*\n🧾 Comprobante: *' + msg + '*\n\nUn administrador verificará tu pago en breve. En cuanto sea aprobado, recibirás la confirmación oficial en este chat.\n\n_Escribe *menu* para volver al inicio._';
+            return '✅ *¡Pago reportado correctamente!*\n\n📋 Cita: *#' + aptId + '*\n🏦 Banco: *' + sess.data.bank + '*\n🧾 Comprobante: *' + msg + '*\n\nUn administrador verificará tu pago en breve. En cuanto sea aprobado, recibirás la confirmación oficial en este chat.\n\n_Escribe menu para volver al inicio._';
         } catch (err) { return '❌ Error al registrar el comprobante. Intenta de nuevo.'; }
     }
 
@@ -770,7 +794,7 @@ async function processMessage(phone, text, senderJid) {
             );
             if (!apts.rows.length) {
                 clearSession(phone);
-                return '❌ No encontré citas registradas para ese número.\n\n_Escribe *menu* para volver al inicio._';
+                return '❌ No encontré citas registradas para ese número.\n\n_Escribe menu para volver al inicio._';
             }
             const info = apts.rows.map(a => {
                 const fecha = a.apt_date?.toISOString().split('T')[0] || 'N/A';
@@ -778,7 +802,7 @@ async function processMessage(phone, text, senderJid) {
                 return '📋 *Cita #' + a.id + '*\n🔧 ' + a.service_type + '\n📅 Fecha: ' + fecha + '\n🔵 Estado: *' + a.status + '*\n💳 Pago: ' + (a.payment_status || 'Pendiente') + tech;
             }).join('\n\n──────────────\n\n');
             clearSession(phone);
-            return '🔍 *Estado de tus Citas en HIDROSYS EC.:*\n\n' + info + '\n\n_Escribe *menu* para volver al inicio._';
+            return '🔍 *Estado de tus Citas en HIDROSYS EC.:*\n\n' + info + '\n\n_Escribe menu para volver al inicio._';
         } catch (err) { return '❌ Error al consultar. Intenta de nuevo.'; }
     }
 
@@ -786,7 +810,7 @@ async function processMessage(phone, text, senderJid) {
     if (step === 'awaiting_csat') {
         const rating = parseInt(msg);
         if (rating >= 1 && rating <= 5) return await saveCsatRating(phone, sess.data, rating, msg);
-        return '⭐ *¿Cómo calificarías la atención recibida hoy?*\n\n5️⃣ Excelente 😍\n4️⃣ Bueno 😊\n3️⃣ Regular 😐\n2️⃣ Malo 🙁\n1️⃣ Pésimo 😡\n\n👉 _Responde con un número del **1 al 5**._';
+        return '⭐ *¿Cómo calificarías la atención recibida hoy?*\n\n5️⃣ Excelente 😍\n4️⃣ Bueno 😊\n3️⃣ Regular 😐\n2️⃣ Malo 🙁\n1️⃣ Pésimo 😡\n\n👉 Responde con un número del 1 al 5.';
     }
 
     // Fallback
@@ -805,7 +829,7 @@ async function saveCsatRating(phone, sessData, rating, rawOption) {
         const emojis = { 5:'😍', 4:'😊', 3:'😐', 2:'🙁', 1:'😡' };
         const labels = { 5:'¡Excelente!', 4:'Bueno', 3:'Regular', 2:'Malo', 1:'Pésimo' };
         clearSession(phone);
-        return '⭐ *¡Muchas gracias por tu calificación!*\n\n' + emojis[rating] + ' *' + labels[rating] + '* (' + rating + '/5)\n\n_Tu opinión nos ayuda a seguir brindando el mejor servicio. ¡Hasta la próxima!_ 💧\n\n_Escribe *menu* si necesitas algo más._';
+        return '⭐ *¡Muchas gracias por tu calificación!*\n\n' + emojis[rating] + ' *' + labels[rating] + '* (' + rating + '/5)\n\n_Tu opinión nos ayuda a seguir brindando el mejor servicio. ¡Hasta la próxima!_ 💧\n\n_Escribe menu si necesitas algo más._';
     } catch (err) { clearSession(phone); return '⭐ ¡Gracias por tu calificación! Tu opinión es muy valiosa para nosotros. 💧'; }
 }
 
@@ -837,7 +861,7 @@ async function buildConfirmationMessage(aptId) {
 
         return {
             phone: targetJid,
-            message: '✅ *HIDROSYS EC. — ¡Cita Confirmada!*\n\n🎉 Tu pago ha sido verificado y aprobado exitosamente.\n\n📋 *Cita ID:* #' + a.id + '\n🔧 *Servicio:* ' + a.service_type + '\n📅 *Fecha:* ' + fecha + '\n⏰ *Hora:* ' + String(a.apt_time).slice(0,5) + '\n📍 *Zona:* ' + a.address + ' (' + a.zone + ')\n👷 *Técnico Asignado:* ' + (a.tech_name || 'Técnico Especializado HIDROSYS') + '\n\n¿Confirmas que estarás disponible en este horario?\n\n1️⃣ *SÍ, estaré disponible*\n2️⃣ *NO, necesito reagendar*\n\n👉 _Responde **1** o **2**._'
+            message: '✅ *HIDROSYS EC. — ¡Cita Confirmada!*\n\n🎉 Tu pago ha sido verificado y aprobado exitosamente.\n\n📋 *Cita ID:* #' + a.id + '\n🔧 *Servicio:* ' + a.service_type + '\n📅 *Fecha:* ' + fecha + '\n⏰ *Hora:* ' + String(a.apt_time).slice(0,5) + '\n📍 *Zona:* ' + a.address + ' (' + a.zone + ')\n👷 *Técnico Asignado:* ' + (a.tech_name || 'Técnico Especializado HIDROSYS') + '\n\n¿Confirmas que estarás disponible en este horario?\n\n1️⃣ *SÍ, estaré disponible*\n2️⃣ *NO, necesito reagendar*\n\n👉 Responde con el número 1 o 2.'
         };
     } catch (err) { console.error('[WA] Error buildConfirmationMessage:', err.message); return null; }
 }
@@ -874,7 +898,7 @@ async function buildServiceCompletedMessage(aptId) {
 
         return {
             phone: targetJid,
-            message: '🏁 *HIDROSYS EC. — Servicio Finalizado*\n\nEstimado/a *' + a.client_name + '*, el servicio técnico de *' + a.service_type + '* ha culminado con éxito.\n\n⭐ *¿Cómo calificarías la atención recibida?*\n\n5️⃣ Excelente 😍\n4️⃣ Bueno 😊\n3️⃣ Regular 😐\n2️⃣ Malo 🙁\n1️⃣ Pésimo 😡\n\n👉 _Responde con un número del **1 al 5**._'
+            message: '🏁 *HIDROSYS EC. — Servicio Finalizado*\n\nEstimado/a *' + a.client_name + '*, el servicio técnico de *' + a.service_type + '* ha culminado con éxito.\n\n⭐ *¿Cómo calificarías la atención recibida?*\n\n5️⃣ Excelente 😍\n4️⃣ Bueno 😊\n3️⃣ Regular 😐\n2️⃣ Malo 🙁\n1️⃣ Pésimo 😡\n\n👉 Responde con un número del 1 al 5.'
         };
     } catch (err) { console.error('[WA] Error buildServiceCompletedMessage:', err.message); return null; }
 }
@@ -885,7 +909,7 @@ async function processAudioMessage(phone, msg, senderJid, waSocket) {
     if (step === 'book_phone') return '🎙️ *Nota de voz recibida.*\n\nPor favor *escribe tu número de celular* de 10 dígitos (ej: 0987654321).';
     if (['book_address','book_canton','book_parish'].includes(step)) return '🎙️ *Nota de voz recibida.*\n\nPor favor *escribe tu dirección y cantón* por texto.';
     if (['book_date','book_time'].includes(step)) return '🎙️ *Nota de voz recibida.*\n\nPor favor indica tu *fecha y horario preferido* por texto.';
-    if (step === 'awaiting_availability_confirm') return '🎙️ *Nota de voz recibida.*\n\nPara confirmar tu disponibilidad, responde *1* (SÍ) o *2* (NO) por texto.';
+    if (step === 'awaiting_availability_confirm') return '🎙️ *Nota de voz recibida.*\n\nPara confirmar tu disponibilidad, responde con el número 1 (SÍ) o 2 (NO) por texto.';
 
     setSession(phone, 'main_menu', { senderJid, fromAudio: true });
     return menuPrincipal();
