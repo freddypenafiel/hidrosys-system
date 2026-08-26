@@ -407,7 +407,8 @@
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label class="form-label">Fecha de la Cita <span class="required">*</span></label>
-                                        <input id="bk-date" type="date" class="form-control" required>
+                                        <input id="bk-date" type="date" class="form-control" required
+                                        onchange="(function(el){ var today=new Date().toISOString().split('T')[0]; if(el.value<today){el.value='';if(window.toast)toast('❌ No puedes seleccionar fechas pasadas. Elige una fecha válida.','error',3500);} })(this)">
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Hora Preferida <span class="required">*</span></label>

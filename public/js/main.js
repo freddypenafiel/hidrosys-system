@@ -463,6 +463,15 @@ function wzGo(step) {
     document.querySelectorAll('.wz-panel').forEach(p => p.classList.remove('active'));
     document.getElementById(`wz-${step}`)?.classList.add('active');
     wzCurrentStep = step;
+    // BUG FIX 2: Reinforce date minimum every time step 3 is shown
+    if (step === 3) {
+        const dateInput = document.getElementById('bk-date');
+        if (dateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.min = today;
+            if (dateInput.value && dateInput.value < today) dateInput.value = '';
+        }
+    }
 }
 
 function wzValidate(step) {
@@ -476,7 +485,14 @@ function wzValidate(step) {
         if (!document.getElementById('bk-service').value) { toast('Seleccione el tipo de servicio.', 'warning'); return false; }
     }
     if (step === 3) {
-        if (!document.getElementById('bk-date').value) { toast('Seleccione la fecha de la cita.', 'warning'); return false; }
+        const dateEl = document.getElementById('bk-date');
+        if (!dateEl || !dateEl.value) { toast('⚠️ Seleccione la fecha de la cita.', 'warning'); return false; }
+        // REQ 2: Rechazar fechas pasadas en la validación
+        const today = new Date().toISOString().split('T')[0];
+        if (dateEl.value < today) {
+            toast('❌ No puedes agendar en una fecha pasada. Selecciona una fecha válida.', 'error', 4000);
+            dateEl.value = ''; return false;
+        }
     }
     return true;
 }
@@ -668,6 +684,24 @@ async function verifyCedulaOtp() {
 
         const res = await api('POST', '/clients/verify-otp', { cedula: currentCedulaLookup, otp });
 
+        // REQ 1: Handle blocked / remaining attempts responses
+        if (res.blocked) {
+            feedback.innerHTML = `🔒 <strong>Verificación bloqueada.</strong> Has superado el límite de 3 intentos. <button type="button" class="btn btn-sm btn-primary" onclick="requestCedulaOtp()" style="margin-left:8px;padding:3px 10px;font-size:0.78rem;">🔄 Solicitar Nuevo Código</button>`;
+            feedback.style.color = 'var(--red)';
+            document.getElementById('btn-verify-otp').disabled = true;
+            return;
+        }
+        if (res.remainingAttempts !== undefined) {
+            feedback.textContent = (res.error || 'Código incorrecto.') + ` (${res.remainingAttempts} intento${res.remainingAttempts !== 1 ? 's' : ''} restante${res.remainingAttempts !== 1 ? 's' : ''})`;
+            feedback.style.color = 'var(--red)';
+            return;
+        }
+        if (res.expired) {
+            feedback.innerHTML = `⏰ <strong>Código expirado.</strong> <button type="button" class="btn btn-sm btn-primary" onclick="requestCedulaOtp()" style="margin-left:8px;padding:3px 10px;font-size:0.78rem;">🔄 Solicitar Nuevo Código</button>`;
+            feedback.style.color = 'var(--red)';
+            return;
+        }
+
         if (res.success && res.client) {
             const c = res.client;
             document.getElementById('bk-name').value = c.name || '';
@@ -698,10 +732,23 @@ async function verifyCedulaOtp() {
             feedback.style.color = 'var(--red)';
         }
     } catch (err) {
-        feedback.textContent = `❌ ${err.message}`;
-        feedback.style.color = 'var(--red)';
+        const msg = err.message || '';
+        if (msg.includes('3 intentos') || msg.includes('bloquead') || msg.includes('agotado')) {
+            feedback.innerHTML = `🔒 <strong>Verificación bloqueada:</strong> ${msg} <button type="button" class="btn btn-sm btn-primary" onclick="requestCedulaOtp()" style="margin-left:8px;padding:4px 10px;font-size:0.78rem;">🔄 Solicitar Nuevo Código</button>`;
+            feedback.style.color = 'var(--red)';
+            const btnVerify = document.getElementById('btn-verify-otp');
+            if (btnVerify) btnVerify.disabled = true;
+        } else if (msg.includes('expirado') || msg.includes('No hay código')) {
+            feedback.innerHTML = `⏰ <strong>Código expirado o no encontrado:</strong> ${msg} <button type="button" class="btn btn-sm btn-primary" onclick="requestCedulaOtp()" style="margin-left:8px;padding:4px 10px;font-size:0.78rem;">🔄 Solicitar Nuevo Código</button>`;
+            feedback.style.color = 'var(--red)';
+        } else {
+            feedback.textContent = `❌ ${msg}`;
+            feedback.style.color = 'var(--red)';
+        }
     } finally {
-        btn.disabled = false;
+        if (!feedback.innerHTML.includes('🔒') && !feedback.innerHTML.includes('Verificación bloqueada')) {
+            btn.disabled = false;
+        }
         btn.innerHTML = '<span>✅</span> Confirmar Identidad';
     }
 }
@@ -1136,8 +1183,19 @@ async function loadAppointments() {
                                    (a.status?.includes('Confirmado') ? 'stripe-confirmed' :
                                    (a.receipt_no ? 'stripe-confirmed' : 'stripe-pre'));
 
+                // REQ 3: Técnicos ordenados por zona (técnicos de la zona primero)
+                const apZoneBase = (a.zone || '').split(' - ')[0].trim().toLowerCase();
+                const sortedTechs = [...techs].sort((t1, t2) => {
+                    const in1 = t1.zone && (t1.zone.toLowerCase().includes(apZoneBase) || t1.zone === 'Toda la Provincia') ? 1 : 0;
+                    const in2 = t2.zone && (t2.zone.toLowerCase().includes(apZoneBase) || t2.zone === 'Toda la Provincia') ? 1 : 0;
+                    return in2 - in1;
+                });
                 const techOptions = `<option value="">— Asignar técnico —</option>` +
-                    techs.map(t => `<option value="${t.id}" ${a.tech_id == t.id ? 'selected' : ''}>${t.avatar} ${t.name} (${t.zone})</option>`).join('');
+                    sortedTechs.map(t => {
+                        const inZone = t.zone && (t.zone.toLowerCase().includes(apZoneBase) || t.zone === 'Toda la Provincia');
+                        const label = inZone ? `📍 ${t.avatar} ${t.name} (${t.zone})` : `⚠️ ${t.name} (${t.zone}) – fuera de zona`;
+                        return `<option value="${t.id}" ${a.tech_id == t.id ? 'selected' : ''}>${label}</option>`;
+                    }).join('');
 
                 return `
                     <div class="apt-card" id="apt-card-${a.id}">
@@ -1214,7 +1272,16 @@ async function assignTech(aptId, techId) {
             toast('Técnico desasignado de la cita.', 'info');
         }
         loadAppointments();
-    } catch (err) { toast(`Error: ${err.message}`, 'error'); }
+    } catch (err) {
+        // REQ 4: Mostrar error de conflicto de horario claramente
+        if (err.message && err.message.includes('Conflicto')) {
+            toast(err.message, 'error', 8000);
+        } else {
+            toast(`Error al asignar técnico: ${err.message}`, 'error');
+        }
+        // Recargar para resetear el select al valor anterior
+        setTimeout(() => loadAppointments(), 800);
+    }
 }
 
 async function approvePayment(aptId, currentTechId) {

@@ -413,7 +413,7 @@ app.delete('/api/clients/:id', async (req, res) => {
 // ============================================================
 // VALIDACIÓN DE CLIENTE POR CÉDULA Y CÓDIGO OTP POR WHATSAPP
 // ============================================================
-const clientOtpStore = new Map(); // cedula -> { code, client, expires }
+const clientOtpStore = new Map(); // cedula -> { code, client, expires, attempts }
 
 app.post('/api/clients/lookup-cedula', async (req, res) => {
     try {
@@ -436,7 +436,8 @@ app.post('/api/clients/lookup-cedula', async (req, res) => {
         clientOtpStore.set(cleanCedula, {
             code,
             client,
-            expires: Date.now() + 5 * 60 * 1000 // 5 minutos
+            expires: Date.now() + 5 * 60 * 1000, // 5 minutos
+            attempts: 0 // contador de intentos fallidos (máx 3)
         });
 
         // Enviar WhatsApp al celular registrado del cliente
@@ -460,7 +461,9 @@ app.post('/api/clients/lookup-cedula', async (req, res) => {
     }
 });
 
+// REQ 1: OTP con límite máximo de 3 intentos fallidos
 app.post('/api/clients/verify-otp', async (req, res) => {
+    const MAX_ATTEMPTS = 3;
     try {
         const { cedula, otp } = req.body;
         if (!cedula || !otp) {
@@ -470,31 +473,40 @@ app.post('/api/clients/verify-otp', async (req, res) => {
         const record = clientOtpStore.get(cleanCedula);
 
         if (!record) {
-            return res.status(400).json({ success: false, error: 'No hay un código pendiente para esta cédula o ya expiró.' });
+            return res.status(400).json({ success: false, error: 'No hay código pendiente para esta cédula o ya expiró. Solicita un nuevo código.', expired: true });
         }
 
         if (Date.now() > record.expires) {
             clientOtpStore.delete(cleanCedula);
-            return res.status(400).json({ success: false, error: 'El código de seguridad ha expirado. Solicita uno nuevo.' });
+            return res.status(400).json({ success: false, error: 'El código de seguridad ha expirado. Solicita uno nuevo.', expired: true });
+        }
+
+        // REQ 1: Verificar límite de intentos
+        if (record.attempts >= MAX_ATTEMPTS) {
+            clientOtpStore.delete(cleanCedula);
+            return res.status(429).json({ success: false, blocked: true, error: '🔒 Has superado el límite de 3 intentos. Solicita un nuevo código de seguridad.' });
         }
 
         if (record.code !== String(otp).trim()) {
-            return res.status(400).json({ success: false, error: 'El código ingresado es incorrecto. Por favor verifica el mensaje en tu WhatsApp.' });
+            record.attempts += 1;
+            const remaining = MAX_ATTEMPTS - record.attempts;
+            if (remaining <= 0) {
+                clientOtpStore.delete(cleanCedula);
+                return res.status(429).json({ success: false, blocked: true, error: '🔒 Has agotado los 3 intentos permitidos. Solicita un nuevo código.' });
+            }
+            return res.status(400).json({
+                success: false,
+                remainingAttempts: remaining,
+                error: `❌ Código incorrecto. Te quedan ${remaining} intento${remaining !== 1 ? 's' : ''}.`
+            });
         }
 
+        // Código correcto
         const client = record.client;
         clientOtpStore.delete(cleanCedula);
-
         res.json({
             success: true,
-            client: {
-                name: client.name,
-                phone: client.phone,
-                email: client.email,
-                address: client.address,
-                zone: client.zone,
-                cedula: client.cedula
-            }
+            client: { name: client.name, phone: client.phone, email: client.email, address: client.address, zone: client.zone, cedula: client.cedula }
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -572,6 +584,26 @@ app.put('/api/appointments/:id', async (req, res) => {
         const prevRes = await pool.query('SELECT * FROM appointments WHERE id = $1', [id]);
         if (!prevRes.rows.length) return res.status(404).json({ error: 'Cita no encontrada' });
         const prevApt = prevRes.rows[0];
+
+        // REQ 4: Control de colisiones – verificar que el técnico no tenga otra cita en la misma fecha y bloque horario
+        if (fields.techId && parseInt(fields.techId) !== prevApt.tech_id) {
+            const newTechIdToCheck = parseInt(fields.techId);
+            const colRes = await pool.query(`
+                SELECT id, client_name, apt_time FROM appointments
+                WHERE tech_id = $1
+                  AND apt_date = $2
+                  AND LEFT(apt_time::text, 2) = LEFT($3::text, 2)
+                  AND status IN ('Confirmado','Conf. Cliente','Pre-agendado','Reportado')
+                  AND id != $4
+            `, [newTechIdToCheck, prevApt.apt_date, prevApt.apt_time, id]);
+
+            if (colRes.rows.length > 0) {
+                const conflict = colRes.rows[0];
+                return res.status(409).json({
+                    error: `⚠️ Conflicto de horario: Este técnico ya tiene asignada la Cita #${conflict.id} (${conflict.client_name || 'Cliente'}) para ${prevApt.apt_date} a las ${String(conflict.apt_time || '').slice(0,5)}. Selecciona otro técnico disponible o cambia el horario de la cita.`
+                });
+            }
+        }
 
         // Mapear campos del frontend a columnas de la DB
         const fieldMap = {
@@ -700,6 +732,52 @@ app.delete('/api/appointments/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// ============================================================
+// REQ 3+4: TÉCNICOS DISPONIBLES POR ZONA (SIN COLISIONES DE HORARIO)
+// ============================================================
+app.get('/api/technicians/available', async (req, res) => {
+    try {
+        const { zone, date, time } = req.query;
+        if (!zone || !date || !time) {
+            return res.status(400).json({ error: 'Se requieren zona, fecha y hora.' });
+        }
+        const hourBlock = String(time).slice(0, 2); // Extrae la hora "HH" del string HH:MM
+        const zoneBase = zone.split(' - ')[0]; // Solo el cantón base
+
+        const result = await pool.query(`
+            SELECT t.*,
+                   COALESCE(busy.cnt, 0) AS citas_en_horario
+            FROM technicians t
+            LEFT JOIN (
+                SELECT tech_id, COUNT(*) as cnt
+                FROM appointments
+                WHERE apt_date = $1
+                  AND LEFT(apt_time::text, 2) = $2
+                  AND status IN ('Confirmado','Conf. Cliente','Pre-agendado','Reportado')
+                GROUP BY tech_id
+            ) busy ON busy.tech_id = t.id
+            WHERE t.active = TRUE
+            ORDER BY
+                (t.zone ILIKE $3 OR t.zone = 'Toda la Provincia') DESC,
+                COALESCE(busy.cnt, 0) ASC,
+                t.name ASC
+        `, [date, hourBlock, `%${zoneBase}%`]);
+
+        const techs = result.rows.map(t => ({
+            id: t.id, name: t.name, specialty: t.specialty, zone: t.zone,
+            phone: t.phone, avatar: t.avatar || '👨‍🔧', active: t.active,
+            citas_en_horario: parseInt(t.citas_en_horario) || 0,
+            disponible: parseInt(t.citas_en_horario) === 0,
+            in_zone: t.zone && (t.zone.toLowerCase().includes(zoneBase.toLowerCase()) || t.zone === 'Toda la Provincia')
+        }));
+
+        res.json(techs);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 // ============================================================
 // LEADS
