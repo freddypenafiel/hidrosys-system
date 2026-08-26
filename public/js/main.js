@@ -1007,24 +1007,28 @@ function setupPaymentForm() {
         if (!receiptNo)  { toast('Ingresa el número de transferencia.', 'warning'); return; }
 
         try {
+            // IMPORTANTE: Siempre guardar la imagen como base64 en la DB.
+            // Render.com borra los archivos del servidor al reiniciar,
+            // así que guardar solo la ruta del archivo causaría que la imagen
+            // desaparezca. El base64 persiste en PostgreSQL indefinidamente.
             let uploadedReceiptUrl = '';
             const file = fileInput?.files?.[0];
             if (file) {
-                try {
-                    const base64Img = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(file);
-                    });
+                // Validar tamaño máximo (2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    toast('⚠️ La imagen es demasiado grande (máx. 2MB). Usa una imagen más pequeña o no la adjuntes.', 'warning', 6000);
+                } else {
                     try {
-                        const uploadRes = await api('POST', '/upload-image', { imageBase64: base64Img });
-                        uploadedReceiptUrl = uploadRes.url || base64Img;
-                    } catch (upErr) {
-                        uploadedReceiptUrl = base64Img;
+                        // Convertir a base64 y guardar directamente en DB
+                        uploadedReceiptUrl = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(file);
+                        });
+                    } catch (imgErr) {
+                        console.warn('Error leyendo imagen de comprobante:', imgErr.message);
                     }
-                } catch (imgErr) {
-                    console.warn('Error subiendo imagen de comprobante:', imgErr.message);
                 }
             }
 
