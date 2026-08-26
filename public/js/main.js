@@ -1014,27 +1014,45 @@ function setupPaymentForm() {
         if (!receiptNo)  { toast('Ingresa el número de transferencia.', 'warning'); return; }
 
         try {
-            // IMPORTANTE: Siempre guardar la imagen como base64 en la DB.
-            // Render.com borra los archivos del servidor al reiniciar,
-            // así que guardar solo la ruta del archivo causaría que la imagen
-            // desaparezca. El base64 persiste en PostgreSQL indefinidamente.
             let uploadedReceiptUrl = '';
             const file = fileInput?.files?.[0];
             if (file) {
-                // Validar tamaño máximo (2MB)
-                if (file.size > 2 * 1024 * 1024) {
-                    toast('⚠️ La imagen es demasiado grande (máx. 2MB). Usa una imagen más pequeña o no la adjuntes.', 'warning', 6000);
+                // Validar tamaño máximo (5MB antes de comprimir)
+                if (file.size > 5 * 1024 * 1024) {
+                    toast('⚠️ La imagen es demasiado grande (máx. 5MB).', 'warning', 5000);
                 } else {
                     try {
-                        // Convertir a base64 y guardar directamente en DB
+                        // Comprimir imagen con canvas antes de guardar en DB
+                        // Esto reduce una foto de 200-300KB a ~15-20KB en base64
                         uploadedReceiptUrl = await new Promise((resolve, reject) => {
                             const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result);
+                            reader.onload = (ev) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    const canvas = document.createElement('canvas');
+                                    const MAX = 900; // Máx. 900px en el lado más largo
+                                    let w = img.width, h = img.height;
+                                    if (w > MAX || h > MAX) {
+                                        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                                        else { w = Math.round(w * MAX / h); h = MAX; }
+                                    }
+                                    canvas.width = w;
+                                    canvas.height = h;
+                                    const ctx = canvas.getContext('2d');
+                                    ctx.drawImage(img, 0, 0, w, h);
+                                    // Calidad 0.65 = buena legibilidad + tamaño pequeño
+                                    resolve(canvas.toDataURL('image/jpeg', 0.65));
+                                };
+                                img.onerror = reject;
+                                img.src = ev.target.result;
+                            };
                             reader.onerror = reject;
                             reader.readAsDataURL(file);
                         });
                     } catch (imgErr) {
-                        console.warn('Error leyendo imagen de comprobante:', imgErr.message);
+                        console.warn('Error comprimiendo imagen:', imgErr.message);
+                        // Fallback: no adjuntar imagen, continuar sin ella
+                        uploadedReceiptUrl = '';
                     }
                 }
             }
@@ -1045,6 +1063,7 @@ function setupPaymentForm() {
                 status: 'Reportado',
                 paymentStatus: 'Pendiente de Validación'
             });
+
             toast('✅ Reporte de pago enviado con éxito. Notificación enviada a tu WhatsApp.', 'success', 6000);
             try {
                 sendWAMsg('system', `*HIDROSYS – Pago Reportado desde Web* 📝\nHemos registrado tu transferencia *Nº ${receiptNo}* en *${selectedBank}* para la cita *#${aptId}*.\n\nUn asesor validará y confirmará tu cita en breve.`);

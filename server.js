@@ -756,6 +756,37 @@ app.put('/api/appointments/:id', async (req, res) => {
 
         res.json(updatedApt);
     } catch (err) {
+        // AUTO-SANADO: Si falla por el límite VARCHAR(255) en receipt_img,
+        // convertir la columna a TEXT y reintentar la misma operación
+        if (err.message && err.message.includes('character varying(255)')) {
+            try {
+                console.warn('[DB] receipt_img aún es VARCHAR(255). Convirtiendo a TEXT y reintentando...');
+                await pool.query('ALTER TABLE appointments ALTER COLUMN receipt_img TYPE TEXT');
+                await pool.query('ALTER TABLE appointments ALTER COLUMN notes TYPE TEXT');
+                console.log('[DB] ✅ Columna receipt_img convertida a TEXT exitosamente.');
+
+                // Reintentar la actualización original
+                const { id } = req.params;
+                const fields = req.body;
+                const fieldMap = { status:'status', paymentStatus:'payment_status', techId:'tech_id', bank:'bank', receiptNo:'receipt_no', receiptImg:'receipt_img', surveyCompleted:'survey_completed', notes:'notes' };
+                const updates = []; const values = [];
+                Object.entries(fields).forEach(([key, val]) => {
+                    if (fieldMap[key] !== undefined) { values.push(val); updates.push(`${fieldMap[key]} = $${values.length}`); }
+                });
+                if (updates.length) {
+                    values.push(id);
+                    const retryResult = await pool.query(
+                        `UPDATE appointments SET ${updates.join(', ')} WHERE id = $${values.length} RETURNING *`, values
+                    );
+                    if (retryResult.rows.length) {
+                        return res.json(retryResult.rows[0]);
+                    }
+                }
+            } catch (retryErr) {
+                console.error('[DB] Error en auto-sanado:', retryErr.message);
+                return res.status(500).json({ error: 'Error interno al guardar. Intenta de nuevo.' });
+            }
+        }
         res.status(500).json({ error: err.message });
     }
 });
