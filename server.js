@@ -1088,8 +1088,25 @@ async function runMigrations() {
         await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS wa_sender VARCHAR(50)');
         await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS client_phone_jid VARCHAR(100)');
         await pool.query('ALTER TABLE clients ADD COLUMN IF NOT EXISTS cedula VARCHAR(20)');
-        
-        // Limpieza y deduplicación de técnicos si hubiesen duplicados en producción
+
+        // CRÍTICO: Asegurar que receipt_img sea TEXT (no VARCHAR(255)) para almacenar base64
+        // Si la columna ya existe como VARCHAR(255), este comando la convierte a TEXT
+        try {
+            await pool.query('ALTER TABLE appointments ALTER COLUMN receipt_img TYPE TEXT');
+            console.log('✅ Columna receipt_img convertida a TEXT correctamente.');
+        } catch (e) {
+            // Si falla (ya es TEXT o columna no existe), ignorar
+            if (!e.message.includes('does not exist')) {
+                console.warn('[DB Migration] receipt_img ya es TEXT o no existe:', e.message);
+            }
+        }
+        // Asegurar que notes también sea TEXT
+        try {
+            await pool.query('ALTER TABLE appointments ALTER COLUMN notes TYPE TEXT');
+        } catch (e) { /* ya es TEXT */ }
+
+        console.log('✅ Migraciones de DB completadas con éxito.\n');
+
         try {
             await pool.query(`
                 DELETE FROM technicians WHERE id NOT IN (
@@ -1101,7 +1118,6 @@ async function runMigrations() {
             console.warn('[DB Migration] Aviso índice técnicos:', e.message);
         }
 
-        console.log('✅ Migraciones de DB completadas con éxito.\n');
     } catch (err) {
         console.error('⚠️ Error ejecutando migraciones:', err.message);
     }

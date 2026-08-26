@@ -1226,6 +1226,10 @@ async function loadProducts() {
 // ============================================================
 // ADMIN: CITAS
 // ============================================================
+// Caché de comprobantes: guarda los datos de cada cita por ID para
+// evitar pasar base64 gigantes dentro de atributos onclick de HTML
+const receiptsCache = new Map();
+
 async function loadAppointments() {
     const container = document.getElementById('apt-cards-container');
     if (!container) return;
@@ -1251,6 +1255,19 @@ async function loadAppointments() {
                 </div>
             `;
         } else {
+            // Limpiar caché anterior y rellenar con datos frescos
+            receiptsCache.clear();
+            apts.forEach(a => {
+                if (a.receipt_img || a.bank || a.receipt_no) {
+                    receiptsCache.set(a.id, {
+                        img: a.receipt_img || '',
+                        bank: a.bank || '',
+                        receiptNo: a.receipt_no || '',
+                        clientName: a.client_name || ''
+                    });
+                }
+            });
+
             container.innerHTML = apts.map(a => {
                 const steps = ['Pre-agendado','Pagado','Confirmado','Conf. Cliente','Terminado'];
                 const idx   = steps.findIndex(s => s.toLowerCase().includes(a.status?.toLowerCase().slice(0,6) || ''));
@@ -1319,7 +1336,7 @@ async function loadAppointments() {
                                         </div>
                                         ${a.receipt_img ? `
                                             <div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--blue-200,#bfdbfe);display:flex;align-items:center;gap:8px;">
-                                                <button type="button" class="btn btn-xs btn-outline" onclick="openReceiptModal('${encodeURIComponent(a.receipt_img||'')}', ${a.id}, '${escapeHtml(a.client_name||'')}', '${escapeHtml(a.bank||'')}', '${escapeHtml(a.receipt_no||'')}')" style="font-size:0.75rem;padding:3px 10px;border-color:var(--blue-500);color:var(--blue-800);background:#fff;font-weight:700;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(0,0,0,0.08);cursor:pointer;border-radius:6px;">
+                                                <button type="button" class="btn btn-xs btn-outline" onclick="openReceiptModal(${a.id})" style="font-size:0.75rem;padding:3px 10px;border-color:var(--blue-500);color:var(--blue-800);background:#fff;font-weight:700;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(0,0,0,0.08);cursor:pointer;border-radius:6px;">
                                                     <span>🖼️</span> Ver Comprobante Adjunto
                                                 </button>
                                             </div>
@@ -2102,51 +2119,52 @@ async function showTechReport(aptId) {
     } catch (err) { toast(`Error al generar informe: ${err.message}`, 'error'); }
 }
 
-window.openReceiptModal = function(imgSrc, aptId, clientName, bank, receiptNo) {
+window.openReceiptModal = function(aptId) {
     const modal = document.getElementById('receipt-modal');
-    const body = document.getElementById('receipt-modal-body');
+    const body  = document.getElementById('receipt-modal-body');
     const title = document.getElementById('receipt-modal-title');
-    const sub = document.getElementById('receipt-modal-sub');
-    const info = document.getElementById('receipt-modal-info');
+    const sub   = document.getElementById('receipt-modal-sub');
+    const info  = document.getElementById('receipt-modal-info');
     const dlBtn = document.getElementById('receipt-modal-download');
     if (!modal || !body) return;
 
-    const rawSrc = decodeURIComponent(imgSrc || '');
-    if (title) title.textContent = `Comprobante — Cita #${aptId}`;
-    if (sub) sub.textContent = `Cliente: ${clientName || 'Cliente'} · Banco: ${bank || 'No especificado'}`;
-    if (info) info.textContent = `Nº de Transferencia: ${receiptNo || 'S/N'}`;
+    // Obtener datos del caché (se pobló en loadAppointments)
+    const cached = receiptsCache.get(Number(aptId)) || {};
+    const rawSrc     = cached.img || '';
+    const clientName = cached.clientName || '';
+    const bank       = cached.bank || '';
+    const receiptNo  = cached.receiptNo || '';
 
-    if (rawSrc && (rawSrc.startsWith('data:image') || rawSrc.startsWith('/uploads/') || rawSrc.startsWith('http://') || rawSrc.startsWith('https://'))) {
+    if (title) title.textContent = `Comprobante — Cita #${aptId}`;
+    if (sub)   sub.textContent   = `Cliente: ${clientName || 'Cliente'} · Banco: ${bank || 'No especificado'}`;
+    if (info)  info.textContent  = `Nº de Transferencia: ${receiptNo || 'S/N'}`;
+
+    if (rawSrc && rawSrc.startsWith('data:image')) {
+        // Base64 — renderizar directamente (lo que guardamos desde el formulario)
         body.innerHTML = `
             <div style="display:flex; justify-content:center; align-items:center; min-height:220px;">
-                <img src="${rawSrc}" alt="Comprobante de Pago" style="max-width:100%; max-height:60vh; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.5); object-fit:contain;">
+                <img src="${rawSrc}" alt="Comprobante de Pago" style="max-width:100%; max-height:65vh; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.5); object-fit:contain;">
             </div>
         `;
-        if (dlBtn) {
-            dlBtn.href = rawSrc;
-            dlBtn.style.display = 'inline-flex';
-        }
-    } else if (rawSrc && (rawSrc.endsWith('.jpg') || rawSrc.endsWith('.png') || rawSrc.endsWith('.jpeg') || rawSrc.endsWith('.webp') || rawSrc.endsWith('.pdf'))) {
-        const attemptUrl = rawSrc.startsWith('/') ? rawSrc : `/uploads/${rawSrc}`;
+        if (dlBtn) { dlBtn.href = rawSrc; dlBtn.download = `comprobante_cita_${aptId}.jpg`; dlBtn.style.display = 'inline-flex'; }
+    } else if (rawSrc && (rawSrc.startsWith('/uploads/') || rawSrc.startsWith('http'))) {
         body.innerHTML = `
             <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:220px; gap:12px;">
-                <img src="${attemptUrl}" onerror="this.style.display='none'; document.getElementById('receipt-fallback-text').style.display='block';" alt="Comprobante de Pago" style="max-width:100%; max-height:60vh; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.5); object-fit:contain;">
-                <div id="receipt-fallback-text" style="display:none; color:white; font-size:0.88rem; background:rgba(255,255,255,0.1); padding:16px; border-radius:8px; text-align:center;">
-                    📄 Archivo reportado: <strong>${rawSrc}</strong><br>
-                    <small style="color:#cbd5e1;">(Transferencia Nº ${receiptNo || 'S/N'} en ${bank || 'Banco'})</small>
+                <img src="${rawSrc}" alt="Comprobante de Pago" style="max-width:100%; max-height:65vh; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.5); object-fit:contain;"
+                     onerror="this.style.display='none'; document.getElementById('rct-fallback').style.display='block';">
+                <div id="rct-fallback" style="display:none; color:white; font-size:0.9rem; text-align:center; padding:16px; background:rgba(255,255,255,0.1); border-radius:8px;">
+                    ⚠️ No se pudo cargar la imagen.<br><small style="color:#cbd5e1;">Banco: ${bank} · Nº ${receiptNo}</small>
                 </div>
             </div>
         `;
-        if (dlBtn) {
-            dlBtn.href = attemptUrl;
-            dlBtn.style.display = 'inline-flex';
-        }
+        if (dlBtn) { dlBtn.href = rawSrc; dlBtn.style.display = 'inline-flex'; }
     } else {
+        // Sin imagen — mostrar solo los datos bancarios
         body.innerHTML = `
             <div style="padding:30px 15px; color:white; text-align:center;">
                 <div style="font-size:2.8rem; margin-bottom:8px;">🧾</div>
                 <h4 style="color:white; margin-bottom:6px;">Transferencia Registrada</h4>
-                <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:12px;">El cliente reportó el comprobante por texto sin archivo adjunto.</p>
+                <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:12px;">El cliente reportó el comprobante sin archivo adjunto.</p>
                 <div style="background:rgba(255,255,255,0.1); padding:12px; border-radius:8px; display:inline-block; font-size:0.85rem;">
                     🏦 <strong>Banco:</strong> ${bank || 'N/A'}<br>
                     🔢 <strong>Nº Transferencia:</strong> ${receiptNo || 'N/A'}
