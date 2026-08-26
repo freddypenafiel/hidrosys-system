@@ -603,33 +603,53 @@ app.post('/api/appointments', async (req, res) => {
         let paymentAmount = 15.00;
         if (paymentMode && paymentMode.toLowerCase().includes('anticipo')) paymentAmount = 7.50;
 
-        const result = await pool.query(
-            `INSERT INTO appointments
-             (client_name, client_phone, client_email, address, zone, service_type,
-              apt_date, apt_time, payment_mode, payment_amount, notes, channel, audio_url, client_cedula)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-             RETURNING *`,
-            [clientName, clientPhone, clientEmail, address, zone, serviceType,
-             aptDate, aptTime, paymentMode, paymentAmount, notes, channel || 'Formulario', audioUrl || null, cedula ? String(cedula).trim() : null]
-        );
+        let result;
+        try {
+            result = await pool.query(
+                `INSERT INTO appointments
+                 (client_name, client_phone, client_email, address, zone, service_type,
+                  apt_date, apt_time, payment_mode, payment_amount, notes, channel, audio_url, client_cedula)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+                 RETURNING *`,
+                [clientName, clientPhone, clientEmail, address, zone, serviceType,
+                 aptDate, aptTime, paymentMode, paymentAmount, notes, channel || 'Formulario', audioUrl || null, cedula ? String(cedula).trim() : null]
+            );
+        } catch (insertErr) {
+            console.warn('[POST /appointments insert fallback]:', insertErr.message);
+            await runMigrations();
+            result = await pool.query(
+                `INSERT INTO appointments
+                 (client_name, client_phone, client_email, address, zone, service_type,
+                  apt_date, apt_time, payment_mode, payment_amount, notes, channel, audio_url, client_cedula)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+                 RETURNING *`,
+                [clientName, clientPhone, clientEmail, address, zone, serviceType,
+                 aptDate, aptTime, paymentMode, paymentAmount, notes, channel || 'Formulario', audioUrl || null, cedula ? String(cedula).trim() : null]
+            );
+        }
 
         // Upsert del cliente (con cédula)
         if (clientPhone) {
-            await pool.query(
-                `INSERT INTO clients (name, phone, email, address, zone, cedula)
-                 VALUES ($1,$2,$3,$4,$5,$6)
-                 ON CONFLICT (phone) DO UPDATE SET 
-                    name = EXCLUDED.name,
-                    email = COALESCE(EXCLUDED.email, clients.email),
-                    address = COALESCE(EXCLUDED.address, clients.address),
-                    zone = COALESCE(EXCLUDED.zone, clients.zone),
-                    cedula = COALESCE(EXCLUDED.cedula, clients.cedula)`,
-                [clientName, clientPhone, clientEmail, address, zone, cedula ? String(cedula).trim() : null]
-            );
+            try {
+                await pool.query(
+                    `INSERT INTO clients (name, phone, email, address, zone, cedula)
+                     VALUES ($1,$2,$3,$4,$5,$6)
+                     ON CONFLICT (phone) DO UPDATE SET 
+                        name = EXCLUDED.name,
+                        email = COALESCE(EXCLUDED.email, clients.email),
+                        address = COALESCE(EXCLUDED.address, clients.address),
+                        zone = COALESCE(EXCLUDED.zone, clients.zone),
+                        cedula = COALESCE(EXCLUDED.cedula, clients.cedula)`,
+                    [clientName, clientPhone, clientEmail, address, zone, cedula ? String(cedula).trim() : null]
+                );
+            } catch (clErr) {
+                console.warn('Aviso upsert cliente:', clErr.message);
+            }
         }
 
         res.status(201).json(result.rows[0]);
     } catch (err) {
+        console.error('Error POST /appointments:', err.message);
         res.status(400).json({ error: err.message });
     }
 });
@@ -1057,21 +1077,16 @@ app.get('*', (req, res) => {
 });
 
 // ============================================================
-// INICIO DEL SERVIDOR
-// ============================================================
-app.listen(PORT, async () => {
-    console.log('\n╔════════════════════════════════════════╗');
-    console.log('║   HIDROSYS EC. - Sistema v3.0          ║');
-    console.log('╚════════════════════════════════════════╝\n');
-    console.log(`🌐 Servidor corriendo en: http://localhost:${PORT}`);
-
-    // Verificar conexión a DB y ejecutar migraciones básicas
+async function runMigrations() {
     try {
-        const r = await pool.query('SELECT NOW()');
-        console.log(`✅ PostgreSQL conectado: ${r.rows[0].now}`);
-        
-        // Migraciones de columnas necesarias
+        console.log('🔄 Ejecutando migraciones de base de datos...');
+        await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS audio_url TEXT');
+        await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS client_cedula VARCHAR(20)');
+        await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS receipt_img TEXT');
+        await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS receipt_no VARCHAR(100)');
+        await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS bank VARCHAR(100)');
         await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS wa_sender VARCHAR(50)');
+        await pool.query('ALTER TABLE appointments ADD COLUMN IF NOT EXISTS client_phone_jid VARCHAR(100)');
         await pool.query('ALTER TABLE clients ADD COLUMN IF NOT EXISTS cedula VARCHAR(20)');
         
         // Limpieza y deduplicación de técnicos si hubiesen duplicados en producción
@@ -1086,7 +1101,26 @@ app.listen(PORT, async () => {
             console.warn('[DB Migration] Aviso índice técnicos:', e.message);
         }
 
-        console.log('✅ Migraciones de DB: Columnas, índice de técnicos y deduplicación verificadas.\n');
+        console.log('✅ Migraciones de DB completadas con éxito.\n');
+    } catch (err) {
+        console.error('⚠️ Error ejecutando migraciones:', err.message);
+    }
+}
+
+// ============================================================
+// INICIO DEL SERVIDOR
+// ============================================================
+app.listen(PORT, async () => {
+    console.log('\n╔════════════════════════════════════════╗');
+    console.log('║   HIDROSYS EC. - Sistema v3.0          ║');
+    console.log('╚════════════════════════════════════════╝\n');
+    console.log(`🌐 Servidor corriendo en: http://localhost:${PORT}`);
+
+    // Verificar conexión a DB y ejecutar migraciones básicas
+    try {
+        const r = await pool.query('SELECT NOW()');
+        console.log(`✅ PostgreSQL conectado: ${r.rows[0].now}`);
+        await runMigrations();
     } catch (err) {
         console.error(`❌ PostgreSQL NO conectado o error en migración: ${err.message}`);
         console.error('   Verifica tu archivo .env y que PostgreSQL esté corriendo\n');
