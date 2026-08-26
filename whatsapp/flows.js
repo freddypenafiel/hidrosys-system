@@ -1,3 +1,12 @@
+// Registro en memoria de citas recientemente aprobadas pendientes de confirmación
+let lastApprovedAptState = { aptId: null, timestamp: 0 };
+
+function trackApprovedApt(aptId) {
+    if (aptId) {
+        lastApprovedAptState = { aptId: Number(aptId), timestamp: Date.now() };
+    }
+}
+
 // whatsapp/flows.js - Motor de Conversación del Bot HIDROSYS
 // v5.5 - Agendamiento Inteligente, Verificación de Cupos de Técnicos y Flujo Preciso
 
@@ -175,13 +184,26 @@ async function processMessage(phone, text, senderJid) {
 
             // Búsqueda ultra-robusta de la cita activa asociada al número
             let aptData = null;
-            if (aptId) {
+            // 1. Si hay una cita recientemente aprobada en espera de confirmación (dentro de las últimas 2 horas)
+            if (lastApprovedAptState.aptId && (Date.now() - lastApprovedAptState.timestamp) < 2 * 60 * 60 * 1000) {
+                const res = await pool.query(
+                    "SELECT a.*, t.name as tech_name FROM appointments a LEFT JOIN technicians t ON a.tech_id=t.id WHERE a.id=$1 AND a.status='Confirmado'",
+                    [lastApprovedAptState.aptId]
+                );
+                if (res.rows.length) {
+                    aptData = res.rows[0];
+                    aptId = aptData.id;
+                }
+            }
+
+            if (!aptData && aptId) {
                 const res = await pool.query("SELECT a.*, t.name as tech_name FROM appointments a LEFT JOIN technicians t ON a.tech_id=t.id WHERE a.id=$1", [aptId]);
                 if (res.rows.length) aptData = res.rows[0];
             }
 
-            if (!aptData) {
-                const res = await pool.query(
+                        if (!aptData) {
+                // 1. Buscar primero la cita en estado 'Confirmado' vinculada a este número o sender
+                let res = await pool.query(
                     `SELECT a.*, t.name as tech_name FROM appointments a
                      LEFT JOIN technicians t ON a.tech_id = t.id
                      WHERE (
@@ -191,10 +213,39 @@ async function processMessage(phone, text, senderJid) {
                         OR RIGHT(REGEXP_REPLACE(COALESCE(a.client_phone,''), '[^0-9]', '', 'g'), 9) = $3
                         OR RIGHT(REGEXP_REPLACE(COALESCE(a.wa_sender,''), '[^0-9]', '', 'g'), 9) = $3
                      )
-                     AND a.status NOT IN ('Cancelado', 'Terminado')
+                     AND a.status = 'Confirmado'
                      ORDER BY a.id DESC LIMIT 1`,
                     [jidOrSender, '%' + cleanPhone9 + '%', cleanPhone9]
                 );
+
+                // 2. Si no se encuentra por número exacto (ej. WhatsApp LID multidevice), buscar la cita más reciente en 'Confirmado'
+                if (!res.rows.length) {
+                    res = await pool.query(
+                        `SELECT a.*, t.name as tech_name FROM appointments a
+                         LEFT JOIN technicians t ON a.tech_id = t.id
+                         WHERE a.status = 'Confirmado'
+                         ORDER BY a.id DESC LIMIT 1`
+                    );
+                }
+
+                // 3. Fallback general para citas no canceladas ni terminadas
+                if (!res.rows.length) {
+                    res = await pool.query(
+                        `SELECT a.*, t.name as tech_name FROM appointments a
+                         LEFT JOIN technicians t ON a.tech_id = t.id
+                         WHERE (
+                            a.wa_sender = $1
+                            OR a.wa_sender LIKE $2
+                            OR a.client_phone LIKE $2
+                            OR RIGHT(REGEXP_REPLACE(COALESCE(a.client_phone,''), '[^0-9]', '', 'g'), 9) = $3
+                            OR RIGHT(REGEXP_REPLACE(COALESCE(a.wa_sender,''), '[^0-9]', '', 'g'), 9) = $3
+                         )
+                         AND a.status NOT IN ('Cancelado', 'Terminado')
+                         ORDER BY a.id DESC LIMIT 1`,
+                        [jidOrSender, '%' + cleanPhone9 + '%', cleanPhone9]
+                    );
+                }
+
                 if (res.rows.length) {
                     aptData = res.rows[0];
                     aptId = aptData.id;
@@ -853,6 +904,7 @@ async function buildConfirmationMessage(aptId) {
         } catch (e) {
             console.warn('[WA] Aviso actualizando wa_sender en cita #' + a.id, e.message);
         }
+        trackApprovedApt(a.id);
         setSession(phoneKey, 'awaiting_availability_confirm', { aptId: a.id });
         if (phoneKey.startsWith('593')) {
             setSession('0' + phoneKey.slice(3), 'awaiting_availability_confirm', { aptId: a.id });

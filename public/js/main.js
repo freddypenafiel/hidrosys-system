@@ -1201,27 +1201,21 @@ async function loadAppointments() {
                 </div>
             `;
         } else {
-            // Limpiar caché anterior y rellenar con datos frescos
-            receiptsCache.clear();
-            apts.forEach(a => {
-                if (a.receipt_img || a.bank || a.receipt_no) {
-                    receiptsCache.set(a.id, {
-                        img: a.receipt_img || '',
-                        bank: a.bank || '',
-                        receiptNo: a.receipt_no || '',
-                        clientName: a.client_name || ''
-                    });
-                }
-            });
-
             container.innerHTML = apts.map(a => {
                 const steps = ['Pre-agendado','Pagado','Confirmado','Conf. Cliente','Terminado'];
-                const idx   = steps.findIndex(s => s.toLowerCase().includes(a.status?.toLowerCase().slice(0,6) || ''));
+                let idx = 0;
+                const st = (a.status || '').toLowerCase();
+                if (st.includes('terminado') || st.includes('finaliz')) idx = 4;
+                else if (st.includes('cliente') || st.includes('conf. cli')) idx = 3;
+                else if (st === 'confirmado' || st.includes('confirm')) idx = 2;
+                else if (st.includes('pagad') || st.includes('reportad')) idx = 1;
+                else idx = 0;
+
                 const tlHtml = steps.map((s,i) => `<div class="tl-step ${i < idx ? 'past' : i === idx ? 'now' : ''}">${s}</div>`).join('');
 
-                const stripeClass = a.status === 'Terminado' ? 'stripe-done' :
-                                   (a.status?.includes('Confirmado') ? 'stripe-confirmed' :
-                                   (a.receipt_no ? 'stripe-confirmed' : 'stripe-pre'));
+                const stripeClass = (st.includes('terminado') || st.includes('finaliz')) ? 'stripe-done' :
+                                   (st.includes('cliente') || st.includes('confirm')) ? 'stripe-confirmed' :
+                                   (a.receipt_no ? 'stripe-confirmed' : 'stripe-pre');
 
                 // REQ 3 & REQ 4: Técnicos ordenados por zona y detección de colisiones de horario en tiempo real
                 const apZoneBase = (a.zone || '').split(' - ')[0].trim().toLowerCase();
@@ -1267,6 +1261,7 @@ async function loadAppointments() {
                                     <div class="apt-service" style="margin-top:5px;">${a.service_type}</div>
                                 </div>
                                 <div class="apt-price">$${parseFloat(a.payment_amount||0).toFixed(2)}</div>
+
                             </div>
                             <div class="apt-info">
                                 <p>👤 <strong>${a.client_name}</strong> · ${a.client_phone}</p>
@@ -2412,6 +2407,7 @@ function statusBadge(status) {
         'Pre-agendado':          'badge-yellow',
         'Reportado':             'badge-purple',
         'Confirmado':            'badge-blue',
+        'Conf. Cliente':         'badge-green',
         'Confirmado por Cliente':'badge-green',
         'Terminado':             'badge-gray',
         'Nuevo':                 'badge-blue',
