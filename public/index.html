@@ -383,18 +383,9 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Notas / Descripción del problema</label>
-                                    <textarea id="bk-notes" class="form-control" rows="2" placeholder="Cuéntenos brevemente el problema..."></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">🎙️ O Graba una Nota de Voz (Opcional)</label>
-                                    <div style="display: flex; align-items: center; gap: 10px; background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb;">
-                                        <button type="button" id="btn-record" class="btn" style="background: var(--blue-600); color: white; padding: 8px 12px; border-radius: 20px;" onclick="toggleRecording()">🎤 Grabar</button>
-                                        <span id="recording-status" style="font-size: 0.85rem; color: var(--gray-500); font-weight: 600;">00:00</span>
-                                        <audio id="audio-playback" controls style="display: none; height: 35px; max-width: 200px;"></audio>
-                                        <button type="button" id="btn-discard-audio" class="btn btn-ghost" style="display: none; color: var(--red); padding: 5px;" onclick="discardAudio()">🗑️</button>
-                                    </div>
-                                    <p style="font-size: 0.75rem; color: var(--gray-400); margin-top: 5px;">Explique su problema en un audio corto.</p>
+                                    <label class="form-label">Notas / Descripción detallada del problema <span class="required">*</span></label>
+                                    <textarea id="bk-notes" class="form-control" rows="3" placeholder="Cuéntenos detalladamente el problema o requerimiento técnico..." required></textarea>
+                                    <p style="font-size:0.75rem; color:var(--gray-500); margin-top:4px;">Describa claramente el servicio requerido para que el técnico acuda con los equipos adecuados.</p>
                                 </div>
                                 <div class="wz-buttons">
                                     <button type="button" class="btn btn-ghost" onclick="wzBack(2)">← Anterior</button>
@@ -525,7 +516,7 @@
                                 <div class="bank-card" data-bank="Banco del Pacífico"><div class="bank-logo bk-navy">Pacífico</div><span class="bank-name">B. Pacífico</span><span class="bank-acc">Cta: 72938472</span></div>
                             </div>
                         </div>
-                        <div class="form-group">
+                                                <div class="form-group col-2">
                             <label class="form-label">N° de Transferencia / Comprobante <span class="required">*</span></label>
                             <input id="pay-receipt-no" class="form-control" required
                                    inputmode="numeric"
@@ -533,14 +524,7 @@
                                    placeholder="Ej. 482039"
                                    oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                    title="Solo se permiten números">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Imagen del Comprobante (opcional)</label>
-                            <div class="file-upload-area" id="file-upload-area" onclick="document.getElementById('pay-file').click()">
-                                <div class="file-upload-icon">📄</div>
-                                <div class="file-upload-text">Clic para subir imagen<br><small>JPG, PNG, PDF</small></div>
-                                <input type="file" id="pay-file" accept="image/*,.pdf" style="display:none">
-                            </div>
+                            <p style="font-size:0.75rem; color:var(--gray-500); margin-top:4px;">Ingrese el número de comprobante o referencia de su transferencia bancaria (solo números).</p>
                         </div>
                         <div class="form-group col-2">
                             <button type="submit" class="btn btn-primary btn-block btn-lg" style="font-weight:700;">📤 Enviar Reporte de Pago</button>
@@ -592,21 +576,6 @@
                                 <button type="button" class="emoji-btn" data-rating="3">😐<span>Regular</span></button>
                                 <button type="button" class="emoji-btn" data-rating="4">😊<span>Bueno</span></button>
                                 <button type="button" class="emoji-btn" data-rating="5">😍<span>Excelente</span></button>
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-bottom:16px;">
-                            <label class="form-label">Nota de voz (opcional)</label>
-                            <div class="recorder-panel">
-                                <button type="button" id="rec-btn" class="rec-btn"><span>🎙️ Grabar Audio</span></button>
-                                <div>
-                                    <div class="rec-timer" id="rec-timer">00:00</div>
-                                    <div class="rec-status" id="rec-status">Presione para iniciar</div>
-                                </div>
-                                <div class="wave-container" id="wave-container">
-                                    <div class="wave-bar"></div><div class="wave-bar"></div>
-                                    <div class="wave-bar"></div><div class="wave-bar"></div>
-                                    <div class="wave-bar"></div><div class="wave-bar"></div>
-                                </div>
                             </div>
                         </div>
                         <div class="form-group" style="margin-bottom:18px;">

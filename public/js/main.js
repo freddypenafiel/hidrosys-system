@@ -556,23 +556,6 @@ function setupBookingForm() {
         const btn = form.querySelector('[type="submit"]');
         btn.disabled = true; btn.textContent = '⏳ Guardando...';
         try {
-            let uploadedAudioUrl = null;
-            if (globalAudioBlob) {
-                try {
-                    const base64Audio = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(globalAudioBlob);
-                    });
-                    const uploadRes = await api('POST', '/upload-audio', { audioBase64: base64Audio });
-                    if (uploadRes && uploadRes.url) {
-                        uploadedAudioUrl = uploadRes.url;
-                    }
-                } catch (audioErr) {
-                    console.warn('Nota de voz no subida:', audioErr.message);
-                }
-            }
-
             const data = {
                 clientName:  document.getElementById('bk-name').value.trim(),
                 clientPhone: document.getElementById('bk-phone').value.trim(),
@@ -585,7 +568,7 @@ function setupBookingForm() {
                 paymentMode: document.getElementById('bk-payment').value,
                 notes:       document.getElementById('bk-notes').value.trim(),
                 channel:     'Formulario',
-                audioUrl:    uploadedAudioUrl,
+                audioUrl:    null,
                 cedula:      currentCedulaLookup || document.getElementById('bk-cedula-input')?.value.trim() || null
             };
 
@@ -982,9 +965,7 @@ async function loadPaymentDropdown() {
 }
 
 function setupPaymentForm() {
-    loadPaymentDropdown();
     let selectedBank = '';
-
     document.querySelectorAll('.bank-card').forEach(card => {
         card.addEventListener('click', () => {
             document.querySelectorAll('.bank-card').forEach(c => c.classList.remove('selected'));
@@ -993,73 +974,20 @@ function setupPaymentForm() {
         });
     });
 
-    const fileInput = document.getElementById('pay-file');
-    const uploadArea = document.getElementById('file-upload-area');
-    fileInput?.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            uploadArea.classList.add('has-file');
-            uploadArea.querySelector('.file-upload-text').innerHTML = `✅ <strong>${file.name}</strong><br><small>${(file.size/1024).toFixed(1)} KB</small>`;
-        }
-    });
-
     const form = document.getElementById('payment-form');
     if (!form) return;
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const aptId    = document.getElementById('pay-apt-select').value;
+        const aptId     = document.getElementById('pay-apt-select').value;
         const receiptNo = document.getElementById('pay-receipt-no').value.trim();
-        if (!aptId)      { toast('Selecciona una cita o busca primero con tu cédula/celular.', 'warning'); return; }
-        if (!selectedBank) { toast('Selecciona el banco.', 'warning'); return; }
-        if (!receiptNo)  { toast('Ingresa el número de transferencia.', 'warning'); return; }
+        if (!aptId)        { toast('Selecciona una cita o busca primero con tu cédula/celular.', 'warning'); return; }
+        if (!selectedBank) { toast('Selecciona el banco donde realizaste la transferencia.', 'warning'); return; }
+        if (!receiptNo)    { toast('Ingresa el número de transferencia.', 'warning'); return; }
 
         try {
-            let uploadedReceiptUrl = '';
-            const file = fileInput?.files?.[0];
-            if (file) {
-                // Validar tamaño máximo (5MB antes de comprimir)
-                if (file.size > 5 * 1024 * 1024) {
-                    toast('⚠️ La imagen es demasiado grande (máx. 5MB).', 'warning', 5000);
-                } else {
-                    try {
-                        // Comprimir imagen con canvas antes de guardar en DB
-                        // Esto reduce una foto de 200-300KB a ~15-20KB en base64
-                        uploadedReceiptUrl = await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                                const img = new Image();
-                                img.onload = () => {
-                                    const canvas = document.createElement('canvas');
-                                    const MAX = 900; // Máx. 900px en el lado más largo
-                                    let w = img.width, h = img.height;
-                                    if (w > MAX || h > MAX) {
-                                        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-                                        else { w = Math.round(w * MAX / h); h = MAX; }
-                                    }
-                                    canvas.width = w;
-                                    canvas.height = h;
-                                    const ctx = canvas.getContext('2d');
-                                    ctx.drawImage(img, 0, 0, w, h);
-                                    // Calidad 0.65 = buena legibilidad + tamaño pequeño
-                                    resolve(canvas.toDataURL('image/jpeg', 0.65));
-                                };
-                                img.onerror = reject;
-                                img.src = ev.target.result;
-                            };
-                            reader.onerror = reject;
-                            reader.readAsDataURL(file);
-                        });
-                    } catch (imgErr) {
-                        console.warn('Error comprimiendo imagen:', imgErr.message);
-                        // Fallback: no adjuntar imagen, continuar sin ella
-                        uploadedReceiptUrl = '';
-                    }
-                }
-            }
-
             await api('PUT', `/appointments/${aptId}`, {
-                bank: selectedBank, receiptNo,
-                receiptImg: uploadedReceiptUrl || '',
+                bank: selectedBank,
+                receiptNo: receiptNo,
                 status: 'Reportado',
                 paymentStatus: 'Pendiente de Validación'
             });
@@ -1068,11 +996,10 @@ function setupPaymentForm() {
             try {
                 sendWAMsg('system', `*HIDROSYS – Pago Reportado desde Web* 📝\nHemos registrado tu transferencia *Nº ${receiptNo}* en *${selectedBank}* para la cita *#${aptId}*.\n\nUn asesor validará y confirmará tu cita en breve.`);
             } catch (e) {}
+
             form.reset();
             const banner = document.getElementById('pay-prefill-banner');
             if (banner) banner.style.display = 'none';
-            uploadArea?.classList.remove('has-file');
-            if (uploadArea) uploadArea.querySelector('.file-upload-text').innerHTML = 'Clic para subir imagen<br><small>JPG, PNG, PDF</small>';
             document.querySelectorAll('.bank-card').forEach(c => c.classList.remove('selected'));
             selectedBank = '';
             loadPaymentDropdown();
@@ -1350,25 +1277,11 @@ async function loadAppointments() {
                                 ${a.receipt_no || a.status === 'Reportado' || a.bank ? `
                                     <div style="background:var(--blue-50,#eff6ff);border:1px solid var(--blue-200,#bfdbfe);border-radius:6px;padding:8px 10px;margin-top:6px;font-size:0.78rem;">
                                         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
-                                            <span>🏦 <strong>Banco:</strong> ${a.bank || 'Reportado'} · <strong>Nº Comprobante:</strong> ${a.receipt_no || 'Pendiente de Validar'}</span>
+                                            <span>🏦 <strong>Banco:</strong> ${a.bank || 'Reportado'} · <strong>Nº Transferencia:</strong> <span style="font-family:monospace;font-weight:700;color:var(--blue-900);">${a.receipt_no || 'Pendiente de Validar'}</span></span>
                                             <span class="badge ${payBadgeClass(a.payment_status)}">${a.payment_status || 'Pendiente de Validación'}</span>
                                         </div>
-                                        ${a.receipt_img ? `
-                                            <div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--blue-200,#bfdbfe);display:flex;align-items:center;gap:8px;">
-                                                <button type="button" class="btn btn-xs btn-outline" onclick="openReceiptModal(${a.id})" style="font-size:0.75rem;padding:3px 10px;border-color:var(--blue-500);color:var(--blue-800);background:#fff;font-weight:700;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(0,0,0,0.08);cursor:pointer;border-radius:6px;">
-                                                    <span>🖼️</span> Ver Comprobante Adjunto
-                                                </button>
-                                            </div>
-                                        ` : ''}
                                     </div>` : `<p style="font-size:0.78rem;color:var(--gray-400);">Sin reporte de pago.</p>`}
-                                ${a.audio_url ? `
-                                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 10px;margin-top:6px;">
-                                        <div style="font-size:0.72rem;font-weight:700;color:#166534;margin-bottom:4px;display:flex;align-items:center;gap:4px;">
-                                            <span>🎙️</span> Nota de voz del cliente:
-                                        </div>
-                                        <audio controls src="${a.audio_url}" style="width:100%;height:30px;"></audio>
-                                    </div>
-                                ` : ''}
+                                
                             </div>
                             <div style="margin-top:12px;">
                                 <label style="font-size:0.75rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:4px;">Técnico Asignado:</label>
