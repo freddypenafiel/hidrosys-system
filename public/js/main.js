@@ -1007,9 +1007,26 @@ function setupPaymentForm() {
         if (!receiptNo)  { toast('Ingresa el número de transferencia.', 'warning'); return; }
 
         try {
+            let uploadedReceiptUrl = '';
+            const file = fileInput?.files?.[0];
+            if (file) {
+                try {
+                    const base64Img = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                    const uploadRes = await api('POST', '/upload-image', { imageBase64: base64Img });
+                    uploadedReceiptUrl = uploadRes.url || '';
+                } catch (imgErr) {
+                    console.warn('Error subiendo imagen de comprobante:', imgErr.message);
+                }
+            }
+
             await api('PUT', `/appointments/${aptId}`, {
                 bank: selectedBank, receiptNo,
-                receiptImg: fileInput?.files[0]?.name || '',
+                receiptImg: uploadedReceiptUrl || file?.name || '',
                 status: 'Reportado',
                 paymentStatus: 'Pendiente de Validación'
             });
@@ -1281,9 +1298,26 @@ async function loadAppointments() {
                                 ${a.notes ? `<p style="font-style:italic;color:var(--gray-500);">"${a.notes}"</p>` : ''}
                                 ${a.receipt_no || a.status === 'Reportado' || a.bank ? `
                                     <div style="background:var(--blue-50,#eff6ff);border:1px solid var(--blue-200,#bfdbfe);border-radius:6px;padding:8px 10px;margin-top:6px;font-size:0.78rem;">
-                                        🏦 <strong>Banco:</strong> ${a.bank || 'Reportado'} · <strong>Nº Comprobante:</strong> ${a.receipt_no || 'Pendiente de Validar'}
-                                        <span class="badge ${payBadgeClass(a.payment_status)}" style="margin-left:5px;">${a.payment_status || 'Pendiente de Validación'}</span>
+                                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                                            <span>🏦 <strong>Banco:</strong> ${a.bank || 'Reportado'} · <strong>Nº Comprobante:</strong> ${a.receipt_no || 'Pendiente de Validar'}</span>
+                                            <span class="badge ${payBadgeClass(a.payment_status)}">${a.payment_status || 'Pendiente de Validación'}</span>
+                                        </div>
+                                        ${a.receipt_img ? `
+                                            <div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--blue-200,#bfdbfe);display:flex;align-items:center;gap:8px;">
+                                                <a href="${a.receipt_img}" target="_blank" class="btn btn-xs btn-outline" style="font-size:0.72rem;padding:3px 8px;border-color:var(--blue-400);color:var(--blue-700);background:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+                                                    <span>🖼️</span> Ver Comprobante Adjunto
+                                                </a>
+                                            </div>
+                                        ` : ''}
                                     </div>` : `<p style="font-size:0.78rem;color:var(--gray-400);">Sin reporte de pago.</p>`}
+                                ${a.audio_url ? `
+                                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 10px;margin-top:6px;">
+                                        <div style="font-size:0.72rem;font-weight:700;color:#166534;margin-bottom:4px;display:flex;align-items:center;gap:4px;">
+                                            <span>🎙️</span> Nota de voz del cliente:
+                                        </div>
+                                        <audio controls src="${a.audio_url}" style="width:100%;height:30px;"></audio>
+                                    </div>
+                                ` : ''}
                             </div>
                             <div style="margin-top:12px;">
                                 <label style="font-size:0.75rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:4px;">Técnico Asignado:</label>
@@ -2026,7 +2060,15 @@ async function showTechReport(aptId) {
                     <div><strong>Pago:</strong> ${a.payment_status || 'Pendiente'}</div>
                     ${a.bank ? `<div><strong>Banco:</strong> ${a.bank}</div>` : ''}
                     ${a.receipt_no ? `<div><strong>N° Comprobante:</strong> ${a.receipt_no}</div>` : ''}
+                    ${a.receipt_img ? `<div class="col-2"><strong>Comprobante de Pago:</strong> <a href="${a.receipt_img}" target="_blank" style="color:var(--blue-700);font-weight:600;text-decoration:underline;">🖼️ Ver Imagen del Comprobante</a></div>` : ''}
                 </div>
+
+                ${a.audio_url ? `
+                    <div class="report-section-title">AUDIO DEL CLIENTE</div>
+                    <div style="margin-bottom:14px;background:#f8fafc;padding:10px;border-radius:6px;border:1px solid #e2e8f0;">
+                        <audio controls src="${a.audio_url}" style="width:100%;height:32px;"></audio>
+                    </div>
+                ` : ''}
 
                 ${a.notes ? `<div class="report-section-title">OBSERVACIONES</div><p style="font-style:italic;font-size:0.875rem;">"${a.notes}"</p>` : ''}
 

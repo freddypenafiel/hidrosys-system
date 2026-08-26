@@ -54,6 +54,34 @@ app.post('/api/upload-audio', async (req, res) => {
     }
 });
 
+// Subida de comprobantes de pago e imágenes
+app.post('/api/upload-image', async (req, res) => {
+    try {
+        const uploadDir = path.join(__dirname, 'public', 'uploads');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const base64Data = req.body.imageBase64;
+        if (!base64Data) return res.status(400).json({ error: 'No image provided' });
+
+        let ext = 'jpg';
+        if (base64Data.includes('data:image/png')) ext = 'png';
+        else if (base64Data.includes('data:image/webp')) ext = 'webp';
+        else if (base64Data.includes('data:application/pdf')) ext = 'pdf';
+
+        const filename = `receipt_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
+        const filePath = path.join(uploadDir, filename);
+        const cleanBase64 = base64Data.replace(/^data:[^;]+;base64,/, '');
+        fs.writeFileSync(filePath, Buffer.from(cleanBase64, 'base64'));
+
+        res.json({ success: true, url: `/uploads/${filename}`, filename });
+    } catch (err) {
+        console.error('[Upload Image Error]:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Logger simple
 app.use((req, res, next) => {
     if (req.path.startsWith('/api')) {
@@ -578,11 +606,11 @@ app.post('/api/appointments', async (req, res) => {
         const result = await pool.query(
             `INSERT INTO appointments
              (client_name, client_phone, client_email, address, zone, service_type,
-              apt_date, apt_time, payment_mode, payment_amount, notes, channel)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+              apt_date, apt_time, payment_mode, payment_amount, notes, channel, audio_url, client_cedula)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
              RETURNING *`,
             [clientName, clientPhone, clientEmail, address, zone, serviceType,
-             aptDate, aptTime, paymentMode, paymentAmount, notes, channel || 'Formulario']
+             aptDate, aptTime, paymentMode, paymentAmount, notes, channel || 'Formulario', audioUrl || null, cedula ? String(cedula).trim() : null]
         );
 
         // Upsert del cliente (con cédula)
