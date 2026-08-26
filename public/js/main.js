@@ -644,6 +644,13 @@ async function requestCedulaOtp() {
         feedback.textContent = 'Consultando registro y enviando código a WhatsApp...';
         feedback.style.color = 'var(--blue-600)';
 
+        // Re-habilitar botón de verificación inmediatamente
+        const verifyBtn = document.getElementById('btn-verify-otp');
+        if (verifyBtn) {
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = '<span>✅</span> Confirmar Identidad';
+        }
+
         const res = await api('POST', '/clients/lookup-cedula', { cedula });
 
         if (res.found) {
@@ -652,7 +659,17 @@ async function requestCedulaOtp() {
             document.getElementById('cedula-masked-phone-text').innerHTML = `📲 Código enviado al WhatsApp terminado en <strong>${res.maskedPhone}</strong>`;
             feedback.innerHTML = `✅ ¡Cliente reconocido: <strong>${res.clientName}</strong>! Ingrese el código de 4 dígitos enviado a su WhatsApp.`;
             feedback.style.color = 'var(--green)';
-            document.getElementById('bk-otp-input')?.focus();
+            
+            const otpInput = document.getElementById('bk-otp-input');
+            if (otpInput) {
+                otpInput.value = '';
+                otpInput.disabled = false;
+                setTimeout(() => otpInput.focus(), 150);
+            }
+            if (verifyBtn) {
+                verifyBtn.disabled = false;
+                verifyBtn.innerHTML = '<span>✅</span> Confirmar Identidad';
+            }
         } else {
             feedback.textContent = 'ℹ️ Esta cédula no registra servicios previos en Hidrosys. Por favor complete los campos abajo como nuevo cliente.';
             feedback.style.color = 'var(--blue-700)';
@@ -675,32 +692,18 @@ async function verifyCedulaOtp() {
     if (!otp || otp.length !== 4) {
         feedback.textContent = '⚠️ Ingrese el código de seguridad de 4 dígitos.';
         feedback.style.color = 'var(--red)';
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>✅</span> Confirmar Identidad'; }
+        if (otpInput) otpInput.focus();
         return;
     }
 
     try {
-        btn.disabled = true;
-        btn.innerHTML = '<span>⏳</span> Verificando...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Verificando...';
+        }
 
         const res = await api('POST', '/clients/verify-otp', { cedula: currentCedulaLookup, otp });
-
-        // REQ 1: Handle blocked / remaining attempts responses
-        if (res.blocked) {
-            feedback.innerHTML = `🔒 <strong>Verificación bloqueada.</strong> Has superado el límite de 3 intentos. <button type="button" class="btn btn-sm btn-primary" onclick="requestCedulaOtp()" style="margin-left:8px;padding:3px 10px;font-size:0.78rem;">🔄 Solicitar Nuevo Código</button>`;
-            feedback.style.color = 'var(--red)';
-            document.getElementById('btn-verify-otp').disabled = true;
-            return;
-        }
-        if (res.remainingAttempts !== undefined) {
-            feedback.textContent = (res.error || 'Código incorrecto.') + ` (${res.remainingAttempts} intento${res.remainingAttempts !== 1 ? 's' : ''} restante${res.remainingAttempts !== 1 ? 's' : ''})`;
-            feedback.style.color = 'var(--red)';
-            return;
-        }
-        if (res.expired) {
-            feedback.innerHTML = `⏰ <strong>Código expirado.</strong> <button type="button" class="btn btn-sm btn-primary" onclick="requestCedulaOtp()" style="margin-left:8px;padding:3px 10px;font-size:0.78rem;">🔄 Solicitar Nuevo Código</button>`;
-            feedback.style.color = 'var(--red)';
-            return;
-        }
 
         if (res.success && res.client) {
             const c = res.client;
@@ -725,31 +728,52 @@ async function verifyCedulaOtp() {
             feedback.style.color = 'var(--green)';
             toast(`✅ Bienvenido/a ${c.name}, datos autocompletados.`, 'success');
 
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>✅</span> Confirmado';
+            }
+
             // Avanzar automáticamente
             setTimeout(() => wzNext(1), 1200);
         } else {
             feedback.textContent = res.error || 'Código incorrecto. Intente de nuevo.';
             feedback.style.color = 'var(--red)';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>✅</span> Confirmar Identidad';
+            }
         }
     } catch (err) {
         const msg = err.message || '';
         if (msg.includes('3 intentos') || msg.includes('bloquead') || msg.includes('agotado')) {
-            feedback.innerHTML = `🔒 <strong>Verificación bloqueada:</strong> ${msg} <button type="button" class="btn btn-sm btn-primary" onclick="requestCedulaOtp()" style="margin-left:8px;padding:4px 10px;font-size:0.78rem;">🔄 Solicitar Nuevo Código</button>`;
+            // Usuario bloqueado por superar 3 intentos fallidos
+            feedback.innerHTML = `🔒 <strong>Verificación bloqueada:</strong> ${msg} <button type="button" class="btn btn-sm btn-primary" onclick="requestCedulaOtp()" style="margin-left:8px;padding:4px 10px;font-size:0.78rem;font-weight:700;">🔄 Solicitar Nuevo Código</button>`;
             feedback.style.color = 'var(--red)';
-            const btnVerify = document.getElementById('btn-verify-otp');
-            if (btnVerify) btnVerify.disabled = true;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>🔒</span> Bloqueado';
+            }
+            if (otpInput) otpInput.value = '';
         } else if (msg.includes('expirado') || msg.includes('No hay código')) {
-            feedback.innerHTML = `⏰ <strong>Código expirado o no encontrado:</strong> ${msg} <button type="button" class="btn btn-sm btn-primary" onclick="requestCedulaOtp()" style="margin-left:8px;padding:4px 10px;font-size:0.78rem;">🔄 Solicitar Nuevo Código</button>`;
+            feedback.innerHTML = `⏰ <strong>Código expirado o no encontrado:</strong> ${msg} <button type="button" class="btn btn-sm btn-primary" onclick="requestCedulaOtp()" style="margin-left:8px;padding:4px 10px;font-size:0.78rem;font-weight:700;">🔄 Solicitar Nuevo Código</button>`;
             feedback.style.color = 'var(--red)';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>✅</span> Confirmar Identidad';
+            }
         } else {
+            // Intento fallido pero aún quedan intentos (1 o 2)
             feedback.textContent = `❌ ${msg}`;
             feedback.style.color = 'var(--red)';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>✅</span> Confirmar Identidad';
+            }
+            if (otpInput) {
+                otpInput.focus();
+                otpInput.select();
+            }
         }
-    } finally {
-        if (!feedback.innerHTML.includes('🔒') && !feedback.innerHTML.includes('Verificación bloqueada')) {
-            btn.disabled = false;
-        }
-        btn.innerHTML = '<span>✅</span> Confirmar Identidad';
     }
 }
 
@@ -762,6 +786,11 @@ function resetCedulaLookup() {
     if (otpInput) otpInput.value = '';
     const feedback = document.getElementById('cedula-feedback-msg');
     if (feedback) feedback.textContent = '';
+    const verifyBtn = document.getElementById('btn-verify-otp');
+    if (verifyBtn) {
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = '<span>✅</span> Confirmar Identidad';
+    }
 }
 
 

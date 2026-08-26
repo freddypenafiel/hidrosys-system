@@ -299,7 +299,7 @@
                                     </p>
                                     
                                     <div id="cedula-step-1" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                        <input id="bk-cedula-input" class="form-control" placeholder="Ingresa tu Nº de Cédula (10 dígitos)" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)" style="flex: 1; min-width: 200px;">
+                                        <input id="bk-cedula-input" class="form-control" placeholder="Ingresa tu Nº de Cédula (10 dígitos)" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)" onkeydown="if(event.key==='Enter'){event.preventDefault();requestCedulaOtp();}" style="flex: 1; min-width: 200px;">
                                         <button type="button" class="btn btn-primary" id="btn-request-otp" onclick="requestCedulaOtp()" style="display:flex; align-items:center; gap:6px;">
                                             <span>📲</span> Enviar Código a mi WhatsApp
                                         </button>
@@ -312,7 +312,7 @@
                                             <button type="button" class="btn btn-ghost btn-xs" onclick="resetCedulaLookup()" style="font-size:0.75rem;">Cambiar Cédula</button>
                                         </div>
                                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                            <input id="bk-otp-input" class="form-control" placeholder="Código de 4 dígitos" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" style="flex: 1; min-width: 160px; font-size:1.1rem; letter-spacing:4px; font-weight:700; text-align:center;">
+                                            <input id="bk-otp-input" class="form-control" placeholder="Código de 4 dígitos" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4); var vb=document.getElementById('btn-verify-otp'); if(vb && !vb.innerHTML.includes('Verificando')){vb.disabled=false; vb.innerHTML='<span>✅</span> Confirmar Identidad';}" onkeydown="if(event.key==='Enter'){event.preventDefault();verifyCedulaOtp();}" style="flex: 1; min-width: 160px; font-size:1.1rem; letter-spacing:4px; font-weight:700; text-align:center;">
                                             <button type="button" class="btn btn-success" id="btn-verify-otp" onclick="verifyCedulaOtp()" style="display:flex; align-items:center; gap:6px; background:#10b981; border-color:#10b981;">
                                                 <span>✅</span> Confirmar Identidad
                                             </button>
