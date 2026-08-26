@@ -367,18 +367,25 @@ async function checkDBStatus() {
 }
 
 // ============================================================
+// ============================================================
 // DASHBOARD
 // ============================================================
 async function loadDashboard() {
     try {
         const stats = await api('GET', '/stats');
 
-        document.getElementById('stat-total').textContent     = stats.totalCitas;
-        document.getElementById('stat-pending').textContent   = stats.citasPendientes;
-        document.getElementById('stat-confirmed').textContent = stats.citasConfirmadas;
-        document.getElementById('stat-revenue').textContent   = `$${stats.ingresosMes.toFixed(2)}`;
-        document.getElementById('stat-clients').textContent   = stats.totalClientes;
-        document.getElementById('stat-leads').textContent     = stats.leadsNuevos;
+        const elTotal = document.getElementById('stat-total');
+        if (elTotal) elTotal.textContent = stats.totalCitas;
+        const elPending = document.getElementById('stat-pending');
+        if (elPending) elPending.textContent = stats.citasPendientes;
+        const elConfirmed = document.getElementById('stat-confirmed');
+        if (elConfirmed) elConfirmed.textContent = stats.citasConfirmadas;
+        const elRevenue = document.getElementById('stat-revenue');
+        if (elRevenue) elRevenue.textContent = `$${stats.ingresosMes.toFixed(2)}`;
+        const elClients = document.getElementById('stat-clients');
+        if (elClients) elClients.textContent = stats.totalClientes;
+        const elLeads = document.getElementById('stat-leads');
+        if (elLeads) elLeads.textContent = stats.leadsNuevos;
 
         // Badge en sidebar
         const leadsB = document.getElementById('leads-badge');
@@ -415,7 +422,7 @@ async function loadDashboard() {
             `).join('') : '<tr class="empty-row"><td colspan="4">Sin citas registradas.</td></tr>';
         }
     } catch (err) {
-        toast(`Error al cargar el dashboard: ${err.message}`, 'error');
+        console.warn('Dashboard notice:', err.message);
     }
 }
 
@@ -543,16 +550,18 @@ function setupBookingForm() {
         try {
             let uploadedAudioUrl = null;
             if (globalAudioBlob) {
-                const formData = new FormData();
-                formData.append('audio', globalAudioBlob, 'voice_note.webm');
-                const uploadRes = await fetch(`${API}/api/upload-audio`, {
-                    method: 'POST',
-                    headers: { 'x-session-token': localStorage.getItem('hs_token') || '' },
-                    body: formData
-                });
-                const uploadData = await uploadRes.json();
-                if (uploadRes.ok && uploadData.url) {
-                    uploadedAudioUrl = uploadData.url;
+                try {
+                    const base64Audio = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(globalAudioBlob);
+                    });
+                    const uploadRes = await api('POST', '/upload-audio', { audioBase64: base64Audio });
+                    if (uploadRes && uploadRes.url) {
+                        uploadedAudioUrl = uploadRes.url;
+                    }
+                } catch (audioErr) {
+                    console.warn('Nota de voz no subida:', audioErr.message);
                 }
             }
 
@@ -568,7 +577,8 @@ function setupBookingForm() {
                 paymentMode: document.getElementById('bk-payment').value,
                 notes:       document.getElementById('bk-notes').value.trim(),
                 channel:     'Formulario',
-                audioUrl:    uploadedAudioUrl
+                audioUrl:    uploadedAudioUrl,
+                cedula:      currentCedulaLookup || document.getElementById('bk-cedula-input')?.value.trim() || null
             };
 
             const cleanPhone = data.clientPhone.replace(/\D/g, '');
@@ -599,7 +609,12 @@ function setupBookingForm() {
 
             const created = await api('POST', '/appointments', data);
             toast(`✅ ¡Cita pre-agendada en la base de datos! ID: ${created.id}`, 'success', 5000);
-            sendWAMsg('system', `*HIDROSYS – Cita Registrada (Pre-agendada)* 💧\n\nHola *${data.clientName}*, tu cita quedó pre-agendada para el *${formatDate(data.aptDate)}* a las *${data.aptTime}* (${data.zone}).\n\n⚠️ *IMPORTANTE:* Tu turno está *Pre-agendado* y solo se confirmará una vez que realices la transferencia por el valor de tu servicio y reportes tu comprobante.\n\n${bankList}\n\n*Titular:* HIDROSYS EC. (RUC: 1793000000001)\n\nUna vez reportado, procederemos a asignarte un técnico y confirmar tu turno.`);
+            
+            try {
+                sendWAMsg('system', `*HIDROSYS – Cita Registrada (Pre-agendada)* 💧\n\nHola *${data.clientName}*, tu cita quedó pre-agendada para el *${formatDate(data.aptDate)}* a las *${data.aptTime}* (${data.zone}).\n\n⚠️ *IMPORTANTE:* Tu turno está *Pre-agendado* y solo se confirmará una vez que realices la transferencia por el valor de tu servicio y reportes tu comprobante.\n\n${bankList}\n\n*Titular:* HIDROSYS EC. (RUC: 1793000000001)\n\nUna vez reportado, procederemos a asignarte un técnico y confirmar tu turno.`);
+            } catch (e) {
+                console.warn('Aviso WA UI:', e.message);
+            }
             
             form.reset();
             discardAudio();
@@ -612,7 +627,7 @@ function setupBookingForm() {
             // Continuidad del Flujo Web: Redirección automática a la pestaña "Reportar Pago"
             navigateTo('payments');
             prefillPaymentForApt(created);
-            loadDashboard();
+            try { loadDashboard(); } catch (e) {}
         } catch (err) {
             toast(`Error al registrar: ${err.message}`, 'error');
         } finally {
@@ -881,16 +896,9 @@ function discardAudio() {
 // ============================================================
 window.prefillPaymentForApt = async function(apt) {
     if (!apt) return;
-    await loadPaymentDropdown();
     const sel = document.getElementById('pay-apt-select');
     if (sel && apt.id) {
-        let opt = sel.querySelector(`option[value="${apt.id}"]`);
-        if (!opt) {
-            opt = document.createElement('option');
-            opt.value = apt.id;
-            opt.textContent = `Cita #${apt.id} – ${apt.service_type || 'Visita Técnica'} (${formatDate(apt.apt_date)} ${apt.apt_time || ''}) – ${apt.client_name}`;
-            sel.insertBefore(opt, sel.firstChild);
-        }
+        sel.innerHTML = `<option value="${apt.id}">Cita #${apt.id} – ${apt.service_type || 'Visita Técnica'} (${formatDate(apt.apt_date)} ${apt.apt_time || ''}) – ${apt.client_name}</option>`;
         sel.value = apt.id;
     }
 
@@ -905,10 +913,10 @@ window.prefillPaymentForApt = async function(apt) {
                     </h4>
                     <p style="font-size:0.85rem; color:var(--blue-800); margin:0; line-height:1.5;">
                         Hola <strong>${apt.client_name}</strong>, tu visita de <strong>${apt.service_type}</strong> para el <strong>${formatDate(apt.apt_date)}</strong> (${apt.zone}) quedó registrada.<br>
-                        Para confirmar tu turno, selecciona abajo la entidad bancaria donde realizaste tu transferencia de <strong>$15.00</strong> e ingresa el número de comprobante.
+                        Para confirmar tu turno, selecciona abajo la entidad bancaria donde realizaste tu transferencia e ingresa el número de comprobante.
                     </p>
                 </div>
-                <button onclick="document.getElementById('pay-prefill-banner').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--gray-500); padding:2px 6px;" title="Cerrar aviso">✕</button>
+                <button type="button" onclick="document.getElementById('pay-prefill-banner').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--gray-500); padding:2px 6px;" title="Cerrar aviso">✕</button>
             </div>
         `;
     }
@@ -933,12 +941,13 @@ window.lookupPendingPaymentApts = async function() {
             sel.innerHTML = apts.map(a => `<option value="${a.id}">Cita #${a.id} – ${a.service_type} (${formatDate(a.apt_date)} ${a.apt_time || ''}) – ${a.client_name}</option>`).join('');
             sel.value = apts[0].id;
             if (feedback) {
-                feedback.textContent = `✅ ¡Encontrada(s) ${apts.length} cita(s) pendiente(s)! Cita #${apts[0].id} seleccionada abajo.`;
+                feedback.textContent = `✅ ¡Encontrada(s) ${apts.length} cita(s) pendiente(s)! Cita #${apts[0].id} seleccionada abajo para reportar su pago.`;
                 feedback.style.color = 'var(--green)';
             }
         } else {
+            sel.innerHTML = '<option value="">Sin citas pendientes de pago encontradas</option>';
             if (feedback) {
-                feedback.textContent = 'ℹ️ No se encontraron citas pendientes de pago para este teléfono o cédula.';
+                feedback.textContent = 'ℹ️ No se encontraron citas pendientes de pago para este número de cédula o teléfono.';
                 feedback.style.color = 'var(--blue-800)';
             }
         }
@@ -950,13 +959,9 @@ window.lookupPendingPaymentApts = async function() {
 async function loadPaymentDropdown() {
     const sel = document.getElementById('pay-apt-select');
     if (!sel) return;
-    try {
-        const apts = await api('GET', '/appointments?status=Pre-agendado');
-        const pending = apts.filter(a => !a.receipt_no);
-        sel.innerHTML = pending.length
-            ? pending.map(a => `<option value="${a.id}">Cita #${a.id} – ${a.service_type} (${formatDate(a.apt_date)}) – ${a.client_name}</option>`).join('')
-            : '<option value="">Sin citas pendientes de pago</option>';
-    } catch { sel.innerHTML = '<option value="">Error al cargar</option>'; }
+    if (sel.options.length <= 1) {
+        sel.innerHTML = '<option value="">— Ingrese su Cédula o Celular arriba para cargar su cita —</option>';
+    }
 }
 
 function setupPaymentForm() {
@@ -987,7 +992,7 @@ function setupPaymentForm() {
         e.preventDefault();
         const aptId    = document.getElementById('pay-apt-select').value;
         const receiptNo = document.getElementById('pay-receipt-no').value.trim();
-        if (!aptId)      { toast('Selecciona una cita.', 'warning'); return; }
+        if (!aptId)      { toast('Selecciona una cita o busca primero con tu cédula/celular.', 'warning'); return; }
         if (!selectedBank) { toast('Selecciona el banco.', 'warning'); return; }
         if (!receiptNo)  { toast('Ingresa el número de transferencia.', 'warning'); return; }
 
@@ -999,7 +1004,9 @@ function setupPaymentForm() {
                 paymentStatus: 'Pendiente de Validación'
             });
             toast('✅ Reporte de pago enviado con éxito. Notificación enviada a tu WhatsApp.', 'success', 6000);
-            sendWAMsg('system', `*HIDROSYS – Pago Reportado desde Web* 📝\nHemos registrado tu transferencia *Nº ${receiptNo}* en *${selectedBank}* para la cita *#${aptId}*.\n\nUn asesor validará y confirmará tu cita en breve.`);
+            try {
+                sendWAMsg('system', `*HIDROSYS – Pago Reportado desde Web* 📝\nHemos registrado tu transferencia *Nº ${receiptNo}* en *${selectedBank}* para la cita *#${aptId}*.\n\nUn asesor validará y confirmará tu cita en breve.`);
+            } catch (e) {}
             form.reset();
             const banner = document.getElementById('pay-prefill-banner');
             if (banner) banner.style.display = 'none';
@@ -1040,6 +1047,9 @@ window.lookupCompletedSurveys = async function() {
                 feedback.style.color = 'var(--green)';
             }
         } else {
+            sel.innerHTML = '<option value="">Sin visitas completadas pendientes de calificar</option>';
+            const infoEl = document.getElementById('survey-apt-info');
+            if (infoEl) infoEl.innerHTML = '';
             if (feedback) {
                 feedback.textContent = 'ℹ️ No hay visitas finalizadas pendientes de calificar para esta cédula o teléfono.';
                 feedback.style.color = 'var(--blue-800)';
@@ -1049,17 +1059,13 @@ window.lookupCompletedSurveys = async function() {
         if (feedback) { feedback.textContent = `❌ Error: ${err.message}`; feedback.style.color = 'var(--red)'; }
     }
 };
+
 async function loadSurveyDropdown() {
     const sel = document.getElementById('survey-apt-select');
     if (!sel) return;
-    try {
-        const apts = await api('GET', '/appointments?status=Terminado');
-        const done = apts.filter(a => !a.survey_completed);
-        sel.innerHTML = done.length
-            ? done.map(a => `<option value="${a.id}" data-tech="${a.tech_name||'N/A'}" data-service="${a.service_type}" data-date="${a.apt_date}">${a.service_type} – ${formatDate(a.apt_date)} – ${a.client_name}</option>`).join('')
-            : '<option value="">Sin visitas pendientes de calificar</option>';
-        sel.dispatchEvent(new Event('change'));
-    } catch { sel.innerHTML = '<option value="">Error al cargar</option>'; }
+    if (sel.options.length <= 1) {
+        sel.innerHTML = '<option value="">— Ingrese su Cédula o Celular arriba para cargar su visita finalizada —</option>';
+    }
 }
 
 function setupSurveyForm() {
@@ -2106,9 +2112,13 @@ function sendWAMsg(sender, text, hasConfirm = false, aptId = null) {
     chat.scrollTop = chat.scrollHeight;
 
     // Mostrar badge si el drawer está cerrado
-    if (!document.getElementById('wa-drawer').classList.contains('open') && sender !== 'client') {
+    const drawer = document.getElementById('wa-drawer');
+    if (drawer && !drawer.classList.contains('open') && sender !== 'client') {
         const badge = document.getElementById('wa-unread-badge');
-        badge.style.display = 'flex';
+        if (badge) {
+            badge.style.display = 'flex';
+            badge.textContent = parseInt(badge.textContent || 0) + 1;
+        }
     }
 }
 

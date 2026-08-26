@@ -143,11 +143,29 @@ async function processMessage(phone, text, senderJid) {
         return '❓ *Confirmación de Visita Técnica*\n\n¿Confirmas que estarás disponible en tu domicilio en el horario acordado?\n\n1️⃣ *SÍ, estaré disponible*\n2️⃣ *NO, necesito reagendar*\n\n👉 _Responde con **1** o **2**._';
     }
 
-    // Menú principal
+    // Menú principal y detección inteligente de confirmaciones
     if (step === 'idle' || step === 'main_menu') {
+        // Si el cliente responde afirmativamente y tiene una cita confirmada o pre-agendada
+        if (msgN.startsWith('si') || msgN.includes('confirmo') || msgN.includes('disponible') || msgN.includes('correcto') || msgN.includes('de acuerdo') || msgN.includes('estare')) {
+            try {
+                const activeApt = await pool.query(
+                    "SELECT id FROM appointments WHERE (client_phone LIKE $1 OR RIGHT(client_phone, 9) = RIGHT($1, 9)) AND status IN ('Confirmado', 'Pre-agendado') ORDER BY id DESC LIMIT 1",
+                    ['%' + phone.slice(-9) + '%']
+                );
+                if (activeApt.rows.length > 0) {
+                    const aptId = activeApt.rows[0].id;
+                    await pool.query("UPDATE appointments SET status = 'Conf. Cliente' WHERE id = $1", [aptId]);
+                    clearSession(phone);
+                    return '✅ *¡Disponibilidad Confirmada!*\n\n📋 Tu cita *#' + aptId + '* ha quedado confirmada por el cliente.\n👷 Nuestro técnico asignado se comunicará contigo antes de la visita.\n\n¡Gracias por confiar en *HIDROSYS EC.*!\n_Escribe *menu* si necesitas algo más._';
+                }
+            } catch (err) {
+                console.error('[WA] Error auto-confirming apt:', err.message);
+            }
+        }
+
         if (msg === '1' || msg.startsWith('1') || msgN.includes('agendar') || msgN.includes('visita') || msgN.includes('cita')) {
-            setSession(phone, 'book_name', { senderJid });
-            return stepHeader('book_name') + 'Por favor, escribe tu *nombre y apellido*:';
+            setSession(phone, 'book_is_existing_client', { senderJid });
+            return '💧 *Agendar Visita Técnica ($15.00)*\n\n¿Ya eres cliente de HIDROSYS o has solicitado servicios antes?\n\n1️⃣ *Sí, validar con mi Cédula* (Autocompletar datos)\n2️⃣ *No, soy cliente nuevo*\n\n👉 _Responde con **1** o **2**._';
         }
         if (msg === '2' || msg.startsWith('2') || msgN.includes('pago') || msgN.includes('comprobante') || msgN.includes('reportar')) {
             setSession(phone, 'pay_phone', { senderJid });
@@ -165,8 +183,89 @@ async function processMessage(phone, text, senderJid) {
     }
 
     // ══════════════════════════════════════════════════════════
-    // FLUJO 1: AGENDAR VISITA TÉCNICA (VALIDACIONES RIGUROSAS)
+    // FLUJO 1: AGENDAR VISITA TÉCNICA (CON VALIDACIÓN CÉDULA/OTP)
     // ══════════════════════════════════════════════════════════
+    if (step === 'book_is_existing_client') {
+        if (msg === '1' || msgN.includes('si') || msgN.includes('cedula') || msgN.includes('validar')) {
+            setSession(phone, 'book_cedula_input', {});
+            return '🛡️ *Verificación de Identidad por Cédula*\n\nPor favor escribe tu *número de cédula* (10 dígitos numéricos):';
+        } else if (msg === '2' || msgN.includes('no') || msgN.includes('nuevo')) {
+            setSession(phone, 'book_name', {});
+            return stepHeader('book_name') + 'Por favor, escribe tu *nombre y apellido*:';
+        } else {
+            return '❓ Por favor responde con:\n1️⃣ *Sí, validar con mi Cédula*\n2️⃣ *No, soy cliente nuevo*';
+        }
+    }
+
+    if (step === 'book_cedula_input') {
+        const cleanCed = msg.replace(/\D/g, '');
+        if (cleanCed.length < 5 || cleanCed.length > 10) {
+            return '⚠️ *Cédula no válida.* Ingrese un número de cédula válido (ej: 0302886395).\n\n_Intente nuevamente:_';
+        }
+
+        try {
+            const clientRes = await pool.query(
+                "SELECT * FROM clients WHERE cedula = $1 OR (phone LIKE $2 AND cedula IS NOT NULL) ORDER BY id DESC LIMIT 1",
+                [cleanCed, '%' + cleanCed.slice(-9) + '%']
+            );
+
+            if (clientRes.rows.length > 0) {
+                const client = clientRes.rows[0];
+                const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+                setSession(phone, 'book_cedula_otp', {
+                    clientData: client,
+                    otpCode,
+                    otpAttempts: 0,
+                    cedula: cleanCed
+                });
+
+                return `🔐 *Código de Seguridad Enviado*\n\nHola *${client.name}*, para confirmar tu identidad tu código es:\n\n👉 *${otpCode}*\n\n_Escribe los 4 dígitos para validar y autocompletar tus datos:_`;
+            } else {
+                setSession(phone, 'book_name', { cedula: cleanCed });
+                return `ℹ️ No registramos servicios previos con la cédula *${cleanCed}*.\nContinuemos con tu agendamiento como nuevo cliente.\n\n` + stepHeader('book_name') + 'Por favor escribe tu *nombre y apellido*:';
+            }
+        } catch (err) {
+            console.error('[WA] Error consultando cédula:', err.message);
+            setSession(phone, 'book_name', { cedula: cleanCed });
+            return stepHeader('book_name') + 'Por favor escribe tu *nombre y apellido*:';
+        }
+    }
+
+    if (step === 'book_cedula_otp') {
+        const typedOtp = msg.replace(/\D/g, '');
+        const expectedOtp = sess.data.otpCode;
+        const client = sess.data.clientData;
+
+        if (typedOtp === expectedOtp) {
+            // Autocompletar datos del cliente y saltar directo a selección de servicio
+            const clientName = client.name || 'Cliente';
+            const clientPhone = client.phone || phone;
+            const address = client.address || 'Domicilio registrado';
+            const zone = client.zone || 'Azogues - Azogues';
+            const [cantonPart, parishPart] = zone.includes(' - ') ? zone.split(' - ') : [zone, 'Centro'];
+
+            setSession(phone, 'book_service', {
+                name: clientName,
+                clientPhone: clientPhone,
+                address: address,
+                canton: cantonPart,
+                parish: parishPart,
+                zone: zone,
+                cedula: sess.data.cedula || client.cedula
+            });
+
+            const listaServ = SERVICIOS.map((s, i) => (i + 1) + '️⃣ *' + s + '* ($15.00)').join('\n');
+            return `🎉 *¡Identidad Confirmada!*\n\nBienvenido/a de nuevo *${clientName}*.\n📍 *Dirección registrada:* ${address} (${zone})\n\n` + stepHeader('book_service') + '🔧 *¿Qué tipo de servicio técnico necesitas?*\n\n' + listaServ + '\n\n👉 _Escribe el número del **1 al 6**._';
+        } else {
+            sess.data.otpAttempts = (sess.data.otpAttempts || 0) + 1;
+            if (sess.data.otpAttempts >= 3) {
+                setSession(phone, 'book_name', { cedula: sess.data.cedula });
+                return `🔒 Has superado los 3 intentos.\nContinuemos ingresando tus datos manualmente.\n\n` + stepHeader('book_name') + 'Por favor escribe tu *nombre y apellido*:';
+            }
+            return `❌ *Código incorrecto.* Te quedan ${3 - sess.data.otpAttempts} intento(s).\n\n_Por favor escribe el código de 4 dígitos:_`;
+        }
+    }
+
     if (step === 'book_name') {
         const cleanName = msg.replace(/[0-9!@#$%^&*()_+={}\[\]:;<>?,./\\]/g, '').trim();
         if (cleanName.length < 3) {
@@ -417,8 +516,8 @@ async function processMessage(phone, text, senderJid) {
                 [d.name, d.clientPhone, d.address, d.zone || d.canton, d.service, d.date, d.time, 15.00, 'WhatsApp', 'Pre-agendado', fullJid]
             );
             await pool.query(
-                'INSERT INTO clients (name,phone,address,zone) VALUES ($1,$2,$3,$4) ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name',
-                [d.name, d.clientPhone, d.address, d.zone || d.canton]
+                'INSERT INTO clients (name,phone,address,zone,cedula) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name, cedula=COALESCE(EXCLUDED.cedula, clients.cedula)',
+                [d.name, d.clientPhone, d.address, d.zone || d.canton, d.cedula || null]
             );
             const aptId = result.rows[0].id;
             clearSession(phone);

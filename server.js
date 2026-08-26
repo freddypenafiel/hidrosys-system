@@ -26,9 +26,33 @@ const PORT = process.env.PORT || 3000;
 // MIDDLEWARES
 // ============================================================
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Subida de notas de voz / audio
+app.post('/api/upload-audio', async (req, res) => {
+    try {
+        const uploadDir = path.join(__dirname, 'public', 'uploads');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        const filename = `audio_${Date.now()}_${Math.floor(Math.random() * 1000)}.webm`;
+        const filePath = path.join(uploadDir, filename);
+
+        const base64Data = req.body.audioBase64;
+        if (base64Data) {
+            const cleanBase64 = base64Data.replace(/^data:audio\/\w+;base64,/, '');
+            fs.writeFileSync(filePath, Buffer.from(cleanBase64, 'base64'));
+            return res.json({ success: true, url: `/uploads/${filename}`, filename });
+        }
+
+        res.json({ success: true, url: `/uploads/${filename}`, filename });
+    } catch (err) {
+        console.error('[Upload Audio Error]:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // Logger simple
 app.use((req, res, next) => {
@@ -545,7 +569,7 @@ app.post('/api/appointments', async (req, res) => {
     try {
         const {
             clientName, clientPhone, clientEmail, address, zone,
-            serviceType, aptDate, aptTime, paymentMode, notes, channel
+            serviceType, aptDate, aptTime, paymentMode, notes, channel, cedula, audioUrl
         } = req.body;
 
         let paymentAmount = 15.00;
@@ -561,13 +585,20 @@ app.post('/api/appointments', async (req, res) => {
              aptDate, aptTime, paymentMode, paymentAmount, notes, channel || 'Formulario']
         );
 
-        // Upsert del cliente
-        await pool.query(
-            `INSERT INTO clients (name, phone, email, address, zone)
-             VALUES ($1,$2,$3,$4,$5)
-             ON CONFLICT (phone) DO UPDATE SET name=EXCLUDED.name`,
-            [clientName, clientPhone, clientEmail, address, zone]
-        );
+        // Upsert del cliente (con cédula)
+        if (clientPhone) {
+            await pool.query(
+                `INSERT INTO clients (name, phone, email, address, zone, cedula)
+                 VALUES ($1,$2,$3,$4,$5,$6)
+                 ON CONFLICT (phone) DO UPDATE SET 
+                    name = EXCLUDED.name,
+                    email = COALESCE(EXCLUDED.email, clients.email),
+                    address = COALESCE(EXCLUDED.address, clients.address),
+                    zone = COALESCE(EXCLUDED.zone, clients.zone),
+                    cedula = COALESCE(EXCLUDED.cedula, clients.cedula)`,
+                [clientName, clientPhone, clientEmail, address, zone, cedula ? String(cedula).trim() : null]
+            );
+        }
 
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -682,15 +713,26 @@ app.get('/api/appointments/pending-payment', async (req, res) => {
     try {
         const { q } = req.query;
         let query = `
-            SELECT a.*, c.cedula
+            SELECT a.*, c.cedula, c.phone as client_registered_phone
             FROM appointments a
-            LEFT JOIN clients c ON a.client_phone = c.phone
+            LEFT JOIN clients c ON (a.client_phone = c.phone OR RIGHT(a.client_phone, 9) = RIGHT(c.phone, 9))
             WHERE a.status = 'Pre-agendado' AND (a.receipt_no IS NULL OR a.receipt_no = 'null' OR a.receipt_no = '')
         `;
         const params = [];
         if (q && q.trim()) {
-            params.push(`%${q.trim()}%`);
-            query += ` AND (a.client_phone ILIKE $1 OR a.client_name ILIKE $1 OR c.cedula ILIKE $1 OR CAST(a.id AS TEXT) = $1)`;
+            const rawQ = q.trim();
+            const cleanDigits = rawQ.replace(/\D/g, '');
+            params.push(`%${rawQ}%`);
+            params.push(`%${cleanDigits}%`);
+            query += ` AND (
+                a.client_phone ILIKE $1 
+                OR a.client_name ILIKE $1 
+                OR c.cedula ILIKE $1 
+                OR c.phone ILIKE $1 
+                OR ($2 != '%%' AND RIGHT(a.client_phone, 9) LIKE $2)
+                OR ($2 != '%%' AND c.cedula LIKE $2)
+                OR CAST(a.id AS TEXT) = $1
+            )`;
         }
         query += ' ORDER BY a.id DESC LIMIT 20';
         const result = await pool.query(query, params);
@@ -707,14 +749,25 @@ app.get('/api/appointments/pending-survey', async (req, res) => {
         let query = `
             SELECT a.*, c.cedula, t.name as tech_name
             FROM appointments a
-            LEFT JOIN clients c ON a.client_phone = c.phone
+            LEFT JOIN clients c ON (a.client_phone = c.phone OR RIGHT(a.client_phone, 9) = RIGHT(c.phone, 9))
             LEFT JOIN technicians t ON a.tech_id = t.id
             WHERE a.status = 'Terminado' AND (a.survey_completed = FALSE OR a.survey_completed IS NULL)
         `;
         const params = [];
         if (q && q.trim()) {
-            params.push(`%${q.trim()}%`);
-            query += ` AND (a.client_phone ILIKE $1 OR a.client_name ILIKE $1 OR c.cedula ILIKE $1 OR CAST(a.id AS TEXT) = $1)`;
+            const rawQ = q.trim();
+            const cleanDigits = rawQ.replace(/\D/g, '');
+            params.push(`%${rawQ}%`);
+            params.push(`%${cleanDigits}%`);
+            query += ` AND (
+                a.client_phone ILIKE $1 
+                OR a.client_name ILIKE $1 
+                OR c.cedula ILIKE $1 
+                OR c.phone ILIKE $1 
+                OR ($2 != '%%' AND RIGHT(a.client_phone, 9) LIKE $2)
+                OR ($2 != '%%' AND c.cedula LIKE $2)
+                OR CAST(a.id AS TEXT) = $1
+            )`;
         }
         query += ' ORDER BY a.id DESC LIMIT 20';
         const result = await pool.query(query, params);
