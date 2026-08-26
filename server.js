@@ -679,13 +679,17 @@ app.put('/api/appointments/:id', async (req, res) => {
             });
         }
 
-        // 3. Notificación al TÉCNICO asignado cuando se le asigna o actualiza una cita
+        // 3. Notificación al TÉCNICO asignado: SOLO cuando la cita está Confirmada / Pagada
         const newTechId = updatedApt.tech_id;
         const prevTechId = prevApt.tech_id;
-        if (waBot && waBot.notifyTechnicianJobAssigned && newTechId && (newTechId !== prevTechId || (isNowConfirmed && !wasAlreadyConfirmed))) {
-            waBot.notifyTechnicianJobAssigned(parseInt(id), parseInt(newTechId)).catch(err => {
-                console.error('[WA Bot] Error notificando al técnico asignado:', err.message);
-            });
+        const isAptPaidOrConfirmed = (updatedApt.status === 'Confirmado' || updatedApt.status === 'Conf. Cliente' || updatedApt.payment_status === 'Pagado' || isNowConfirmed);
+
+        if (waBot && waBot.notifyTechnicianJobAssigned && newTechId && isAptPaidOrConfirmed) {
+            if ((isNowConfirmed && !wasAlreadyConfirmed) || (newTechId !== prevTechId)) {
+                waBot.notifyTechnicianJobAssigned(parseInt(id), parseInt(newTechId)).catch(err => {
+                    console.error('[WA Bot] Error notificando al técnico asignado:', err.message);
+                });
+            }
         }
 
         // 4. Si el estado se actualiza a Terminado, enviar automáticamente mensaje de conclusión y encuesta CSAT

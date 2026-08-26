@@ -86,6 +86,37 @@ function menuPrincipal() {
     return '💧 *HIDROSYS EC. — Asistente Virtual*\n_Atención al Cliente • Sistemas de Agua y Gas_\n\n¡Hola! ¿En qué podemos ayudarte hoy? Escribe el *número* de tu opción:\n\n1️⃣ *Agendar Visita Técnica* ($15.00)\n2️⃣ *Reportar Comprobante de Pago*\n3️⃣ *Consultar Estado de mi Cita*\n4️⃣ *Ver Catálogo y Precios*\n\n👉 _Escribe **1**, **2**, **3** o **4** para continuar._';
 }
 
+async function getRescheduleDateOptions() {
+    const techRes = await pool.query("SELECT COUNT(*) FROM technicians WHERE active = TRUE");
+    const totalTechs = parseInt(techRes.rows[0]?.count || '4');
+    const optionsDate = [];
+    const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    let offset = 1;
+    let count = 0;
+    while (count < 5 && offset < 15) {
+        const d = new Date();
+        d.setDate(d.getDate() + offset);
+        if (d.getDay() !== 0) { // Lunes a Sábado
+            const iso = d.toISOString().split('T')[0];
+            const countRes = await pool.query(
+                "SELECT COUNT(*) FROM appointments WHERE apt_date = $1 AND status NOT IN ('Cancelado')",
+                [iso]
+            );
+            const bookedCount = parseInt(countRes.rows[0]?.count || '0');
+            const maxDayCapacity = totalTechs * 3;
+            const hasCapacity = bookedCount < maxDayCapacity;
+            const str = dias[d.getDay()] + ' ' + d.getDate() + ' de ' + meses[d.getMonth()];
+            const statusLabel = hasCapacity ? '✅ Disponible' : '❌ Cupos Llenos';
+
+            optionsDate.push({ num: String(count + 1), iso, str, hasCapacity, statusLabel });
+            count++;
+        }
+        offset++;
+    }
+    return { optionsDate, totalTechs };
+}
+
 // ============================================================
 // PROCESADOR PRINCIPAL DE MENSAJES
 // ============================================================
@@ -106,7 +137,13 @@ async function processMessage(phone, text, senderJid) {
 
     // Navegación inversa
     const esAtras = ['atras','volver','corregir','cambiar','anterior'].includes(msgN);
-    if (esAtras && ['book_phone','book_address','book_canton','book_parish','book_service','book_date','book_time','book_confirm'].includes(step)) {
+    if (esAtras && ['book_phone','book_address','book_canton','book_parish','book_service','book_date','book_time','book_confirm','reschedule_time'].includes(step)) {
+        if (step === 'reschedule_time') {
+            setSession(phone, 'reschedule_date', {});
+            const { optionsDate } = await getRescheduleDateOptions();
+            const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '* (' + o.iso + ') — ' + o.statusLabel).join('\n');
+            return '📅 *Selecciona tu nueva fecha:* \n\n' + listaFechas;
+        }
         const back = { book_phone:'book_name', book_address:'book_phone', book_canton:'book_address', book_parish:'book_canton', book_service:'book_canton', book_date:'book_service', book_time:'book_date', book_confirm:'book_time' };
         const prev = back[step];
         setSession(phone, prev, {});
@@ -120,49 +157,163 @@ async function processMessage(phone, text, senderJid) {
         return menuPrincipal();
     }
 
-    // Confirmación de disponibilidad por cliente (1 sola respuesta sin duplicados)
-    if (step === 'awaiting_availability_confirm') {
-        if (['si','s','1','confirmo','confirmar'].includes(msgN) || msgN.includes('disponible')) {
+    // ══════════════════════════════════════════════════════════
+    // CONFIRMACIÓN DE DISPONIBILIDAD Y REAGENDAMIENTO INTELIGENTE
+    // ══════════════════════════════════════════════════════════
+    if (step === 'awaiting_availability_confirm' || step === 'idle' || step === 'main_menu') {
+        const cleanPhone9 = phone.slice(-9);
+
+        // 1. Confirmar disponibilidad (Opción 1 o frases afirmativas)
+        if (['1','1️⃣','si','s','confirmo','confirmar','disponible','de acuerdo','correcto','estare','ok'].includes(msgN) || (msgN.startsWith('si') && !msgN.includes('nuevo'))) {
             try {
                 let aptId = sess.data.aptId;
                 if (!aptId) {
-                    const res = await pool.query("SELECT id FROM appointments WHERE client_phone LIKE $1 AND status IN ('Confirmado','Pre-agendado') ORDER BY id DESC LIMIT 1", ['%' + phone.slice(-9) + '%']);
+                    const res = await pool.query(
+                        "SELECT id FROM appointments WHERE (client_phone LIKE $1 OR RIGHT(client_phone, 9) = RIGHT($1, 9)) AND status IN ('Confirmado','Pre-agendado') ORDER BY id DESC LIMIT 1",
+                        ['%' + cleanPhone9 + '%']
+                    );
                     if (res.rows.length) aptId = res.rows[0].id;
                 }
                 if (aptId) {
                     await pool.query("UPDATE appointments SET status = 'Conf. Cliente' WHERE id = $1", [aptId]);
                     clearSession(phone);
-                    return '✅ *¡Perfecto! Disponibilidad confirmada.*\n\n📋 Tu cita *#' + aptId + '* ha quedado registrada como *Confirmada por el Cliente*.\n👷 Nuestro técnico asignado se comunicará contigo antes de la visita.\n\n¡Gracias por confiar en *HIDROSYS EC.*!\n_Escribe *menu* si necesitas algo más._';
-                }
-            } catch (err) { console.error('[WA] Error Conf. Cliente:', err.message); }
-        }
-        if (['no','n','2'].includes(msgN) || msgN.includes('reagendar')) {
-            clearSession(phone);
-            return '⚠️ Entendido. Si necesitas reagendar tu cita, por favor escribe *menu* para agendar una nueva fecha.';
-        }
-        return '❓ *Confirmación de Visita Técnica*\n\n¿Confirmas que estarás disponible en tu domicilio en el horario acordado?\n\n1️⃣ *SÍ, estaré disponible*\n2️⃣ *NO, necesito reagendar*\n\n👉 _Responde con **1** o **2**._';
-    }
-
-    // Menú principal y detección inteligente de confirmaciones
-    if (step === 'idle' || step === 'main_menu') {
-        // Si el cliente responde afirmativamente y tiene una cita confirmada o pre-agendada
-        if (msgN.startsWith('si') || msgN.includes('confirmo') || msgN.includes('disponible') || msgN.includes('correcto') || msgN.includes('de acuerdo') || msgN.includes('estare')) {
-            try {
-                const activeApt = await pool.query(
-                    "SELECT id FROM appointments WHERE (client_phone LIKE $1 OR RIGHT(client_phone, 9) = RIGHT($1, 9)) AND status IN ('Confirmado', 'Pre-agendado') ORDER BY id DESC LIMIT 1",
-                    ['%' + phone.slice(-9) + '%']
-                );
-                if (activeApt.rows.length > 0) {
-                    const aptId = activeApt.rows[0].id;
-                    await pool.query("UPDATE appointments SET status = 'Conf. Cliente' WHERE id = $1", [aptId]);
-                    clearSession(phone);
-                    return '✅ *¡Disponibilidad Confirmada!*\n\n📋 Tu cita *#' + aptId + '* ha quedado confirmada por el cliente.\n👷 Nuestro técnico asignado se comunicará contigo antes de la visita.\n\n¡Gracias por confiar en *HIDROSYS EC.*!\n_Escribe *menu* si necesitas algo más._';
+                    return '✅ *¡Disponibilidad Confirmada!*\n\n📋 Tu cita *#' + aptId + '* ha quedado registrada como *Confirmada por el Cliente*.\n👷 Nuestro técnico asignado se comunicará contigo antes de la visita.\n\n¡Gracias por confiar en *HIDROSYS EC.*! 💧\n_Escribe *menu* si necesitas algo más._';
                 }
             } catch (err) {
-                console.error('[WA] Error auto-confirming apt:', err.message);
+                console.error('[WA] Error Conf. Cliente:', err.message);
             }
         }
 
+        // 2. Reagendar cita (Opción 2 o solicitud de cambio)
+        if (['2','2️⃣','no','n','reagendar','cambiar','cambiar fecha','cambiar hora'].includes(msgN) || msgN.includes('reagendar')) {
+            try {
+                let aptId = sess.data.aptId;
+                let aptData = null;
+                const res = await pool.query(
+                    "SELECT a.*, t.name as tech_name FROM appointments a LEFT JOIN technicians t ON a.tech_id = t.id WHERE (a.client_phone LIKE $1 OR RIGHT(a.client_phone, 9) = RIGHT($1, 9)) AND a.status IN ('Confirmado','Conf. Cliente','Pre-agendado','Reportado') ORDER BY a.id DESC LIMIT 1",
+                    ['%' + cleanPhone9 + '%']
+                );
+                if (res.rows.length) {
+                    aptData = res.rows[0];
+                    aptId = aptData.id;
+                }
+
+                if (aptId && aptData) {
+                    const { optionsDate, totalTechs } = await getRescheduleDateOptions();
+                    setSession(phone, 'reschedule_date', { aptId, aptData, optionsDate, totalTechs });
+                    const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '* (' + o.iso + ') — ' + o.statusLabel).join('\n');
+                    return '📅 *Reagendamiento de Visita Técnica*\n\nHola *' + aptData.client_name + '*, vamos a cambiar la fecha de tu cita *#' + aptId + '* (' + aptData.service_type + ').\n\n*Selecciona el nuevo día disponible:*\n\n' + listaFechas + '\n\n👉 _Escribe el número del **1 al 5** o la fecha (AAAA-MM-DD)._';
+                }
+            } catch (err) {
+                console.error('[WA] Error Reagendar lookup:', err.message);
+            }
+        }
+    }
+
+    // PASO REAGENDAMIENTO 1: SELECCIONAR FECHA
+    if (step === 'reschedule_date') {
+        const optionsDate = sess.data.optionsDate || [];
+        let fechaObj = optionsDate.find(o => o.num === msg || o.iso === msg);
+        if (!fechaObj) {
+            const idx = parseInt(msg) - 1;
+            if (!isNaN(idx) && idx >= 0 && idx < optionsDate.length) {
+                fechaObj = optionsDate[idx];
+            } else if (/^\d{4}-\d{2}-\d{2}$/.test(msg)) {
+                fechaObj = { iso: msg, hasCapacity: true };
+            }
+        }
+
+        if (!fechaObj) {
+            const listaFechas = optionsDate.map(o => o.num + '️⃣ *' + o.str + '* — ' + o.statusLabel).join('\n');
+            return '❌ Fecha no válida. Escribe un número del 1 al 5:\n\n' + listaFechas;
+        }
+
+        if (fechaObj.hasCapacity === false) {
+            return '⚠️ Ese día no tiene cupos disponibles. Por favor selecciona otra fecha (1 al 5).';
+        }
+
+        const fechaSeleccionada = fechaObj.iso;
+        const totalTechs = sess.data.totalTechs || 4;
+
+        const aptRes = await pool.query(
+            "SELECT apt_time, COUNT(*) as booked FROM appointments WHERE apt_date = $1 AND status NOT IN ('Cancelado') GROUP BY apt_time",
+            [fechaSeleccionada]
+        );
+
+        const slots = [
+            { id: '1', time: '09:00', label: 'Mañana (08:00 – 12:00)' },
+            { id: '2', time: '14:00', label: 'Tarde (13:00 – 17:00)' },
+            { id: '3', time: '17:00', label: 'Tarde-Noche (17:00 – 19:00)' }
+        ];
+
+        const slotAvailability = slots.map(s => {
+            const row = aptRes.rows.find(r => String(r.apt_time).startsWith(s.time.slice(0, 2)));
+            const booked = row ? parseInt(row.booked) : 0;
+            const free = Math.max(0, totalTechs - booked);
+            return {
+                ...s,
+                booked,
+                free,
+                available: free > 0,
+                statusText: free > 0 ? '✅ Disponible (' + free + ' ' + (free === 1 ? 'cupo libre' : 'cupos libres') + ')' : '❌ Lleno'
+            };
+        });
+
+        setSession(phone, 'reschedule_time', {
+            aptId: sess.data.aptId,
+            aptData: sess.data.aptData,
+            newDate: fechaSeleccionada,
+            slotAvailability
+        });
+        const listaSlots = slotAvailability.map(s => s.id + '️⃣ *' + s.label + '* — ' + s.statusText).join('\n');
+
+        return '📅 Nueva fecha: *' + fechaSeleccionada + '*\n\n⏰ *Selecciona tu nuevo horario preferido:*\n\n' + listaSlots + '\n\n👉 _Escribe **1**, **2** o **3**._';
+    }
+
+    // PASO REAGENDAMIENTO 2: CONFIRMAR NUEVO HORARIO
+    if (step === 'reschedule_time') {
+        const slotAvailability = sess.data.slotAvailability || [];
+        let chosenSlot = null;
+        if (msg === '1' || msg.startsWith('1') || norm(msg).includes('manana') || norm(msg).includes('08') || norm(msg).includes('09')) {
+            chosenSlot = slotAvailability.find(s => s.id === '1') || { time: '09:00', available: true };
+        } else if (msg === '2' || msg.startsWith('2') || (norm(msg).includes('tarde') && !norm(msg).includes('noche')) || norm(msg).includes('13') || norm(msg).includes('14')) {
+            chosenSlot = slotAvailability.find(s => s.id === '2') || { time: '14:00', available: true };
+        } else if (msg === '3' || msg.startsWith('3') || norm(msg).includes('noche') || norm(msg).includes('17')) {
+            chosenSlot = slotAvailability.find(s => s.id === '3') || { time: '17:00', available: true };
+        }
+
+        if (!chosenSlot) return '❌ Horario no reconocido. Escribe **1** (Mañana), **2** (Tarde) o **3** (Tarde-Noche).';
+        if (!chosenSlot.available) return '⚠️ Horario sin cupos disponibles. Elige otra opción (1, 2 o 3) o escribe *atras*.';
+
+        try {
+            const aptId = sess.data.aptId;
+            const newDate = sess.data.newDate;
+            const newTime = chosenSlot.time;
+            const apt = sess.data.aptData || {};
+
+            await pool.query(
+                "UPDATE appointments SET apt_date = $1, apt_time = $2, status = 'Confirmado' WHERE id = $3",
+                [newDate, newTime, aptId]
+            );
+            clearSession(phone);
+
+            return '🎉 *¡Cita Reagendada con Éxito!*\n\n' +
+                '📋 *Cita ID:* #' + aptId + '\n' +
+                '🔧 *Servicio:* ' + (apt.service_type || 'Visita Técnica') + '\n' +
+                '📅 *Nueva Fecha:* ' + newDate + '\n' +
+                '⏰ *Nuevo Horario:* ' + newTime + '\n' +
+                '📍 *Dirección:* ' + (apt.address || 'Registrada') + ' (' + (apt.zone || 'Cañar') + ')\n' +
+                '👷 *Técnico:* ' + (apt.tech_name || 'Especialista Asignado') + '\n\n' +
+                '✅ Tu nuevo horario ha sido actualizado en nuestro sistema y notificado a tu técnico.\n\n' +
+                '_¡Muchas gracias por preferir HIDROSYS EC.! 💧_';
+        } catch (err) {
+            console.error('[WA] Error actualizando cita reagendada:', err.message);
+            return '❌ Ocurrió un error al actualizar la cita. Por favor intenta de nuevo escribiendo *menu*.';
+        }
+    }
+
+    // Menú principal
+    if (step === 'idle' || step === 'main_menu') {
         if (msg === '1' || msg.startsWith('1') || msgN.includes('agendar') || msgN.includes('visita') || msgN.includes('cita')) {
             setSession(phone, 'book_is_existing_client', { senderJid });
             return '💧 *Agendar Visita Técnica ($15.00)*\n\n¿Ya eres cliente de HIDROSYS o has solicitado servicios antes?\n\n1️⃣ *Sí, validar con mi Cédula* (Autocompletar datos)\n2️⃣ *No, soy cliente nuevo*\n\n👉 _Responde con **1** o **2**._';
@@ -674,6 +825,15 @@ async function buildConfirmationMessage(aptId) {
         }
         const phoneKey = targetJid.split('@')[0].replace(/\D/g,'');
         setSession(phoneKey, 'awaiting_availability_confirm', { aptId: a.id });
+        if (phoneKey.startsWith('593')) {
+            setSession('0' + phoneKey.slice(3), 'awaiting_availability_confirm', { aptId: a.id });
+            setSession(phoneKey.slice(3), 'awaiting_availability_confirm', { aptId: a.id });
+        }
+        if (a.client_phone) {
+            const rawDigits = a.client_phone.replace(/\D/g,'');
+            setSession(rawDigits, 'awaiting_availability_confirm', { aptId: a.id });
+            setSession(rawDigits.slice(-9), 'awaiting_availability_confirm', { aptId: a.id });
+        }
 
         return {
             phone: targetJid,

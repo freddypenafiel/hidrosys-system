@@ -310,6 +310,7 @@ function navigateTo(pageId) {
 
     // Cargar datos según la página
     const loaders = {
+        'book':               () => { resetCedulaLookup(); wzGo(1); },
         'admin-dashboard':    loadDashboard,
         'catalog':            loadProducts,
         'admin-appointments': loadAppointments,
@@ -617,6 +618,7 @@ function setupBookingForm() {
             }
             
             form.reset();
+            resetCedulaLookup();
             discardAudio();
             const bkCanton = document.getElementById('bk-canton');
             if (bkCanton) bkCanton.value = '';
@@ -794,13 +796,21 @@ async function verifyCedulaOtp() {
 
 function resetCedulaLookup() {
     currentCedulaLookup = null;
-    document.getElementById('cedula-step-2').style.display = 'none';
+    const step1 = document.getElementById('cedula-step-1');
+    if (step1) step1.style.display = 'flex';
+    const step2 = document.getElementById('cedula-step-2');
+    if (step2) step2.style.display = 'none';
     const input = document.getElementById('bk-cedula-input');
-    if (input) { input.value = ''; input.focus(); }
+    if (input) input.value = '';
     const otpInput = document.getElementById('bk-otp-input');
     if (otpInput) otpInput.value = '';
     const feedback = document.getElementById('cedula-feedback-msg');
     if (feedback) feedback.textContent = '';
+    const reqBtn = document.getElementById('btn-request-otp');
+    if (reqBtn) {
+        reqBtn.disabled = false;
+        reqBtn.innerHTML = '<span>📲</span> Enviar Código a mi WhatsApp';
+    }
     const verifyBtn = document.getElementById('btn-verify-otp');
     if (verifyBtn) {
         verifyBtn.disabled = false;
@@ -1218,8 +1228,11 @@ async function loadAppointments() {
                                    (a.status?.includes('Confirmado') ? 'stripe-confirmed' :
                                    (a.receipt_no ? 'stripe-confirmed' : 'stripe-pre'));
 
-                // REQ 3: Técnicos ordenados por zona (técnicos de la zona primero)
+                // REQ 3 & REQ 4: Técnicos ordenados por zona y detección de colisiones de horario en tiempo real
                 const apZoneBase = (a.zone || '').split(' - ')[0].trim().toLowerCase();
+                const aDateStr = a.apt_date ? a.apt_date.split('T')[0] : '';
+                const aHourBlock = String(a.apt_time || '').slice(0, 2);
+
                 const sortedTechs = [...techs].sort((t1, t2) => {
                     const in1 = t1.zone && (t1.zone.toLowerCase().includes(apZoneBase) || t1.zone === 'Toda la Provincia') ? 1 : 0;
                     const in2 = t2.zone && (t2.zone.toLowerCase().includes(apZoneBase) || t2.zone === 'Toda la Provincia') ? 1 : 0;
@@ -1227,8 +1240,23 @@ async function loadAppointments() {
                 });
                 const techOptions = `<option value="">— Asignar técnico —</option>` +
                     sortedTechs.map(t => {
+                        const isBusy = (apts || []).some(other => 
+                            other.id !== a.id && 
+                            other.tech_id === t.id && 
+                            other.apt_date && other.apt_date.split('T')[0] === aDateStr &&
+                            String(other.apt_time || '').slice(0, 2) === aHourBlock &&
+                            ['Confirmado', 'Conf. Cliente', 'Reportado', 'Pre-agendado'].includes(other.status)
+                        );
                         const inZone = t.zone && (t.zone.toLowerCase().includes(apZoneBase) || t.zone === 'Toda la Provincia');
-                        const label = inZone ? `📍 ${t.avatar} ${t.name} (${t.zone})` : `⚠️ ${t.name} (${t.zone}) – fuera de zona`;
+                        
+                        let label;
+                        if (isBusy && a.tech_id != t.id) {
+                            label = `🚫 ${t.name} (${t.zone}) – ❌ OCUPADO a las ${String(a.apt_time||'').slice(0,5)}`;
+                        } else if (inZone) {
+                            label = `📍 ${t.avatar || '👨‍🔧'} ${t.name} (${t.zone})`;
+                        } else {
+                            label = `⚠️ ${t.name} (${t.zone}) – fuera de zona`;
+                        }
                         return `<option value="${t.id}" ${a.tech_id == t.id ? 'selected' : ''}>${label}</option>`;
                     }).join('');
 
