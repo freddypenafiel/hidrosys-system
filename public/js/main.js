@@ -19,6 +19,13 @@ function toast(message, type = 'info', duration = 4000) {
 }
 
 // ============================================================
+// UTILIDADES
+// ============================================================
+function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ============================================================
 // API HELPER
 // ============================================================
 async function api(method, path, body = null) {
