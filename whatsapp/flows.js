@@ -134,17 +134,19 @@ async function processMessage(phone, text, senderJid) {
     const sess = getSession(phone);
     const step = sess.step;
     const msgN = norm(msg);
+    const cleanPhone9 = String(phone).replace(/\D/g, '').slice(-9);
+    const jidOrSender = senderJid || (phone + '@s.whatsapp.net');
 
     if (senderJid && !sess.data.senderJid) setSession(phone, step, { senderJid });
 
-    // Comandos globales
+    // ── 1. COMANDOS GLOBALES DE REINICIO ────────────────────────
     if (['menu','hola','hi','inicio','0','cancelar','cancel','empezar','ayuda','soporte'].includes(msgN)) {
         clearSession(phone);
         setSession(phone, 'main_menu', { senderJid });
         return menuPrincipal();
     }
 
-    // Navegación inversa
+    // ── 2. NAVEGACIÓN INVERSA (ATRÁS) ───────────────────────────
     const esAtras = ['atras','volver','corregir','cambiar','anterior'].includes(msgN);
     if (esAtras && ['book_phone','book_address','book_canton','book_parish','book_service','book_date','book_time','book_confirm','reschedule_time'].includes(step)) {
         if (step === 'reschedule_time') {
@@ -166,44 +168,45 @@ async function processMessage(phone, text, senderJid) {
         return menuPrincipal();
     }
 
-        // ══════════════════════════════════════════════════════════
-    // CONFIRMACIÓN DE DISPONIBILIDAD Y REAGENDAMIENTO INTELIGENTE
-    // Intercepta respuestas 1 / 2 o palabras afirmativas/negativas
-    // siempre consultando la DB directamente (independiente de RAM/sesión).
-    // ══════════════════════════════════════════════════════════
-    const cleanPhone9 = String(phone).replace(/\D/g, '').slice(-9);
+    // ── 3. MENÚ PRINCIPAL INTERACTIVO ───────────────────────────
+    if (step === 'main_menu') {
+        if (msg === '1' || msg.startsWith('1') || msgN.includes('agendar') || msgN.includes('visita') || msgN.includes('cita')) {
+            setSession(phone, 'book_is_existing_client', { senderJid });
+            return '💧 *Agendar Visita Técnica ($15.00)*\n\n¿Ya eres cliente de HIDROSYS o has solicitado servicios antes?\n\n1️⃣ *Sí, validar con mi Cédula* (Autocompletar datos)\n2️⃣ *No, soy cliente nuevo*\n\n👉 Responde con el número 1 o 2.';
+        }
+        if (msg === '2' || msg.startsWith('2') || msgN.includes('pago') || msgN.includes('comprobante') || msgN.includes('reportar')) {
+            setSession(phone, 'pay_phone', { senderJid });
+            return '💳 *Reportar Comprobante de Pago*\n\nEscribe el *número de teléfono* con el que registraste tu cita (ej. 0987654321):';
+        }
+        if (msg === '3' || msg.startsWith('3') || msgN.includes('consultar') || msgN.includes('estado')) {
+            setSession(phone, 'status_phone', { senderJid });
+            return '🔍 *Consultar Estado de Cita*\n\nEscribe el *número de teléfono* con el que te registraste (ej. 0987654321):';
+        }
+        if (msg === '4' || msg.startsWith('4') || msgN.includes('catalogo') || msgN.includes('precio')) {
+            clearSession(phone);
+            return '📦 *Catálogo de Servicios HIDROSYS EC.:*\n\n💧 *Instalación de medidor de agua:* $15.00\n🔩 *Reparación de tubería / fugas:* $15.00\n⛽ *Red de gas domiciliario:* $15.00\n🔨 *Mantenimiento sistema hidráulico:* $15.00\n🔍 *Inspección técnica general:* $15.00\n\n_Nota: El valor de $15.00 incluye visita técnica y diagnóstico profesional. Materiales se cotizan en sitio._\n\n👉 Escribe 1 para agendar ahora o escribe menu para volver.';
+        }
+        return menuPrincipal();
+    }
 
+    // ── 4. CONFIRMACIÓN DE DISPONIBILIDAD (CUANDO SE ENVIÓ NOTIFICACIÓN) ──
     const esConfirmar = ['1','1️⃣','si','s','confirmo','confirmar','disponible','de acuerdo','correcto','estare','ok'].includes(msgN) ||
                         (msgN.startsWith('si') && !msgN.includes('nuevo') && !msgN.includes('cedula'));
     const esReagendar = ['2','2️⃣','no','n','reagendar','cambiar fecha','cambiar hora'].includes(msgN) || msgN === 'reagendar';
 
-    if (step === 'awaiting_availability_confirm' || ((step === 'idle' || step === 'main_menu') && (esConfirmar || esReagendar))) {
+    if (step === 'awaiting_availability_confirm' || (step === 'idle' && (esConfirmar || esReagendar))) {
         try {
             let aptId = sess.data.aptId || null;
-            const jidOrSender = senderJid || (phone + '@s.whatsapp.net');
-
-            // Búsqueda ultra-robusta de la cita activa asociada al número
             let aptData = null;
-            // 1. Si hay una cita recientemente aprobada en espera de confirmación (dentro de las últimas 2 horas)
-            if (lastApprovedAptState.aptId && (Date.now() - lastApprovedAptState.timestamp) < 2 * 60 * 60 * 1000) {
-                const res = await pool.query(
-                    "SELECT a.*, t.name as tech_name FROM appointments a LEFT JOIN technicians t ON a.tech_id=t.id WHERE a.id=$1 AND a.status='Confirmado'",
-                    [lastApprovedAptState.aptId]
-                );
-                if (res.rows.length) {
-                    aptData = res.rows[0];
-                    aptId = aptData.id;
-                }
-            }
 
-            if (!aptData && aptId) {
+            // Buscar la cita en 'Confirmado' de ESTE NÚMERO ESPECÍFICO
+            if (aptId) {
                 const res = await pool.query("SELECT a.*, t.name as tech_name FROM appointments a LEFT JOIN technicians t ON a.tech_id=t.id WHERE a.id=$1", [aptId]);
                 if (res.rows.length) aptData = res.rows[0];
             }
 
-                        if (!aptData) {
-                // 1. Buscar primero la cita en estado 'Confirmado' vinculada a este número o sender
-                let res = await pool.query(
+            if (!aptData && cleanPhone9) {
+                const res = await pool.query(
                     `SELECT a.*, t.name as tech_name FROM appointments a
                      LEFT JOIN technicians t ON a.tech_id = t.id
                      WHERE (
@@ -217,50 +220,20 @@ async function processMessage(phone, text, senderJid) {
                      ORDER BY a.id DESC LIMIT 1`,
                     [jidOrSender, '%' + cleanPhone9 + '%', cleanPhone9]
                 );
-
-                // 2. Si no se encuentra por número exacto (ej. WhatsApp LID multidevice), buscar la cita más reciente en 'Confirmado'
-                if (!res.rows.length) {
-                    res = await pool.query(
-                        `SELECT a.*, t.name as tech_name FROM appointments a
-                         LEFT JOIN technicians t ON a.tech_id = t.id
-                         WHERE a.status = 'Confirmado'
-                         ORDER BY a.id DESC LIMIT 1`
-                    );
-                }
-
-                // 3. Fallback general para citas no canceladas ni terminadas
-                if (!res.rows.length) {
-                    res = await pool.query(
-                        `SELECT a.*, t.name as tech_name FROM appointments a
-                         LEFT JOIN technicians t ON a.tech_id = t.id
-                         WHERE (
-                            a.wa_sender = $1
-                            OR a.wa_sender LIKE $2
-                            OR a.client_phone LIKE $2
-                            OR RIGHT(REGEXP_REPLACE(COALESCE(a.client_phone,''), '[^0-9]', '', 'g'), 9) = $3
-                            OR RIGHT(REGEXP_REPLACE(COALESCE(a.wa_sender,''), '[^0-9]', '', 'g'), 9) = $3
-                         )
-                         AND a.status NOT IN ('Cancelado', 'Terminado')
-                         ORDER BY a.id DESC LIMIT 1`,
-                        [jidOrSender, '%' + cleanPhone9 + '%', cleanPhone9]
-                    );
-                }
-
                 if (res.rows.length) {
                     aptData = res.rows[0];
                     aptId = aptData.id;
                 }
             }
 
-            if (aptData && aptId) {
+            if (aptData && aptId && (aptData.status === 'Confirmado' || step === 'awaiting_availability_confirm')) {
                 if (esConfirmar) {
-                    // Marcar como confirmada por el cliente y vincular wa_sender
                     await pool.query(
                         "UPDATE appointments SET status = 'Conf. Cliente', wa_sender = COALESCE(NULLIF(wa_sender, ''), $1) WHERE id = $2",
                         [jidOrSender, aptId]
                     );
                     clearSession(phone);
-                    return '✅ *¡Disponibilidad Confirmada!*\n\n📋 Tu cita *#' + aptId + '* (' + aptData.service_type + ') ha quedado registrada como *Confirmada por el Cliente*.\n👷 Nuestro técnico asignado *' + (aptData.tech_name || 'Especializado HIDROSYS') + '* se comunicará contigo antes de la visita.\n\n¡Muchas gracias por confiar en *HIDROSYS EC.*! 💧\n_Escribe menu si necesitas algo más._';
+                    return '✅ *¡Disponibilidad Confirmada!*\n\n📋 Tu cita *#' + aptId + '* (' + (aptData.service_type || 'Visita Técnica') + ') ha quedado registrada como *Confirmada por el Cliente*.\n👷 Nuestro técnico asignado *' + (aptData.tech_name || 'Especializado HIDROSYS') + '* se comunicará contigo antes de la visita.\n\n¡Muchas gracias por confiar en *HIDROSYS EC.*! 💧\n_Escribe menu si necesitas algo más._';
                 }
 
                 if (esReagendar) {
@@ -271,11 +244,33 @@ async function processMessage(phone, text, senderJid) {
                 }
             } else if (step === 'awaiting_availability_confirm') {
                 clearSession(phone);
-                return '✅ *Tu cita ya ha sido registrada como confirmada.*\n\n¡Gracias por confiar en *HIDROSYS EC.*! 💧\n_Escribe menu si necesitas algo más._';
+                return '✅ *Tu cita ya se encuentra confirmada.*\n\n¡Gracias por confiar en *HIDROSYS EC.*! 💧\n_Escribe menu si necesitas algo más._';
             }
         } catch (err) {
             console.error('[WA] Error confirmación/reagendamiento:', err.message);
         }
+    }
+
+    // ── 5. ENTRADA SIN SESIÓN PREVIA (IDLE) ──────────────────────
+    if (step === 'idle') {
+        if (msg === '1' || msg.startsWith('1') || msgN.includes('agendar') || msgN.includes('visita') || msgN.includes('cita')) {
+            setSession(phone, 'book_is_existing_client', { senderJid });
+            return '💧 *Agendar Visita Técnica ($15.00)*\n\n¿Ya eres cliente de HIDROSYS o has solicitado servicios antes?\n\n1️⃣ *Sí, validar con mi Cédula* (Autocompletar datos)\n2️⃣ *No, soy cliente nuevo*\n\n👉 Responde con el número 1 o 2.';
+        }
+        if (msg === '2' || msg.startsWith('2') || msgN.includes('pago') || msgN.includes('comprobante') || msgN.includes('reportar')) {
+            setSession(phone, 'pay_phone', { senderJid });
+            return '💳 *Reportar Comprobante de Pago*\n\nEscribe el *número de teléfono* con el que registraste tu cita (ej. 0987654321):';
+        }
+        if (msg === '3' || msg.startsWith('3') || msgN.includes('consultar') || msgN.includes('estado')) {
+            setSession(phone, 'status_phone', { senderJid });
+            return '🔍 *Consultar Estado de Cita*\n\nEscribe el *número de teléfono* con el que te registraste (ej. 0987654321):';
+        }
+        if (msg === '4' || msg.startsWith('4') || msgN.includes('catalogo') || msgN.includes('precio')) {
+            clearSession(phone);
+            return '📦 *Catálogo de Servicios HIDROSYS EC.:*\n\n💧 *Instalación de medidor de agua:* $15.00\n🔩 *Reparación de tubería / fugas:* $15.00\n⛽ *Red de gas domiciliario:* $15.00\n🔨 *Mantenimiento sistema hidráulico:* $15.00\n🔍 *Inspección técnica general:* $15.00\n\n_Nota: El valor de $15.00 incluye visita técnica y diagnóstico profesional. Materiales se cotizan en sitio._\n\n👉 Escribe 1 para agendar ahora o escribe menu para volver.';
+        }
+        setSession(phone, 'main_menu', { senderJid });
+        return menuPrincipal();
     }
 
     // PASO REAGENDAMIENTO 1: SELECCIONAR FECHA
